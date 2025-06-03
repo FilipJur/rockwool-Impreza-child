@@ -1,0 +1,48 @@
+@use '../base/variables' as *;
+
+// WooCommerce customizations
+
+// Unaffordable products styling
+.woocommerce ul.products li.product.product-not-affordable,
+.product.product-not-affordable {
+  opacity: 0.6 !important; // Grey out the product
+}
+
+.woocommerce ul.products li.product.product-not-affordable a.woocommerce-LoopProduct-link,
+.product.product-not-affordable .woocommerce-loop-product__link {
+  // Optional: if you want to prevent clicking the product image/title link too
+  // pointer-events: none;
+}
+
+// Disabled add to cart buttons for unaffordable products
+.product-not-affordable,
+.product.product-not-affordable {
+  .add_to_cart_button,
+  .single_add_to_cart_button,
+  button[type="submit"].single_add_to_cart_button,
+  .variations_form .single_add_to_cart_button {
+    background-color: $gray-300 !important; // Lighter grey background
+    color: $gray-500 !important; // Darker grey text
+    cursor: not-allowed !important;
+    pointer-events: none; // Make button unclickable
+  }
+}
+
+// Message for unaffordable items
+.product-unaffordable-message {
+  color: $color-danger; // Reddish color for warning
+  font-size: 0.9em;
+  display: block;
+  margin-top: 8px;
+  clear: both;
+}
+
+// Ensure disabled add to cart button on archive looks distinct
+.woocommerce ul.products li.product .button.disabled.not-affordable-button {
+  background-color: $gray-300 !important;
+  color: $gray-500 !important;
+  cursor: not-allowed !important;
+  padding: 0.618em 1em; // Match theme button padding
+  display: inline-block;
+  text-align: center;
+}

@@ -1,0 +1,24 @@
+/*
+Theme Name:     Impreza-child
+Theme URI:
+Description:    Impreza child theme.
+Author:         Me
+Author URI:
+Template:       Impreza
+Version:        0.1.0
+*/
+
+// Base styles
+@use 'base/variables' as *;
+@use 'base/mixins' as *;
+@use 'base/reset';
+
+// Layout
+@use 'layout/grid';
+
+// Components
+@use 'components/file-upload';
+@use 'components/woocommerce';
+
+// Utilities
+@use 'utilities/helpers';

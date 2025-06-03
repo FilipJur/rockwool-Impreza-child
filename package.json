@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "build:css": "sass src/scss/main.scss:style.css --style=expanded --source-map",
+    "watch:css": "sass src/scss/main.scss:style.css --style=expanded --source-map --watch",
+    "build:css:prod": "sass src/scss/main.scss:style.css --style=compressed --no-source-map",
+    "build:js": "wp-scripts build src/js/main.js --output-path=build/js",
+    "build:js:dev": "wp-scripts build src/js/main.js --output-path=build/js --mode=development",
+    "watch:js": "wp-scripts start src/js/main.js --output-path=build/js",
+    "build": "npm run build:css:prod && npm run build:js",
+    "dev": "npm run build:css && npm run build:js:dev",
+    "watch": "npm run watch:css & npm run watch:js"
+  },
+  "dependencies": {
+    "sass": "^1.89.1"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^30.17.0"
+  }
+}
