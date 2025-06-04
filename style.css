@@ -7,6 +7,14 @@ Author URI:
 Template:       Impreza
 Version:        0.1.0
 */
+input:not([type=submit]),
+textarea,
+select {
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+}
+
 /* Enhanced File Upload Styling */
 .registration-form .wpcf7-form-control-wrap[data-name=fotky-realizace] {
   position: relative;

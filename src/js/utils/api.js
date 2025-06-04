@@ -68,31 +68,6 @@ export const api = {
     }
   },
 
-  /**
-   * WordPress AJAX helper
-   * @param {string} action - WordPress AJAX action
-   * @param {Object} data - Request data
-   * @param {Object} options - Request options
-   * @returns {Promise}
-   */
-  async wpAjax(action, data = {}, options = {}) {
-    const url = window.wpAjax?.ajaxurl || '/wp-admin/admin-ajax.php';
-    const nonce = window.wpAjax?.nonce || '';
-
-    const formData = new FormData();
-    formData.append('action', action);
-    formData.append('nonce', nonce);
-    
-    Object.keys(data).forEach(key => {
-      formData.append(key, data[key]);
-    });
-
-    return this.request(url, {
-      method: 'POST',
-      body: formData,
-      ...options
-    });
-  },
 
   /**
    * Handle API errors with user-friendly messages

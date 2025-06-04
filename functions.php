@@ -37,17 +37,12 @@ function impreza_child_enqueue_custom_assets()
 		true
 	);
 
-	// Add any WordPress AJAX data if needed
-	wp_localize_script('theme-main-js', 'wpAjax', array(
-		'ajaxurl' => admin_url('admin-ajax.php'),
-		'nonce' => wp_create_nonce('wp_ajax_nonce'),
-	));
 }
 
 
 /**
  * myCred WooCommerce Integration
- * 
+ *
  * Load the organized myCred functionality from separate files.
  */
 require_once get_stylesheet_directory() . '/src/includes/mycred-integration.php';

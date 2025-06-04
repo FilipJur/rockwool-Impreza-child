@@ -1,1 +1,1 @@
-console.log("Hello from functions.js");
+console.log("Hello from functions.jsf");

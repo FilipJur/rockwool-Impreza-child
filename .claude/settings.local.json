@@ -8,7 +8,8 @@
       "Bash(mv:*)",
       "Bash(find:*)",
       "Bash(rg:*)",
-      "Bash(npm run build:js:*)"
+      "Bash(npm run build:js:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

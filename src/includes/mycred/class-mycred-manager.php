@@ -44,12 +44,6 @@ class MyCred_Manager {
      */
     private $ui_modifier;
     
-    /**
-     * AJAX handler instance
-     *
-     * @var MyCred_Ajax_Handler|null
-     */
-    private $ajax_handler;
     
     /**
      * Get singleton instance
@@ -78,7 +72,6 @@ class MyCred_Manager {
         $this->cart_calculator = new MyCred_Cart_Calculator();
         $this->purchasability = new MyCred_Purchasability($this->cart_calculator);
         $this->ui_modifier = new MyCred_UI_Modifier();
-        $this->ajax_handler = new MyCred_Ajax_Handler($this->cart_calculator);
         
         // Hook into WordPress
         $this->setup_hooks();
@@ -93,9 +86,6 @@ class MyCred_Manager {
         
         // Let UI modifier handle its own hooks
         $this->ui_modifier->init_hooks();
-        
-        // Let AJAX handler handle its own hooks
-        $this->ajax_handler->init_hooks();
     }
     
     /**
@@ -125,14 +115,6 @@ class MyCred_Manager {
         return $this->ui_modifier;
     }
     
-    /**
-     * Get the AJAX handler instance
-     *
-     * @return MyCred_Ajax_Handler
-     */
-    public function get_ajax_handler() {
-        return $this->ajax_handler;
-    }
     
     /**
      * Get myCred point type for WooCommerce
@@ -162,6 +144,7 @@ class MyCred_Manager {
      */
     private function __clone() {}
     
+
     /**
      * Prevent unserialization
      */

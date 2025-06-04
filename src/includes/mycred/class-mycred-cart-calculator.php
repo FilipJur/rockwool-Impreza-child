@@ -126,7 +126,7 @@ class MyCred_Cart_Calculator
 	 */
 	public function get_potential_total_cost($product, $quantity = 1)
 	{
-		$current_cart_total = $this->get_cart_points_total_excluding_product($product);
+		$current_cart_total = $this->get_cart_points_total();
 		$product_cost = $this->get_product_point_cost($product);
 
 		if (is_null($product_cost) || $product_cost < 0) {

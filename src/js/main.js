@@ -5,7 +5,6 @@
 
 import { AresHandler } from './modules/ares-handler.js';
 import { FileUpload } from './modules/file-upload.js';
-import { WooCommerceIntegration } from './modules/woocommerce-integration.js';
 
 /**
  * Theme Application Class
@@ -15,8 +14,7 @@ class ThemeApp {
   constructor() {
     this.modules = {
       aresHandler: null,
-      fileUpload: null,
-      wooCommerceIntegration: null
+      fileUpload: null
     };
     this.isInitialized = false;
 
@@ -66,15 +64,6 @@ class ThemeApp {
       }
     }
 
-    // Initialize WooCommerce integration (for myCred point system)
-    if (document.querySelector('.woocommerce, .add_to_cart_button') || typeof wc_add_to_cart_params !== 'undefined') {
-      try {
-        this.modules.wooCommerceIntegration = new WooCommerceIntegration();
-        console.log('WooCommerce integration initialized');
-      } catch (error) {
-        console.error('Failed to initialize WooCommerce integration:', error);
-      }
-    }
   }
 
   /**
