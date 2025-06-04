@@ -78,3 +78,5 @@ coverage/
 uploads/
 repomix-output.txt
 .repomix/bundles.json
+.repomix/bundles.json
+repomix-output.txt

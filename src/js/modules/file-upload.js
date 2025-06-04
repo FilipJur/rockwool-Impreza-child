@@ -449,6 +449,14 @@ export class FileUpload {
 		const previewItem = document.createElement("div");
 		previewItem.className = "file-preview-item";
 		previewItem.dataset.fileId = fileData.id;
+		
+		// Add staggered animation delay for multiple files
+		const existingPreviews = this.previewContainer.querySelectorAll('.file-preview-item');
+		const animationDelay = existingPreviews.length * 0.1;
+		previewItem.style.animationDelay = `${animationDelay}s`;
+		
+		// Set view transition name for smooth transitions
+		previewItem.style.viewTransitionName = `file-preview-${fileData.id}`;
 
 		// Thumbnail
 		const thumbnail = document.createElement("div");
@@ -486,21 +494,28 @@ export class FileUpload {
 		info.appendChild(size);
 		info.appendChild(status);
 
-		// Remove button
-		const removeButton = document.createElement("button");
-		removeButton.type = "button";
-		removeButton.className = "file-preview-remove";
-		removeButton.innerHTML = "×";
-		removeButton.setAttribute("aria-label", "Odstranit soubor");
-		removeButton.addEventListener("click", (e) => {
+		// Make entire preview clickable for removal
+		previewItem.addEventListener("click", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			this.removeFile(fileData.id);
 		});
+		
+		// Add visual feedback for clickable area
+		previewItem.setAttribute("title", "Klikněte pro odstranění souboru");
+		previewItem.setAttribute("role", "button");
+		previewItem.setAttribute("tabindex", "0");
+		
+		// Add keyboard support
+		previewItem.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				this.removeFile(fileData.id);
+			}
+		});
 
 		previewItem.appendChild(thumbnail);
 		previewItem.appendChild(info);
-		previewItem.appendChild(removeButton);
 
 		const previewList =
 			this.previewContainer.querySelector(".file-preview-list");
@@ -604,13 +619,13 @@ export class FileUpload {
 	}
 
 	/**
-	 * Update preview container visibility
+	 * Update preview container visibility with animations
 	 */
 	updatePreviewVisibility() {
 		if (this.selectedFiles.length > 0) {
-			this.previewContainer.classList.add("has-files");
+			this.animateContainerAppearance();
 		} else {
-			this.previewContainer.classList.remove("has-files");
+			this.animateContainerDisappearance();
 		}
 	}
 
@@ -692,7 +707,7 @@ export class FileUpload {
 	}
 
 	/**
-	 * Remove a specific file from selection
+	 * Remove a specific file from selection with smooth animation
 	 * @param {string} fileId - ID of file to remove
 	 */
 	removeFile(fileId) {
@@ -713,11 +728,11 @@ export class FileUpload {
 		this.selectedFiles = this.selectedFiles.filter(fileData => fileData.id !== fileId);
 		console.log(`[FileUpload] Filtered selectedFiles: ${originalLength} -> ${this.selectedFiles.length}`);
 
-		// Remove preview element
+		// Remove preview element with animation
 		const previewItem = this.previewContainer.querySelector(`[data-file-id="${fileId}"]`);
 		if (previewItem) {
 			console.log(`[FileUpload] Removing preview element for file ID: ${fileId}`);
-			previewItem.remove();
+			this.animateFileRemoval(previewItem);
 		} else {
 			console.warn(`[FileUpload] Preview element not found for file ID: ${fileId}`);
 		}
@@ -778,6 +793,58 @@ export class FileUpload {
 			}
 		} catch (error) {
 			console.error("[FileUpload] Could not update file input:", error);
+		}
+	}
+
+	/**
+	 * Animate file removal with View Transitions API or CSS fallback
+	 * @param {HTMLElement} previewItem - Preview item to remove
+	 */
+	animateFileRemoval(previewItem) {
+		// Check for View Transitions API support
+		if (document.startViewTransition && 'viewTransitionName' in previewItem.style) {
+			// Use View Transitions API for smooth removal
+			document.startViewTransition(() => {
+				previewItem.remove();
+			});
+		} else {
+			// Fallback to improved CSS animation
+			previewItem.classList.add('removing');
+			
+			// Wait for improved animation to complete before removing
+			setTimeout(() => {
+				if (previewItem.parentNode) {
+					previewItem.remove();
+				}
+			}, 600); // Match the slideOutFileImproved animation duration
+		}
+	}
+
+	/**
+	 * Animate container appearance
+	 */
+	animateContainerAppearance() {
+		// Use View Transitions for smooth container transitions
+		if (document.startViewTransition && this.previewContainer) {
+			document.startViewTransition(() => {
+				this.previewContainer.classList.add('has-files');
+			});
+		} else {
+			// Fallback to CSS transition
+			this.previewContainer.classList.add('has-files');
+		}
+	}
+
+	/**
+	 * Animate container disappearance
+	 */
+	animateContainerDisappearance() {
+		if (document.startViewTransition && this.previewContainer) {
+			document.startViewTransition(() => {
+				this.previewContainer.classList.remove('has-files');
+			});
+		} else {
+			this.previewContainer.classList.remove('has-files');
 		}
 	}
 
