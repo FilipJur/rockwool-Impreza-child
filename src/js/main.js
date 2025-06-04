@@ -5,6 +5,7 @@
 
 import { AresHandler } from './modules/ares-handler.js';
 import { FileUpload } from './modules/file-upload.js';
+import { WooCommerceIntegration } from './modules/woocommerce-integration.js';
 
 /**
  * Theme Application Class
@@ -14,7 +15,8 @@ class ThemeApp {
   constructor() {
     this.modules = {
       aresHandler: null,
-      fileUpload: null
+      fileUpload: null,
+      wooCommerceIntegration: null
     };
     this.isInitialized = false;
 
@@ -36,7 +38,7 @@ class ThemeApp {
     this.initializeModules();
     this.bindGlobalEvents();
     this.isInitialized = true;
-    
+
     console.log('Theme application initialized successfully');
   }
 
@@ -61,6 +63,16 @@ class ThemeApp {
         console.log('File upload handler initialized');
       } catch (error) {
         console.error('Failed to initialize file upload handler:', error);
+      }
+    }
+
+    // Initialize WooCommerce integration (for myCred point system)
+    if (document.querySelector('.woocommerce, .add_to_cart_button') || typeof wc_add_to_cart_params !== 'undefined') {
+      try {
+        this.modules.wooCommerceIntegration = new WooCommerceIntegration();
+        console.log('WooCommerce integration initialized');
+      } catch (error) {
+        console.error('Failed to initialize WooCommerce integration:', error);
       }
     }
   }
@@ -100,7 +112,7 @@ class ThemeApp {
    */
   handleFormSuccess(event) {
     console.log('Form submitted successfully');
-    
+
     // Reset file upload interface
     if (this.modules.fileUpload && this.modules.fileUpload.isReady()) {
       this.modules.fileUpload.onFormSuccess();
@@ -148,7 +160,7 @@ class ThemeApp {
         if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
           // Check if any added nodes contain forms that need our modules
           const hasRegistrationForm = Array.from(mutation.addedNodes).some(node => {
-            return node.nodeType === Node.ELEMENT_NODE && 
+            return node.nodeType === Node.ELEMENT_NODE &&
                    (node.matches('.registration-form') || node.querySelector('.registration-form'));
           });
 
@@ -173,7 +185,7 @@ class ThemeApp {
   reinitializeModules() {
     // Clean up existing modules
     this.destroyModules();
-    
+
     // Reinitialize
     this.initializeModules();
   }

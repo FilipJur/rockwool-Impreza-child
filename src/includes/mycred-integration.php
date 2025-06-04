@@ -24,6 +24,7 @@ require_once get_stylesheet_directory() . '/src/includes/mycred/class-mycred-man
 require_once get_stylesheet_directory() . '/src/includes/mycred/class-mycred-cart-calculator.php';
 require_once get_stylesheet_directory() . '/src/includes/mycred/class-mycred-purchasability.php';
 require_once get_stylesheet_directory() . '/src/includes/mycred/class-mycred-ui-modifier.php';
+require_once get_stylesheet_directory() . '/src/includes/mycred/class-mycred-ajax-handler.php';
 
 // Initialize the integration
 add_action('init', function() {
