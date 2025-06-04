@@ -29,17 +29,24 @@ Uses modern SCSS with `@use` modules. Main entry point is `src/scss/main.scss`. 
 ### JavaScript Architecture
 Uses modern ES6 modules with `@wordpress/scripts` build system. Main entry point is `src/js/main.js`. Never edit `build/js/*` directly - it's auto-generated.
 
-- `src/js/utils/` - Shared utility modules (DOM, API, validation)
+- `src/js/utils/` - Shared utility modules (API, validation)
 - `src/js/modules/` - Feature-specific modules (ARES, file upload)
 - `build/js/` - Built/bundled JavaScript ready for WordPress
+- Uses vanilla JS DOM APIs instead of jQuery for better performance
 - Entry point initializes all modules and handles global events
 
 ### Key Integrations
 
-**myCred Points System** (`functions.php:20-80`)
-- WooCommerce integration for points-based purchasing
-- Modifies "Add to Cart" buttons based on user point balance
-- Custom affordability calculations
+**myCred Points System** (`src/includes/mycred/`)
+- **Architecture**: Object-oriented singleton pattern with dependency injection
+- **Entry Point**: `src/includes/mycred-integration.php` (loaded from functions.php)
+- **Core Classes**:
+  - `MyCred_Manager` - Main orchestrator and singleton instance
+  - `MyCred_Cart_Calculator` - All point calculations and user balance logic
+  - `MyCred_Purchasability` - Product affordability filtering with cart awareness
+  - `MyCred_UI_Modifier` - WooCommerce button modifications and styling
+- **Functionality**: Prevents users from purchasing products if total cart + new product exceeds point balance
+- **Integration**: Hooks into `woocommerce_is_purchasable` and `woocommerce_loop_add_to_cart_link` filters
 
 **LeadHub API** (`includes/leadhub.php`)
 - OAuth-based lead forwarding from Contact Form 7
@@ -62,7 +69,9 @@ Comprehensive design tokens in `docs/design/design-tokens.md`:
 
 ### Important Files
 
-- `functions.php` - Main theme functions, myCred integration, asset enqueuing
+- `functions.php` - Main theme functions, asset enqueuing, loads myCred integration
+- `src/includes/mycred-integration.php` - myCred system bootstrap and initialization
+- `src/includes/mycred/` - Object-oriented myCred classes (Manager, Calculator, Purchasability, UI)
 - `impreza-theme-config.json` - Extensive Impreza theme configuration
 - `src/scss/main.scss` - SCSS entry point with modular imports
 - `src/js/` - JavaScript modules (no bundling, direct inclusion)
@@ -70,7 +79,34 @@ Comprehensive design tokens in `docs/design/design-tokens.md`:
 ### Development Notes
 
 - Always use `npm run watch:css` during development
-- Test myCred point calculations carefully in staging
+- **myCred Development**: Follow object-oriented patterns, use dependency injection, maintain singleton integrity
+- Test myCred point calculations carefully in staging environment
+- myCred classes use WordPress coding standards with comprehensive documentation
 - ARES integration is Czech-specific and requires valid IČO numbers
 - File upload features require Contact Form 7 plugin
 - Theme inherits heavily from Impreza parent theme
+
+### myCred Development Guidelines
+
+**Class Structure Standards:**
+- Use singleton pattern for Manager class only
+- Implement dependency injection between components
+- Follow WordPress coding standards and PHPDoc documentation
+- Prefix all classes with `MyCred_` to avoid conflicts
+- Use type hints and return type declarations where possible
+
+**Testing myCred Features:**
+- Test with various point balances (zero, insufficient, exact, surplus)
+- Verify cart calculations with multiple products and quantities
+- Test product variations and different product types
+- Ensure UI buttons update correctly based on affordability
+- Test with myCred disabled/enabled states
+
+**Extending myCred Functionality:**
+- Add new methods to appropriate existing classes rather than creating new files
+- Maintain backward compatibility with existing point calculation logic
+- Use the Manager class to coordinate between components
+- Follow the established error handling and validation patterns
+
+## Cursor Rules
+- Always use the header for cursor rules when creating cursor like mentioned before

@@ -1,0 +1,283 @@
+---
+description: PHP development standards for myCred WooCommerce integration
+globs: ["src/includes/mycred/**/*.php", "src/includes/mycred-integration.php"]
+alwaysApply: true
+---
+
+# myCred PHP Development Rules
+
+## Overview
+Rules for developing and maintaining the myCred WooCommerce integration in the Impreza child theme.
+
+## File Structure
+```
+src/includes/
+├── mycred-integration.php              # Bootstrap file
+└── mycred/
+    ├── class-mycred-manager.php         # Main singleton manager
+    ├── class-mycred-cart-calculator.php # Calculations and balance logic
+    ├── class-mycred-purchasability.php  # Product affordability filtering
+    └── class-mycred-ui-modifier.php     # WooCommerce UI modifications
+```
+
+## Coding Standards
+
+### Class Naming & Structure
+- **MUST** prefix all classes with `MyCred_` to avoid conflicts
+- **MUST** use PascalCase for class names: `MyCred_ClassName`
+- **MUST** use snake_case for method names: `get_user_balance()`
+- **MUST** follow WordPress Coding Standards
+- **SHOULD** implement single responsibility principle
+
+### Singleton Pattern
+- **ONLY** the `MyCred_Manager` class should use singleton pattern
+- **MUST** implement private constructor, `__clone()`, and `__wakeup()` methods
+- **MUST** use `get_instance()` static method for access
+- **NEVER** create multiple manager instances
+
+### Dependency Injection
+- **MUST** inject dependencies through constructor parameters
+- **SHOULD** store dependencies as private properties
+- **MUST** validate dependency types in constructor
+- Example:
+```php
+public function __construct(MyCred_Cart_Calculator $calculator) {
+    $this->calculator = $calculator;
+}
+```
+
+### Documentation
+- **MUST** include comprehensive PHPDoc for all methods
+- **MUST** document `@param` types and descriptions
+- **MUST** document `@return` types and descriptions
+- **SHOULD** include `@since` version tags
+- **SHOULD** include usage examples for complex methods
+
+### Type Safety
+- **SHOULD** use type hints for parameters where possible
+- **SHOULD** use return type declarations
+- **MUST** validate input parameters
+- **MUST** return consistent types (e.g., always float for calculations)
+
+### Error Handling
+- **MUST** check for required WordPress/WooCommerce functions before use
+- **MUST** validate user authentication before point operations
+- **MUST** return sensible defaults when operations fail
+- **SHOULD** use early returns for validation failures
+- **NEVER** throw uncaught exceptions in WordPress context
+
+## Method Patterns
+
+### Point Calculations
+```php
+/**
+ * Get product point cost
+ *
+ * @param WC_Product|int $product Product object or ID
+ * @return float|null Point cost or null if invalid
+ */
+public function get_product_point_cost($product) {
+    // Always validate input
+    if (!$product instanceof WC_Product) {
+        $product = wc_get_product($product);
+    }
+    
+    if (!$product) {
+        return null;
+    }
+    
+    // Return consistent float type
+    return (float) $product->get_price();
+}
+```
+
+### WordPress Hooks
+```php
+/**
+ * Initialize WordPress hooks
+ */
+public function init_hooks() {
+    add_filter('woocommerce_is_purchasable', [$this, 'check_affordability'], 10, 2);
+}
+```
+
+### Validation Patterns
+```php
+private function should_process_request() {
+    return is_user_logged_in() 
+        && function_exists('mycred') 
+        && class_exists('WooCommerce');
+}
+```
+
+## Security Guidelines
+
+### Data Sanitization
+- **MUST** sanitize all user input using WordPress functions
+- **MUST** escape output using `esc_html()`, `esc_attr()`, etc.
+- **NEVER** trust user-provided data without validation
+
+### Capability Checks
+- **SHOULD** verify user capabilities for administrative functions
+- **MUST** use `current_user_can()` for permission checks
+- **NEVER** bypass WordPress user permission system
+
+### SQL Safety
+- **MUST** use WordPress database API (`$wpdb->prepare()`)
+- **NEVER** construct raw SQL queries with user input
+- **SHOULD** use WordPress query functions when possible
+
+## Performance Guidelines
+
+### Caching
+- **SHOULD** cache expensive calculations during request lifecycle
+- **MUST** avoid repetitive database queries
+- **CONSIDER** using WordPress transients for temporary data storage
+
+### Database Queries
+- **MINIMIZE** database calls in loops
+- **SHOULD** batch operations when possible
+- **MUST** use indexed columns for queries
+
+### Hook Priority
+- **USE** appropriate hook priorities to ensure proper load order
+- **DEFAULT** to priority 10 unless specific ordering needed
+- **DOCUMENT** reasons for non-standard priorities
+
+## Testing Requirements
+
+### Unit Testing Scenarios
+- **MUST** test with zero point balance
+- **MUST** test with insufficient points
+- **MUST** test with exact point amount
+- **MUST** test with surplus points
+- **MUST** test cart calculation accuracy
+- **MUST** test product variation handling
+
+### Integration Testing
+- **MUST** test with myCred disabled
+- **MUST** test with WooCommerce disabled
+- **MUST** test with different product types
+- **MUST** test cart modifications during session
+
+### Edge Cases
+- **MUST** handle empty cart scenarios
+- **MUST** handle invalid product objects
+- **MUST** handle missing myCred configuration
+- **MUST** handle concurrent cart modifications
+
+## Common Patterns
+
+### Accessing Manager Instance
+```php
+$manager = MyCred_Manager::get_instance();
+$calculator = $manager->get_cart_calculator();
+```
+
+### Safe Point Balance Retrieval
+```php
+public function get_user_balance($user_id = null) {
+    if (is_null($user_id)) {
+        $user_id = get_current_user_id();
+    }
+    
+    if (!$user_id || !function_exists('mycred')) {
+        return 0.0;
+    }
+    
+    // Continue with balance retrieval...
+}
+```
+
+### WordPress Filter Implementation
+```php
+public function modify_purchasability($is_purchasable, $product) {
+    // Early return if already not purchasable
+    if (!$is_purchasable) {
+        return false;
+    }
+    
+    // Validate context
+    if (!$this->should_check_affordability($product)) {
+        return $is_purchasable;
+    }
+    
+    // Apply myCred logic
+    return $this->calculator->can_user_afford_product($product);
+}
+```
+
+## Anti-Patterns to Avoid
+
+### ❌ Don't Do This
+```php
+// Multiple manager instances
+$manager1 = new MyCred_Manager();
+$manager2 = new MyCred_Manager();
+
+// Direct property access
+$manager->cart_calculator->some_property;
+
+// Unvalidated input
+function process_product($product_id) {
+    $product = wc_get_product($product_id); // No validation
+    return $product->get_price(); // Potential error
+}
+
+// Inconsistent return types
+function get_balance() {
+    if ($error) return false;
+    if ($zero) return 0;
+    return "150.50"; // Should be float
+}
+```
+
+### ✅ Do This Instead
+```php
+// Singleton pattern
+$manager = MyCred_Manager::get_instance();
+
+// Method-based access
+$calculator = $manager->get_cart_calculator();
+
+// Validated input
+function process_product($product_id) {
+    $product = wc_get_product($product_id);
+    if (!$product instanceof WC_Product) {
+        return null;
+    }
+    return (float) $product->get_price();
+}
+
+// Consistent return types
+function get_balance() {
+    if ($error || $zero) {
+        return 0.0; // Always float
+    }
+    return (float) $balance;
+}
+```
+
+## Debugging Guidelines
+
+### Logging
+- **USE** WordPress `error_log()` for debugging
+- **INCLUDE** context information in log messages
+- **REMOVE** debug logging before production deployment
+- **FORMAT** logs consistently with component prefixes
+
+### Error Messages
+```php
+error_log('MyCred Calculator: Invalid product ID provided: ' . $product_id);
+error_log(sprintf(
+    'MyCred: Balance check failed - User: %d, Product: %d, Error: %s',
+    $user_id,
+    $product_id,
+    $error_message
+));
+```
+
+See also:
+- `.cursor/rules/architecture.mdc` - Overall system architecture
+- `.cursor/rules/testing.mdc` - Comprehensive testing guidelines
+- `CLAUDE.md` - Project-wide development guidelines

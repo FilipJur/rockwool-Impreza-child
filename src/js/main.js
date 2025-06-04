@@ -5,7 +5,6 @@
 
 import { AresHandler } from './modules/ares-handler.js';
 import { FileUpload } from './modules/file-upload.js';
-import { dom } from './utils/dom.js';
 
 /**
  * Theme Application Class
@@ -26,13 +25,19 @@ class ThemeApp {
    * Initialize the application
    */
   init() {
-    dom.ready(() => {
-      this.initializeModules();
-      this.bindGlobalEvents();
-      this.isInitialized = true;
-      
-      console.log('Theme application initialized successfully');
-    });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.setup());
+    } else {
+      this.setup();
+    }
+  }
+
+  setup() {
+    this.initializeModules();
+    this.bindGlobalEvents();
+    this.isInitialized = true;
+    
+    console.log('Theme application initialized successfully');
   }
 
   /**
@@ -40,7 +45,7 @@ class ThemeApp {
    */
   initializeModules() {
     // Initialize ARES handler for company data lookup
-    if (dom.exists('.registration-form')) {
+    if (document.querySelector('.registration-form')) {
       try {
         this.modules.aresHandler = new AresHandler();
         console.log('ARES handler initialized');
@@ -50,7 +55,7 @@ class ThemeApp {
     }
 
     // Initialize enhanced file upload
-    if (dom.exists('.registration-form input[name="fotky-realizace"]')) {
+    if (document.querySelector('.registration-form input[name="fotky-realizace"]')) {
       try {
         this.modules.fileUpload = new FileUpload();
         console.log('File upload handler initialized');
@@ -226,7 +231,6 @@ if (process.env.NODE_ENV === 'development') {
   window.ThemeAppDebug = {
     app,
     modules: app.modules,
-    dom,
     // Add other utilities for debugging
   };
 }

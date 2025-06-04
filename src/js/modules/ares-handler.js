@@ -3,7 +3,6 @@
  * Handles Czech company registration data lookup and form population
  */
 
-import { dom } from '../utils/dom.js';
 import { api } from '../utils/api.js';
 import { validation } from '../utils/validation.js';
 
@@ -27,33 +26,39 @@ export class AresHandler {
    * Initialize the ARES handler
    */
   init() {
-    dom.ready(() => {
-      this.setupElements();
-      if (this.isValidSetup()) {
-        this.bindEvents();
-        this.isInitialized = true;
-        console.log('ARES Handler initialized successfully');
-      }
-    });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.setup());
+    } else {
+      this.setup();
+    }
+  }
+
+  setup() {
+    this.setupElements();
+    if (this.isValidSetup()) {
+      this.bindEvents();
+      this.isInitialized = true;
+      console.log('ARES Handler initialized successfully');
+    }
   }
 
   /**
    * Set up DOM elements and validate they exist
    */
   setupElements() {
-    this.form = dom.findOne('.registration-form');
-    
+    this.form = document.querySelector('.registration-form');
+
     if (!this.form) {
       console.warn('Registration form container ".registration-form" not found.');
       return;
     }
 
     this.fields = {
-      ico: dom.findOne('[name="ico"]', this.form),
-      companyName: dom.findOne('[name="company-name"]', this.form),
-      address: dom.findOne('[name="address"]', this.form),
-      status: dom.findOne('#aresStatus', this.form),
-      loadButton: dom.findOne('#loadAresData', this.form)
+      ico: this.form.querySelector('[name="ico"]'),
+      companyName: this.form.querySelector('[name="company-name"]'),
+      address: this.form.querySelector('[name="address"]'),
+      status: this.form.querySelector('#aresStatus'),
+      loadButton: this.form.querySelector('#loadAresData')
     };
   }
 
@@ -64,7 +69,7 @@ export class AresHandler {
   isValidSetup() {
     const requiredFields = ['ico', 'companyName', 'address', 'status', 'loadButton'];
     const missingFields = requiredFields.filter(field => !this.fields[field]);
-    
+
     if (missingFields.length > 0) {
       console.warn(`ARES Handler: Missing required fields: ${missingFields.join(', ')}`);
       return false;
@@ -78,18 +83,18 @@ export class AresHandler {
    */
   bindEvents() {
     // Load ARES data button click
-    dom.on(this.fields.loadButton, 'click', (e) => {
+    this.fields.loadButton.addEventListener('click', (e) => {
       e.preventDefault();
       this.loadAresData();
     });
 
     // IČO field input change
-    dom.on(this.fields.ico, 'input', () => {
+    this.fields.ico.addEventListener('input', () => {
       this.handleIcoChange();
     });
 
     // Enter key in IČO field
-    dom.on(this.fields.ico, 'keypress', (e) => {
+    this.fields.ico.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         this.loadAresData();
@@ -101,8 +106,8 @@ export class AresHandler {
    * Load company data from ARES API
    */
   async loadAresData() {
-    const ico = dom.val(this.fields.ico).trim();
-    
+    const ico = this.fields.ico.value.trim();
+
     // Validate IČO format
     const icoValidation = validation.ico(ico);
     if (!icoValidation.valid) {
@@ -134,12 +139,12 @@ export class AresHandler {
    */
   handleAresSuccess(data, ico) {
     if (data && data.obchodniJmeno) {
-      dom.val(this.fields.companyName, data.obchodniJmeno);
-      
+      this.fields.companyName.value = data.obchodniJmeno;
+
       if (data.sidlo && data.sidlo.textovaAdresa) {
-        dom.val(this.fields.address, data.sidlo.textovaAdresa);
+        this.fields.address.value = data.sidlo.textovaAdresa;
       }
-      
+
       this.showStatus('Údaje načteny', 'success');
       this.lastFetchedIco = ico;
     } else {
@@ -164,7 +169,7 @@ export class AresHandler {
 
     const errorMessage = api.handleError(error, errorMessages);
     this.showError(errorMessage);
-    
+
     console.error('ARES API Error:', error);
   }
 
@@ -172,8 +177,8 @@ export class AresHandler {
    * Handle changes to the IČO field
    */
   handleIcoChange() {
-    const currentIco = dom.val(this.fields.ico).trim();
-    const hasCompanyData = dom.val(this.fields.companyName) !== '' || dom.val(this.fields.address) !== '';
+    const currentIco = this.fields.ico.value.trim();
+    const hasCompanyData = this.fields.companyName.value !== '' || this.fields.address.value !== '';
 
     if (this.lastFetchedIco && currentIco !== this.lastFetchedIco && hasCompanyData) {
       this.showStatus('IČO bylo změněno. Klikněte na "Načíst údaje" pro aktualizaci', 'warning');
@@ -194,13 +199,13 @@ export class AresHandler {
     const colors = {
       loading: '#ff9500',
       success: '#4CAF50',
-      error: '#f44336',
+      error: '#D32F2F',
       warning: '#ff9500',
       info: '#2196F3'
     };
 
-    dom.text(this.fields.status, message);
-    dom.css(this.fields.status, 'color', colors[type] || colors.info);
+    this.fields.status.textContent = message;
+    this.fields.status.style.color = colors[type] || colors.info;
   }
 
   /**
@@ -215,16 +220,16 @@ export class AresHandler {
    * Clear status message
    */
   clearStatus() {
-    dom.text(this.fields.status, '');
-    dom.css(this.fields.status, 'color', '');
+    this.fields.status.textContent = '';
+    this.fields.status.style.color = '';
   }
 
   /**
    * Clear company data fields
    */
   clearFields() {
-    dom.val(this.fields.companyName, '');
-    dom.val(this.fields.address, '');
+    this.fields.companyName.value = '';
+    this.fields.address.value = '';
   }
 
   /**

@@ -62,13 +62,16 @@
 
 /* Upload text styling */
 .file-upload-text {
-  font-family: 'General Sans', sans-serif;
   font-weight: 500;
   font-size: 16px;
   line-height: 1.35;
-  color: var(--color-content-link);
+  color: black;
   text-align: center;
   white-space: pre-line;
+  span{
+	color: var(--color-content-link);
+	text-decoration: underline;
+  }
 }
 
 /* Hide the original small text */

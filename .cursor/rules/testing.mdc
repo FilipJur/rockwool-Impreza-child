@@ -1,0 +1,359 @@
+---
+description: Comprehensive testing guidelines for myCred integration
+globs: ["src/includes/mycred/**/*.php", "tests/**/*.php"]
+alwaysApply: false
+---
+
+# myCred Testing Guidelines
+
+## Testing Philosophy
+
+The myCred integration requires comprehensive testing due to its impact on e-commerce functionality and user experience. Test scenarios should cover all point balance states, product types, and edge cases.
+
+## Testing Categories
+
+### Unit Testing
+
+#### MyCred_Cart_Calculator Tests
+```php
+// Point cost calculations
+test_get_product_point_cost_valid_product()
+test_get_product_point_cost_invalid_product()
+test_get_product_point_cost_zero_price()
+test_get_product_point_cost_negative_price()
+
+// Cart calculations  
+test_get_cart_points_total_empty_cart()
+test_get_cart_points_total_single_item()
+test_get_cart_points_total_multiple_items()
+test_get_cart_points_total_with_quantities()
+
+// User balance
+test_get_user_balance_logged_in_user()
+test_get_user_balance_logged_out_user()
+test_get_user_balance_invalid_user_id()
+test_get_user_balance_mycred_disabled()
+
+// Affordability checks
+test_can_user_afford_product_sufficient_balance()
+test_can_user_afford_product_insufficient_balance()
+test_can_user_afford_product_exact_balance()
+test_can_user_afford_product_with_cart_items()
+```
+
+#### MyCred_Purchasability Tests
+```php
+// Filter integration
+test_check_product_affordability_affordable()
+test_check_product_affordability_unaffordable()
+test_check_product_affordability_already_unpurchasable()
+test_check_product_affordability_logged_out()
+test_check_product_affordability_mycred_disabled()
+
+// Product type handling
+test_simple_product_affordability()
+test_variable_product_affordability()
+test_grouped_product_affordability()
+test_external_product_affordability()
+```
+
+#### MyCred_UI_Modifier Tests
+```php
+// Button modifications
+test_modify_add_to_cart_button_affordable()
+test_modify_add_to_cart_button_unaffordable()
+test_modify_add_to_cart_button_invalid_product()
+
+// Product type specifics
+test_simple_product_button_disabled()
+test_variable_product_button_unchanged()
+test_grouped_product_button_disabled()
+```
+
+### Integration Testing
+
+#### WooCommerce Integration
+```php
+// Cart scenarios
+test_cart_with_single_affordable_product()
+test_cart_with_multiple_affordable_products()
+test_cart_with_mixed_affordability()
+test_cart_total_exceeds_balance()
+test_empty_cart_calculations()
+
+// Product page scenarios
+test_product_page_affordable_display()
+test_product_page_unaffordable_display()
+test_product_page_logged_out_display()
+
+// Shop page scenarios
+test_shop_page_button_states()
+test_shop_page_mixed_affordability()
+test_shop_page_all_unaffordable()
+```
+
+#### myCred Integration
+```php
+// Point type detection
+test_point_type_detection_standard_setup()
+test_point_type_detection_custom_setup()
+test_point_type_detection_missing_config()
+
+// Balance queries
+test_balance_query_accurate()
+test_balance_query_with_pending_points()
+test_balance_query_with_expired_points()
+```
+
+### Manual Testing Scenarios
+
+#### User Experience Testing
+
+**Scenario 1: Sufficient Balance**
+- User has 1000 points
+- Product costs 500 points
+- Cart is empty
+- Expected: "Add to Cart" button enabled
+
+**Scenario 2: Insufficient Balance - Empty Cart**
+- User has 300 points
+- Product costs 500 points
+- Cart is empty
+- Expected: Button shows "Not enough points (inc. cart)"
+
+**Scenario 3: Insufficient Balance - With Cart**
+- User has 800 points
+- Cart contains items worth 600 points
+- New product costs 300 points
+- Expected: Button disabled (total would be 900 points)
+
+**Scenario 4: Exact Balance**
+- User has 1000 points
+- Cart contains items worth 700 points
+- New product costs 300 points
+- Expected: Button enabled (total equals balance)
+
+**Scenario 5: Cart Modification Impact**
+- User adds affordable product to cart
+- Previously affordable products become unaffordable
+- Expected: Shop page buttons update accordingly
+
+#### Product Type Testing
+
+**Simple Products**
+- Single price point
+- Direct "Add to Cart" functionality
+- Button state changes based on affordability
+
+**Variable Products**
+- Multiple price points (variations)
+- "Select options" default button text
+- Variation-specific affordability checks
+
+**Grouped Products**
+- Multiple component products
+- Individual product affordability
+- Total group cost considerations
+
+**External Products**
+- External purchase process
+- Limited myCred integration
+- Graceful handling of edge cases
+
+#### Edge Case Testing
+
+**Plugin States**
+```
+Test Matrix:
+┌─────────────┬─────────────┬────────────────┐
+│ myCred      │ WooCommerce │ Expected       │
+├─────────────┼─────────────┼────────────────┤
+│ Active      │ Active      │ Full function  │
+│ Inactive    │ Active      │ Normal WooC    │
+│ Active      │ Inactive    │ No integration │
+│ Inactive    │ Inactive    │ No integration │
+└─────────────┴─────────────┴────────────────┘
+```
+
+**User States**
+- Logged out users: No point restrictions
+- Users with zero points: All products disabled
+- Users with negative points: All products disabled
+- New users: Default point allocation handling
+
+**Cart States**
+- Empty cart calculations
+- Cart with free products (0 point cost)
+- Cart with negative point products (discounts)
+- Cart session expiration
+
+### Automated Testing Setup
+
+#### WordPress Test Environment
+```php
+// wp-tests-config.php setup
+define('DB_NAME', 'test_mycred_integration');
+define('WP_TESTS_DOMAIN', 'example.org');
+
+// Required plugins for testing
+$GLOBALS['wp_tests_plugins'] = [
+    'woocommerce/woocommerce.php',
+    'mycred/mycred.php'
+];
+```
+
+#### Test Data Setup
+```php
+class MyCred_Test_Data {
+    public static function create_test_user($point_balance = 1000) {
+        $user_id = wp_create_user('testuser', 'password', 'test@example.com');
+        mycred_add($point_balance, $user_id, 'Test setup');
+        return $user_id;
+    }
+    
+    public static function create_test_product($price_points = 500) {
+        $product = new WC_Product_Simple();
+        $product->set_price($price_points);
+        $product->set_name('Test Product');
+        $product->save();
+        return $product;
+    }
+}
+```
+
+#### Mock Objects
+```php
+// Mock WooCommerce cart
+class Mock_WC_Cart {
+    private $items = [];
+    
+    public function add_item($product_id, $quantity = 1) {
+        $this->items[] = ['id' => $product_id, 'quantity' => $quantity];
+    }
+    
+    public function get_cart() {
+        return $this->items;
+    }
+}
+
+// Mock myCred point type
+class Mock_MyCred_Point_Type {
+    private $balances = [];
+    
+    public function set_user_balance($user_id, $balance) {
+        $this->balances[$user_id] = $balance;
+    }
+    
+    public function get_users_balance($user_id) {
+        return $this->balances[$user_id] ?? 0;
+    }
+}
+```
+
+### Performance Testing
+
+#### Load Testing Scenarios
+- 100+ products in cart calculation
+- Rapid cart modifications
+- Concurrent user sessions
+- High-traffic shop page loads
+
+#### Memory Testing
+- Long-running cart sessions
+- Multiple manager instances (should not occur)
+- Large product catalogs
+- Complex product variations
+
+#### Database Query Analysis
+```php
+// Monitor query count during operations
+add_action('init', function() {
+    if (defined('SAVEQUERIES')) {
+        global $wpdb;
+        $wpdb->queries = [];
+    }
+});
+
+// Log query count after cart operations
+add_action('woocommerce_cart_updated', function() {
+    if (defined('SAVEQUERIES')) {
+        global $wpdb;
+        error_log('myCred Cart Update Queries: ' . count($wpdb->queries));
+    }
+});
+```
+
+### Testing Checklist
+
+#### Pre-Release Testing
+- [ ] All unit tests passing
+- [ ] Integration tests with real myCred data
+- [ ] Manual testing of all user scenarios
+- [ ] Cross-browser testing (Chrome, Firefox, Safari)
+- [ ] Mobile responsiveness testing
+- [ ] Performance benchmarking
+
+#### Production Testing
+- [ ] Staging environment full test
+- [ ] A/B testing with subset of users
+- [ ] Monitoring error logs
+- [ ] User feedback collection
+- [ ] Cart abandonment rate analysis
+
+#### Regression Testing
+- [ ] Previous functionality still works
+- [ ] WordPress core updates compatibility
+- [ ] Plugin updates compatibility
+- [ ] Theme updates compatibility
+
+### Test Data Management
+
+#### Test User Setup
+```php
+// Create users with various point balances
+$test_users = [
+    'zero_points' => MyCred_Test_Data::create_test_user(0),
+    'low_points' => MyCred_Test_Data::create_test_user(100),
+    'medium_points' => MyCred_Test_Data::create_test_user(1000),
+    'high_points' => MyCred_Test_Data::create_test_user(10000),
+];
+```
+
+#### Test Product Setup
+```php
+// Create products with various point costs
+$test_products = [
+    'free_product' => MyCred_Test_Data::create_test_product(0),
+    'cheap_product' => MyCred_Test_Data::create_test_product(50),
+    'medium_product' => MyCred_Test_Data::create_test_product(500),
+    'expensive_product' => MyCred_Test_Data::create_test_product(2000),
+];
+```
+
+### Debugging Testing Issues
+
+#### Common Test Failures
+1. **Mock data inconsistency**: Ensure test setup matches production data structure
+2. **Plugin dependency issues**: Verify all required plugins are active in test environment
+3. **WordPress hook timing**: Test with proper hook priorities and timing
+4. **Cache interference**: Clear all caches between tests
+
+#### Debugging Tools
+```php
+// Test-specific logging
+if (defined('WP_DEBUG') && WP_DEBUG) {
+    error_log('myCred Test: ' . $message);
+}
+
+// Test data validation
+function validate_test_data($data, $expected_type) {
+    if (!is_a($data, $expected_type)) {
+        throw new Exception("Expected {$expected_type}, got " . gettype($data));
+    }
+}
+```
+
+See also:
+- `.cursor/rules/mycred-php.mdc` - PHP coding standards
+- `.cursor/rules/architecture.mdc` - System architecture
+- `CLAUDE.md` - Development environment setup

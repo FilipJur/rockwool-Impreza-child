@@ -1,63 +1,78 @@
 ---
-description: DOM utility patterns to replace jQuery
+description: Vanilla JS DOM patterns to replace jQuery
 globs: ["src/js/**/*.js"]
 alwaysApply: false
 ---
 
-# DOM Utilities - jQuery Replacement
+# Vanilla JS DOM - jQuery Replacement
 
-Always use `dom` utility instead of jQuery:
+Always use native DOM APIs instead of jQuery:
 
 ## Element Selection
 ```javascript
 // Instead of: $('.selector')
-dom.find('.selector')
+document.querySelectorAll('.selector')
 
 // Instead of: $('#id')  
-dom.findOne('#id')
+document.querySelector('#id')
 
 // Instead of: $('.selector').length > 0
-dom.exists('.selector')
+document.querySelector('.selector') !== null
 ```
 
 ## Content Manipulation
 ```javascript
 // Instead of: $('#id').text('content')
-dom.text('#id', 'content')
+document.querySelector('#id').textContent = 'content'
 
 // Instead of: $('#id').html('<span>content</span>')
-dom.html('#id', '<span>content</span>')
+document.querySelector('#id').innerHTML = '<span>content</span>'
 
 // Instead of: $('#id').val('value')
-dom.val('#id', 'value')
+document.querySelector('#id').value = 'value'
 ```
 
 ## Event Handling
 ```javascript
 // Instead of: $('.btn').on('click', handler)
-dom.on('.btn', 'click', handler)
+document.querySelector('.btn').addEventListener('click', handler)
 
 // Event delegation:
-dom.on('.container', 'click', handler, '.btn')
+document.addEventListener('click', (e) => {
+  if (e.target.matches('.btn')) {
+    handler(e);
+  }
+});
 ```
 
 ## CSS Classes
 ```javascript
 // Instead of: $('.el').addClass('class')
-dom.class('.el', 'class', 'add')
+document.querySelector('.el').classList.add('class')
 
 // Instead of: $('.el').removeClass('class')
-dom.class('.el', 'class', 'remove')
+document.querySelector('.el').classList.remove('class')
 
 // Instead of: $('.el').toggleClass('class')
-dom.class('.el', 'class', 'toggle')
+document.querySelector('.el').classList.toggle('class')
 ```
 
 ## Styles
 ```javascript
 // Instead of: $('.el').css('color', 'red')
-dom.css('.el', 'color', 'red')
+document.querySelector('.el').style.color = 'red'
 
 // Multiple styles:
-dom.css('.el', { color: 'red', fontSize: '16px' })
+const el = document.querySelector('.el');
+Object.assign(el.style, { color: 'red', fontSize: '16px' });
+```
+
+## DOM Ready
+```javascript
+// Instead of: $(document).ready(callback)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', callback);
+} else {
+  callback();
+}
 ```

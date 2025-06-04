@@ -1,33 +1,1352 @@
-/*
- * ATTENTION: The "eval" devtool has been used (maybe by default in mode: "development").
- * This devtool is neither made for production nor for readable output files.
- * It uses "eval()" calls to create a separate source file in the browser devtools.
- * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
- * or disable the default devtool with "devtool: false".
- * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
- */
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./src/js/main.js":
-/*!************************************!*\
-  !*** ./src/js/main.js + 5 modules ***!
-  \************************************/
-/***/ (() => {
+/***/ "./src/js/modules/ares-handler.js":
+/*!****************************************!*\
+  !*** ./src/js/modules/ares-handler.js ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-eval("\n;// ./src/js/utils/dom.js\n/**\n * DOM utility functions\n * Replaces jQuery for common DOM operations\n */\n\nconst dom = {\n  /**\n   * Find element(s) by selector\n   * @param {string} selector - CSS selector\n   * @param {Element} context - Optional context element\n   * @returns {Element|NodeList|null}\n   */\n  find(selector, context = document) {\n    const elements = context.querySelectorAll(selector);\n    return elements.length === 1 ? elements[0] : elements.length > 1 ? elements : null;\n  },\n  /**\n   * Find single element by selector\n   * @param {string} selector - CSS selector\n   * @param {Element} context - Optional context element\n   * @returns {Element|null}\n   */\n  findOne(selector, context = document) {\n    return context.querySelector(selector);\n  },\n  /**\n   * Check if element exists\n   * @param {string} selector - CSS selector\n   * @param {Element} context - Optional context element\n   * @returns {boolean}\n   */\n  exists(selector, context = document) {\n    return context.querySelector(selector) !== null;\n  },\n  /**\n   * Add event listener with optional delegation\n   * @param {Element|string} target - Element or selector\n   * @param {string} event - Event type\n   * @param {Function} handler - Event handler\n   * @param {string} delegate - Optional selector for delegation\n   */\n  on(target, event, handler, delegate = null) {\n    const element = typeof target === 'string' ? this.findOne(target) : target;\n    if (!element) return;\n    if (delegate) {\n      element.addEventListener(event, e => {\n        if (e.target.matches(delegate) || e.target.closest(delegate)) {\n          handler.call(e.target.closest(delegate) || e.target, e);\n        }\n      });\n    } else {\n      element.addEventListener(event, handler);\n    }\n  },\n  /**\n   * Set element text content\n   * @param {Element|string} target - Element or selector\n   * @param {string} text - Text content\n   */\n  text(target, text) {\n    const element = typeof target === 'string' ? this.findOne(target) : target;\n    if (element) element.textContent = text;\n  },\n  /**\n   * Set element HTML content\n   * @param {Element|string} target - Element or selector\n   * @param {string} html - HTML content\n   */\n  html(target, html) {\n    const element = typeof target === 'string' ? this.findOne(target) : target;\n    if (element) element.innerHTML = html;\n  },\n  /**\n   * Set element styles\n   * @param {Element|string} target - Element or selector\n   * @param {Object|string} styles - Style object or property name\n   * @param {string} value - Style value (if styles is string)\n   */\n  css(target, styles, value = null) {\n    const element = typeof target === 'string' ? this.findOne(target) : target;\n    if (!element) return;\n    if (typeof styles === 'object') {\n      Object.assign(element.style, styles);\n    } else if (value !== null) {\n      element.style[styles] = value;\n    }\n  },\n  /**\n   * Get/set element value\n   * @param {Element|string} target - Element or selector\n   * @param {string} value - Value to set (optional)\n   * @returns {string} Current value if getting\n   */\n  val(target, value = null) {\n    const element = typeof target === 'string' ? this.findOne(target) : target;\n    if (!element) return '';\n    if (value !== null) {\n      element.value = value;\n    } else {\n      return element.value || '';\n    }\n  },\n  /**\n   * Add/remove/toggle CSS classes\n   * @param {Element|string} target - Element or selector\n   * @param {string} className - Class name\n   * @param {string} action - 'add', 'remove', or 'toggle'\n   */\n  class(target, className, action = 'add') {\n    const element = typeof target === 'string' ? this.findOne(target) : target;\n    if (!element) return;\n    switch (action) {\n      case 'add':\n        element.classList.add(className);\n        break;\n      case 'remove':\n        element.classList.remove(className);\n        break;\n      case 'toggle':\n        element.classList.toggle(className);\n        break;\n    }\n  },\n  /**\n   * Wait for DOM ready state\n   * @param {Function} callback - Function to execute when ready\n   */\n  ready(callback) {\n    if (document.readyState === 'loading') {\n      document.addEventListener('DOMContentLoaded', callback);\n    } else {\n      callback();\n    }\n  }\n};\n;// ./src/js/utils/api.js\n/**\n * API utility functions\n * Modern fetch-based AJAX helpers\n */\n\nconst api = {\n  /**\n   * Make GET request\n   * @param {string} url - Request URL\n   * @param {Object} options - Request options\n   * @returns {Promise}\n   */\n  async get(url, options = {}) {\n    return this.request(url, {\n      method: 'GET',\n      ...options\n    });\n  },\n  /**\n   * Make POST request\n   * @param {string} url - Request URL\n   * @param {Object} data - Request data\n   * @param {Object} options - Request options\n   * @returns {Promise}\n   */\n  async post(url, data = {}, options = {}) {\n    return this.request(url, {\n      method: 'POST',\n      body: JSON.stringify(data),\n      headers: {\n        'Content-Type': 'application/json',\n        ...options.headers\n      },\n      ...options\n    });\n  },\n  /**\n   * Generic request handler\n   * @param {string} url - Request URL\n   * @param {Object} options - Fetch options\n   * @returns {Promise}\n   */\n  async request(url, options = {}) {\n    const defaults = {\n      headers: {\n        'Accept': 'application/json'\n      },\n      credentials: 'same-origin'\n    };\n    const config = {\n      ...defaults,\n      ...options\n    };\n    try {\n      const response = await fetch(url, config);\n      if (!response.ok) {\n        throw new Error(`HTTP ${response.status}: ${response.statusText}`);\n      }\n      const contentType = response.headers.get('content-type');\n      if (contentType && contentType.includes('application/json')) {\n        return await response.json();\n      } else {\n        return await response.text();\n      }\n    } catch (error) {\n      console.error('API Request failed:', error);\n      throw error;\n    }\n  },\n  /**\n   * WordPress AJAX helper\n   * @param {string} action - WordPress AJAX action\n   * @param {Object} data - Request data\n   * @param {Object} options - Request options\n   * @returns {Promise}\n   */\n  async wpAjax(action, data = {}, options = {}) {\n    const url = window.wpAjax?.ajaxurl || '/wp-admin/admin-ajax.php';\n    const nonce = window.wpAjax?.nonce || '';\n    const formData = new FormData();\n    formData.append('action', action);\n    formData.append('nonce', nonce);\n    Object.keys(data).forEach(key => {\n      formData.append(key, data[key]);\n    });\n    return this.request(url, {\n      method: 'POST',\n      body: formData,\n      ...options\n    });\n  },\n  /**\n   * Handle API errors with user-friendly messages\n   * @param {Error} error - Error object\n   * @param {Object} messages - Custom error messages\n   * @returns {string} User-friendly error message\n   */\n  handleError(error, messages = {}) {\n    const defaultMessages = {\n      404: 'Požadovaný zdroj nebyl nalezen',\n      400: 'Chybný formát požadavku',\n      500: 'Chyba serveru',\n      503: 'Služba je dočasně nedostupná',\n      network: 'Chyba připojení k internetu',\n      timeout: 'Požadavek vypršel',\n      default: 'Nastala neočekávaná chyba'\n    };\n    const errorMessages = {\n      ...defaultMessages,\n      ...messages\n    };\n    if (error.message.includes('HTTP 404')) {\n      return errorMessages[404];\n    } else if (error.message.includes('HTTP 400')) {\n      return errorMessages[400];\n    } else if (error.message.includes('HTTP 500')) {\n      return errorMessages[500];\n    } else if (error.message.includes('HTTP 503')) {\n      return errorMessages[503];\n    } else if (error.name === 'TypeError' && error.message.includes('fetch')) {\n      return errorMessages.network;\n    } else if (error.name === 'AbortError') {\n      return errorMessages.timeout;\n    } else {\n      return errorMessages.default;\n    }\n  },\n  /**\n   * Add request timeout\n   * @param {Promise} request - Request promise\n   * @param {number} timeout - Timeout in milliseconds\n   * @returns {Promise}\n   */\n  withTimeout(request, timeout = 10000) {\n    return Promise.race([request, new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), timeout))]);\n  }\n};\n;// ./src/js/utils/validation.js\n/**\n * Form validation utilities\n * Czech-specific validation rules\n */\n\nconst validation = {\n  /**\n   * Validate Czech IČO (company registration number)\n   * @param {string} ico - IČO to validate\n   * @returns {Object} Validation result\n   */\n  ico(ico) {\n    const cleaned = ico.replace(/\\s/g, '');\n    if (!/^\\d{8}$/.test(cleaned)) {\n      return {\n        valid: false,\n        error: 'IČO musí mít 8 číslic'\n      };\n    }\n\n    // Czech IČO checksum validation\n    const digits = cleaned.split('').map(Number);\n    const weights = [8, 7, 6, 5, 4, 3, 2];\n    const sum = digits.slice(0, 7).reduce((acc, digit, index) => acc + digit * weights[index], 0);\n    const remainder = sum % 11;\n    const checksum = remainder < 2 ? remainder : 11 - remainder;\n    if (digits[7] !== checksum) {\n      return {\n        valid: false,\n        error: 'Neplatné IČO (chybný kontrolní součet)'\n      };\n    }\n    return {\n      valid: true\n    };\n  },\n  /**\n   * Validate email address\n   * @param {string} email - Email to validate\n   * @returns {Object} Validation result\n   */\n  email(email) {\n    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n    if (!emailRegex.test(email)) {\n      return {\n        valid: false,\n        error: 'Neplatný formát e-mailové adresy'\n      };\n    }\n    return {\n      valid: true\n    };\n  },\n  /**\n   * Validate Czech phone number\n   * @param {string} phone - Phone to validate\n   * @returns {Object} Validation result\n   */\n  phone(phone) {\n    const cleaned = phone.replace(/[\\s\\-\\(\\)]/g, '');\n    const phoneRegex = /^(\\+420)?[0-9]{9}$/;\n    if (!phoneRegex.test(cleaned)) {\n      return {\n        valid: false,\n        error: 'Neplatný formát telefonního čísla'\n      };\n    }\n    return {\n      valid: true\n    };\n  },\n  /**\n   * Validate required field\n   * @param {string} value - Value to validate\n   * @param {string} fieldName - Field name for error message\n   * @returns {Object} Validation result\n   */\n  required(value, fieldName = 'Pole') {\n    if (!value || value.trim() === '') {\n      return {\n        valid: false,\n        error: `${fieldName} je povinné`\n      };\n    }\n    return {\n      valid: true\n    };\n  },\n  /**\n   * Validate file type\n   * @param {File} file - File to validate\n   * @param {Array} allowedTypes - Allowed MIME types\n   * @returns {Object} Validation result\n   */\n  fileType(file, allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']) {\n    if (!allowedTypes.includes(file.type)) {\n      const allowedExtensions = allowedTypes.map(type => {\n        switch (type) {\n          case 'image/jpeg':\n            return 'JPG';\n          case 'image/jpg':\n            return 'JPG';\n          case 'image/png':\n            return 'PNG';\n          default:\n            return type;\n        }\n      });\n      return {\n        valid: false,\n        error: `Pouze soubory typu ${allowedExtensions.join(', ')} jsou povoleny`\n      };\n    }\n    return {\n      valid: true\n    };\n  },\n  /**\n   * Validate file size\n   * @param {File} file - File to validate\n   * @param {number} maxSize - Maximum size in bytes\n   * @returns {Object} Validation result\n   */\n  fileSize(file, maxSize = 5 * 1024 * 1024) {\n    // 5MB default\n    if (file.size > maxSize) {\n      const maxSizeMB = Math.round(maxSize / (1024 * 1024));\n      return {\n        valid: false,\n        error: `Soubor je příliš velký (maximum ${maxSizeMB}MB)`\n      };\n    }\n    return {\n      valid: true\n    };\n  },\n  /**\n   * Format file size for display\n   * @param {number} bytes - File size in bytes\n   * @returns {string} Formatted size string\n   */\n  formatFileSize(bytes) {\n    if (bytes === 0) return '0 B';\n    const k = 1024;\n    const sizes = ['B', 'KB', 'MB', 'GB'];\n    const i = Math.floor(Math.log(bytes) / Math.log(k));\n    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];\n  },\n  /**\n   * Validate multiple rules for a single value\n   * @param {any} value - Value to validate\n   * @param {Array} rules - Array of validation rules\n   * @returns {Object} Validation result\n   */\n  validate(value, rules) {\n    for (const rule of rules) {\n      const result = rule(value);\n      if (!result.valid) {\n        return result;\n      }\n    }\n    return {\n      valid: true\n    };\n  }\n};\n;// ./src/js/modules/ares-handler.js\n/**\n * ARES Company Data Handler\n * Handles Czech company registration data lookup and form population\n */\n\n\n\n\nclass AresHandler {\n  constructor() {\n    this.form = null;\n    this.fields = {\n      ico: null,\n      companyName: null,\n      address: null,\n      status: null,\n      loadButton: null\n    };\n    this.lastFetchedIco = null;\n    this.isInitialized = false;\n    this.init();\n  }\n\n  /**\n   * Initialize the ARES handler\n   */\n  init() {\n    dom.ready(() => {\n      this.setupElements();\n      if (this.isValidSetup()) {\n        this.bindEvents();\n        this.isInitialized = true;\n        console.log('ARES Handler initialized successfully');\n      }\n    });\n  }\n\n  /**\n   * Set up DOM elements and validate they exist\n   */\n  setupElements() {\n    this.form = dom.findOne('.registration-form');\n    if (!this.form) {\n      console.warn('Registration form container \".registration-form\" not found.');\n      return;\n    }\n    this.fields = {\n      ico: dom.findOne('[name=\"ico\"]', this.form),\n      companyName: dom.findOne('[name=\"company-name\"]', this.form),\n      address: dom.findOne('[name=\"address\"]', this.form),\n      status: dom.findOne('#aresStatus', this.form),\n      loadButton: dom.findOne('#loadAresData', this.form)\n    };\n  }\n\n  /**\n   * Validate that all required elements are present\n   * @returns {boolean}\n   */\n  isValidSetup() {\n    const requiredFields = ['ico', 'companyName', 'address', 'status', 'loadButton'];\n    const missingFields = requiredFields.filter(field => !this.fields[field]);\n    if (missingFields.length > 0) {\n      console.warn(`ARES Handler: Missing required fields: ${missingFields.join(', ')}`);\n      return false;\n    }\n    return true;\n  }\n\n  /**\n   * Bind event listeners\n   */\n  bindEvents() {\n    // Load ARES data button click\n    dom.on(this.fields.loadButton, 'click', e => {\n      e.preventDefault();\n      this.loadAresData();\n    });\n\n    // IČO field input change\n    dom.on(this.fields.ico, 'input', () => {\n      this.handleIcoChange();\n    });\n\n    // Enter key in IČO field\n    dom.on(this.fields.ico, 'keypress', e => {\n      if (e.key === 'Enter') {\n        e.preventDefault();\n        this.loadAresData();\n      }\n    });\n  }\n\n  /**\n   * Load company data from ARES API\n   */\n  async loadAresData() {\n    const ico = dom.val(this.fields.ico).trim();\n\n    // Validate IČO format\n    const icoValidation = validation.ico(ico);\n    if (!icoValidation.valid) {\n      this.showError(icoValidation.error);\n      this.clearFields();\n      return;\n    }\n    this.showStatus('Ověřuji IČO...', 'loading');\n    this.clearFields();\n    this.lastFetchedIco = null;\n    try {\n      const data = await api.withTimeout(api.get(`https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/${ico}`), 15000 // 15 second timeout\n      );\n      this.handleAresSuccess(data, ico);\n    } catch (error) {\n      this.handleAresError(error);\n    }\n  }\n\n  /**\n   * Handle successful ARES API response\n   * @param {Object} data - ARES API response data\n   * @param {string} ico - The IČO that was looked up\n   */\n  handleAresSuccess(data, ico) {\n    if (data && data.obchodniJmeno) {\n      dom.val(this.fields.companyName, data.obchodniJmeno);\n      if (data.sidlo && data.sidlo.textovaAdresa) {\n        dom.val(this.fields.address, data.sidlo.textovaAdresa);\n      }\n      this.showStatus('Údaje načteny', 'success');\n      this.lastFetchedIco = ico;\n    } else {\n      this.showError('Společnost nenalezena nebo odpověď neobsahuje název');\n    }\n  }\n\n  /**\n   * Handle ARES API errors\n   * @param {Error} error - Error object\n   */\n  handleAresError(error) {\n    const errorMessages = {\n      404: 'IČO nebylo nalezeno v ARES',\n      400: 'Chybný formát IČO pro ARES (zkontrolujte)',\n      500: 'Služba ARES je dočasně nedostupná. Zkuste později',\n      503: 'Služba ARES je dočasně nedostupná. Zkuste později',\n      timeout: 'Požadavek na ARES vypršel. Zkuste později',\n      network: 'Chyba připojení k ARES API',\n      default: 'Chyba při komunikaci s ARES API'\n    };\n    const errorMessage = api.handleError(error, errorMessages);\n    this.showError(errorMessage);\n    console.error('ARES API Error:', error);\n  }\n\n  /**\n   * Handle changes to the IČO field\n   */\n  handleIcoChange() {\n    const currentIco = dom.val(this.fields.ico).trim();\n    const hasCompanyData = dom.val(this.fields.companyName) !== '' || dom.val(this.fields.address) !== '';\n    if (this.lastFetchedIco && currentIco !== this.lastFetchedIco && hasCompanyData) {\n      this.showStatus('IČO bylo změněno. Klikněte na \"Načíst údaje\" pro aktualizaci', 'warning');\n    } else if (!this.lastFetchedIco && hasCompanyData && currentIco !== '') {\n      this.showStatus('Zadejte IČO a klikněte na \"Načíst údaje\"', 'info');\n    } else if (currentIco === '' && this.lastFetchedIco) {\n      this.clearStatus();\n      this.lastFetchedIco = null;\n    }\n  }\n\n  /**\n   * Show status message\n   * @param {string} message - Status message\n   * @param {string} type - Status type: 'loading', 'success', 'error', 'warning', 'info'\n   */\n  showStatus(message, type = 'info') {\n    const colors = {\n      loading: '#ff9500',\n      success: '#4CAF50',\n      error: '#f44336',\n      warning: '#ff9500',\n      info: '#2196F3'\n    };\n    dom.text(this.fields.status, message);\n    dom.css(this.fields.status, 'color', colors[type] || colors.info);\n  }\n\n  /**\n   * Show error message\n   * @param {string} message - Error message\n   */\n  showError(message) {\n    this.showStatus(message, 'error');\n  }\n\n  /**\n   * Clear status message\n   */\n  clearStatus() {\n    dom.text(this.fields.status, '');\n    dom.css(this.fields.status, 'color', '');\n  }\n\n  /**\n   * Clear company data fields\n   */\n  clearFields() {\n    dom.val(this.fields.companyName, '');\n    dom.val(this.fields.address, '');\n  }\n\n  /**\n   * Check if handler is properly initialized\n   * @returns {boolean}\n   */\n  isReady() {\n    return this.isInitialized;\n  }\n\n  /**\n   * Destroy the handler and clean up event listeners\n   */\n  destroy() {\n    // Note: In a full implementation, you'd want to track and remove specific event listeners\n    // For now, this is a placeholder for cleanup functionality\n    this.isInitialized = false;\n    this.lastFetchedIco = null;\n    console.log('ARES Handler destroyed');\n  }\n}\n;// ./src/js/modules/file-upload.js\n/**\n * Enhanced File Upload Handler\n * Provides drag & drop functionality for Contact Form 7 file uploads\n */\n\n\n\nclass FileUpload {\n  constructor() {\n    // Singleton pattern\n    if (FileUpload.instance) {\n      return FileUpload.instance;\n    }\n    this.fileInput = null;\n    this.originalContainer = null;\n    this.customContainer = null;\n    this.previewContainer = null;\n    this.errorContainer = null;\n    this.selectedFiles = [];\n    this.config = {\n      maxFileSize: 5 * 1024 * 1024,\n      // 5MB\n      allowedTypes: ['image/jpeg', 'image/jpg', 'image/png'],\n      allowedExtensions: ['.jpg', '.jpeg', '.png']\n    };\n    this.isInitialized = false;\n    FileUpload.instance = this;\n    this.init();\n  }\n\n  /**\n   * Initialize the file upload handler\n   */\n  init() {\n    dom.ready(() => {\n      this.setup();\n    });\n  }\n\n  /**\n   * Set up the enhanced file upload interface\n   */\n  setup() {\n    this.fileInput = dom.findOne('.registration-form input[name=\"fotky-realizace\"]');\n    if (!this.fileInput) {\n      console.warn('File input not found');\n      return;\n    }\n    this.originalContainer = this.fileInput.closest('.wpcf7-form-control-wrap');\n    if (!this.originalContainer) {\n      console.warn('File input container not found');\n      return;\n    }\n    this.cleanup();\n    this.createCustomInterface();\n    this.bindEvents();\n    this.syncWithOriginalInput();\n    this.isInitialized = true;\n    console.log('Enhanced File Upload initialized successfully');\n  }\n\n  /**\n   * Create the custom drag & drop interface\n   */\n  createCustomInterface() {\n    // Create upload zone\n    this.customContainer = document.createElement('div');\n    this.customContainer.className = 'file-upload-zone';\n\n    // File icon SVG\n    const iconSvg = this.createFileIcon();\n    const uploadText = document.createElement('div');\n    uploadText.className = 'file-upload-text';\n    uploadText.textContent = 'Přetáhněte fotky sem nebo\\\\nklikněte pro nahrání';\n    this.customContainer.innerHTML = iconSvg;\n    this.customContainer.appendChild(uploadText);\n\n    // Create preview container\n    this.previewContainer = document.createElement('div');\n    this.previewContainer.className = 'file-preview-container';\n    const previewList = document.createElement('div');\n    previewList.className = 'file-preview-list';\n    this.previewContainer.appendChild(previewList);\n\n    // Create error container\n    this.errorContainer = document.createElement('div');\n    this.errorContainer.className = 'file-upload-error';\n\n    // Insert before original container\n    const parent = this.originalContainer.parentNode;\n    parent.insertBefore(this.customContainer, this.originalContainer);\n    parent.insertBefore(this.previewContainer, this.originalContainer);\n    parent.insertBefore(this.errorContainer, this.originalContainer);\n    this.hideOriginalElements();\n  }\n\n  /**\n   * Create file icon SVG\n   * @returns {string} SVG markup\n   */\n  createFileIcon() {\n    return `<svg class=\"file-upload-icon\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path d=\"M3.55556 32C2.57778 32 1.74104 31.6521 1.04533 30.9564C0.34963 30.2607 0.00118519 29.4234 0 28.4444V3.55556C0 2.57778 0.348445 1.74104 1.04533 1.04533C1.74222 0.34963 2.57896 0.00118519 3.55556 0H28.4444C29.4222 0 30.2596 0.348445 30.9564 1.04533C31.6533 1.74222 32.0012 2.57896 32 3.55556V28.4444C32 29.4222 31.6521 30.2596 30.9564 30.9564C30.2607 31.6533 29.4234 32.0012 28.4444 32H3.55556ZM3.55556 28.4444H28.4444V3.55556H3.55556V28.4444ZM5.33333 24.8889H26.6667L20 16L14.6667 23.1111L10.6667 17.7778L5.33333 24.8889Z\" fill=\"#CCCCCC\"/>\n    </svg>`;\n  }\n\n  /**\n   * Hide original form elements\n   */\n  hideOriginalElements() {\n    const br = this.originalContainer.nextElementSibling;\n    if (br && br.tagName === 'BR') {\n      br.style.display = 'none';\n      const small = br.nextElementSibling;\n      if (small && small.tagName === 'SMALL') {\n        small.style.display = 'none';\n      }\n    }\n  }\n\n  /**\n   * Show original form elements\n   */\n  showOriginalElements() {\n    if (!this.originalContainer) return;\n    const br = this.originalContainer.nextElementSibling;\n    if (br && br.tagName === 'BR') {\n      br.style.display = '';\n      const small = br.nextElementSibling;\n      if (small && small.tagName === 'SMALL') {\n        small.style.display = '';\n      }\n    }\n  }\n\n  /**\n   * Bind event listeners\n   */\n  bindEvents() {\n    // Click to upload\n    dom.on(this.customContainer, 'click', () => {\n      this.fileInput.click();\n    });\n\n    // File input change\n    dom.on(this.fileInput, 'change', e => {\n      this.handleFileSelection(e.target.files);\n    });\n\n    // Drag and drop events\n    this.bindDragDropEvents();\n\n    // Prevent default drag behaviors globally\n    this.preventDefaultDragBehaviors();\n  }\n\n  /**\n   * Bind drag and drop event listeners\n   */\n  bindDragDropEvents() {\n    dom.on(this.customContainer, 'dragover', e => {\n      e.preventDefault();\n      e.stopPropagation();\n      dom.class(this.customContainer, 'drag-over', 'add');\n    });\n    dom.on(this.customContainer, 'dragleave', e => {\n      e.preventDefault();\n      e.stopPropagation();\n      if (!this.customContainer.contains(e.relatedTarget)) {\n        dom.class(this.customContainer, 'drag-over', 'remove');\n      }\n    });\n    dom.on(this.customContainer, 'drop', e => {\n      e.preventDefault();\n      e.stopPropagation();\n      dom.class(this.customContainer, 'drag-over', 'remove');\n      const files = Array.from(e.dataTransfer.files);\n      this.setFilesToInput(files);\n    });\n  }\n\n  /**\n   * Prevent default drag behaviors on document\n   */\n  preventDefaultDragBehaviors() {\n    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {\n      document.addEventListener(eventName, e => {\n        e.preventDefault();\n        e.stopPropagation();\n      }, false);\n    });\n  }\n\n  /**\n   * Set files to the original input element\n   * @param {FileList|Array} files - Files to set\n   */\n  setFilesToInput(files) {\n    if (!files || files.length === 0) return;\n    try {\n      if (typeof DataTransfer !== 'undefined') {\n        const dt = new DataTransfer();\n        Array.from(files).forEach(file => {\n          dt.items.add(file);\n        });\n        this.fileInput.files = dt.files;\n        this.fileInput.dispatchEvent(new Event('change', {\n          bubbles: true\n        }));\n      } else {\n        this.showError('Drag and drop není podporován v tomto prohlížeči. Použijte tlačítko pro výběr souborů.');\n      }\n    } catch (error) {\n      console.warn('DataTransfer not supported:', error);\n      this.showError('Drag and drop není podporován. Použijte tlačítko pro výběr souborů.');\n    }\n  }\n\n  /**\n   * Handle file selection (both click and drag & drop)\n   * @param {FileList} files - Selected files\n   */\n  handleFileSelection(files) {\n    this.clearErrors();\n    this.selectedFiles = [];\n    if (!files || files.length === 0) {\n      this.updatePreviewVisibility();\n      return;\n    }\n    const validFiles = [];\n    const errors = [];\n    Array.from(files).forEach(file => {\n      const fileValidation = this.validateFile(file);\n      if (fileValidation.valid) {\n        validFiles.push(file);\n      } else {\n        errors.push(`${file.name}: ${fileValidation.error}`);\n      }\n    });\n    if (errors.length > 0) {\n      this.showError(errors.join('<br>'));\n    }\n    if (validFiles.length > 0) {\n      this.addFiles(validFiles);\n    }\n    this.updatePreviewVisibility();\n  }\n\n  /**\n   * Validate a single file\n   * @param {File} file - File to validate\n   * @returns {Object} Validation result\n   */\n  validateFile(file) {\n    // File type validation\n    const typeValidation = validation.fileType(file, this.config.allowedTypes);\n    if (!typeValidation.valid) {\n      return typeValidation;\n    }\n\n    // File size validation\n    const sizeValidation = validation.fileSize(file, this.config.maxFileSize);\n    if (!sizeValidation.valid) {\n      return sizeValidation;\n    }\n    return {\n      valid: true\n    };\n  }\n\n  /**\n   * Add files to the preview\n   * @param {Array} files - Valid files to add\n   */\n  addFiles(files) {\n    files.forEach(file => {\n      const fileData = {\n        file: file,\n        id: Date.now() + Math.random(),\n        name: file.name,\n        size: file.size,\n        status: 'selected'\n      };\n      this.selectedFiles.push(fileData);\n      this.createFilePreview(fileData);\n    });\n  }\n\n  /**\n   * Create preview element for a file\n   * @param {Object} fileData - File data object\n   */\n  createFilePreview(fileData) {\n    const previewItem = document.createElement('div');\n    previewItem.className = 'file-preview-item';\n    previewItem.dataset.fileId = fileData.id;\n\n    // Thumbnail\n    const thumbnail = document.createElement('div');\n    thumbnail.className = 'file-preview-thumbnail';\n    if (fileData.file.type.startsWith('image/')) {\n      const img = document.createElement('img');\n      const reader = new FileReader();\n      reader.onload = e => {\n        img.src = e.target.result;\n      };\n      reader.readAsDataURL(fileData.file);\n      thumbnail.appendChild(img);\n    } else {\n      thumbnail.innerHTML = '📄';\n    }\n\n    // File info\n    const info = document.createElement('div');\n    info.className = 'file-preview-info';\n    const name = document.createElement('div');\n    name.className = 'file-preview-name';\n    name.textContent = fileData.name;\n    const size = document.createElement('div');\n    size.className = 'file-preview-size';\n    size.textContent = validation.formatFileSize(fileData.size);\n    const status = document.createElement('div');\n    status.className = 'file-preview-status';\n    status.textContent = 'Připraven k nahrání';\n    info.appendChild(name);\n    info.appendChild(size);\n    info.appendChild(status);\n    previewItem.appendChild(thumbnail);\n    previewItem.appendChild(info);\n    const previewList = dom.findOne('.file-preview-list', this.previewContainer);\n    previewList.appendChild(previewItem);\n  }\n\n  /**\n   * Sync with original input changes (e.g., from WPCF7 validation)\n   */\n  syncWithOriginalInput() {\n    const observer = new MutationObserver(() => {\n      if (this.fileInput.files && this.fileInput.files.length === 0) {\n        this.selectedFiles = [];\n        const previewList = dom.findOne('.file-preview-list', this.previewContainer);\n        if (previewList) {\n          previewList.innerHTML = '';\n        }\n        this.updatePreviewVisibility();\n      }\n    });\n    observer.observe(this.fileInput, {\n      attributes: true,\n      attributeFilter: ['value']\n    });\n  }\n\n  /**\n   * Update preview container visibility\n   */\n  updatePreviewVisibility() {\n    if (this.selectedFiles.length > 0) {\n      dom.class(this.previewContainer, 'has-files', 'add');\n    } else {\n      dom.class(this.previewContainer, 'has-files', 'remove');\n    }\n  }\n\n  /**\n   * Show error message\n   * @param {string} message - Error message\n   */\n  showError(message) {\n    dom.html(this.errorContainer, message);\n    dom.class(this.errorContainer, 'show', 'add');\n    dom.class(this.customContainer, 'has-error', 'add');\n    setTimeout(() => {\n      this.clearErrors();\n    }, 5000);\n  }\n\n  /**\n   * Clear error messages\n   */\n  clearErrors() {\n    dom.class(this.errorContainer, 'show', 'remove');\n    dom.class(this.customContainer, 'has-error', 'remove');\n  }\n\n  /**\n   * Reset the upload interface\n   */\n  reset() {\n    this.selectedFiles = [];\n    const previewList = dom.findOne('.file-preview-list', this.previewContainer);\n    if (previewList) {\n      previewList.innerHTML = '';\n    }\n    this.updatePreviewVisibility();\n    this.clearErrors();\n  }\n\n  /**\n   * Clean up and remove custom elements\n   */\n  cleanup() {\n    if (this.customContainer && this.customContainer.parentNode) {\n      this.customContainer.parentNode.removeChild(this.customContainer);\n    }\n    if (this.previewContainer && this.previewContainer.parentNode) {\n      this.previewContainer.parentNode.removeChild(this.previewContainer);\n    }\n    if (this.errorContainer && this.errorContainer.parentNode) {\n      this.errorContainer.parentNode.removeChild(this.errorContainer);\n    }\n    if (this.originalContainer) {\n      this.showOriginalElements();\n    }\n    this.customContainer = null;\n    this.previewContainer = null;\n    this.errorContainer = null;\n    this.selectedFiles = [];\n  }\n\n  /**\n   * Check if handler is properly initialized\n   * @returns {boolean}\n   */\n  isReady() {\n    return this.isInitialized;\n  }\n\n  /**\n   * Handle WPCF7 form submission success\n   */\n  onFormSuccess() {\n    setTimeout(() => {\n      this.reset();\n    }, 100);\n  }\n\n  /**\n   * Clear singleton instance\n   */\n  static clearInstance() {\n    if (FileUpload.instance) {\n      FileUpload.instance.cleanup();\n      FileUpload.instance = null;\n    }\n  }\n\n  /**\n   * Destroy the handler\n   */\n  destroy() {\n    this.cleanup();\n    this.isInitialized = false;\n    console.log('Enhanced File Upload destroyed');\n  }\n}\n;// ./src/js/main.js\n/**\n * Main JavaScript Entry Point\n * Imports and initializes all modules for the theme\n */\n\n\n\n\n\n/**\n * Theme Application Class\n * Manages initialization and lifecycle of all modules\n */\nclass ThemeApp {\n  constructor() {\n    this.modules = {\n      aresHandler: null,\n      fileUpload: null\n    };\n    this.isInitialized = false;\n    this.init();\n  }\n\n  /**\n   * Initialize the application\n   */\n  init() {\n    dom.ready(() => {\n      this.initializeModules();\n      this.bindGlobalEvents();\n      this.isInitialized = true;\n      console.log('Theme application initialized successfully');\n    });\n  }\n\n  /**\n   * Initialize all modules\n   */\n  initializeModules() {\n    // Initialize ARES handler for company data lookup\n    if (dom.exists('.registration-form')) {\n      try {\n        this.modules.aresHandler = new AresHandler();\n        console.log('ARES handler initialized');\n      } catch (error) {\n        console.error('Failed to initialize ARES handler:', error);\n      }\n    }\n\n    // Initialize enhanced file upload\n    if (dom.exists('.registration-form input[name=\"fotky-realizace\"]')) {\n      try {\n        this.modules.fileUpload = new FileUpload();\n        console.log('File upload handler initialized');\n      } catch (error) {\n        console.error('Failed to initialize file upload handler:', error);\n      }\n    }\n  }\n\n  /**\n   * Bind global event listeners\n   */\n  bindGlobalEvents() {\n    // Handle Contact Form 7 submission success\n    if (typeof window.wpcf7 !== 'undefined') {\n      document.addEventListener('wpcf7mailsent', event => {\n        this.handleFormSuccess(event);\n      });\n      document.addEventListener('wpcf7invalid', event => {\n        this.handleFormError(event);\n      });\n      document.addEventListener('wpcf7spam', event => {\n        this.handleFormSpam(event);\n      });\n      document.addEventListener('wpcf7mailfailed', event => {\n        this.handleFormFailed(event);\n      });\n    }\n\n    // Handle dynamic content loading (if needed for AJAX)\n    document.addEventListener('DOMContentLoaded', () => {\n      this.reinitializeOnDynamicContent();\n    });\n  }\n\n  /**\n   * Handle successful form submission\n   * @param {Event} event - WPCF7 event\n   */\n  handleFormSuccess(event) {\n    console.log('Form submitted successfully');\n\n    // Reset file upload interface\n    if (this.modules.fileUpload && this.modules.fileUpload.isReady()) {\n      this.modules.fileUpload.onFormSuccess();\n    }\n\n    // You can add more success handling here\n    // e.g., analytics tracking, user notifications, etc.\n  }\n\n  /**\n   * Handle form validation errors\n   * @param {Event} event - WPCF7 event\n   */\n  handleFormError(event) {\n    console.log('Form validation failed');\n    // Add custom error handling if needed\n  }\n\n  /**\n   * Handle spam detection\n   * @param {Event} event - WPCF7 event\n   */\n  handleFormSpam(event) {\n    console.log('Form marked as spam');\n    // Add custom spam handling if needed\n  }\n\n  /**\n   * Handle mail sending failure\n   * @param {Event} event - WPCF7 event\n   */\n  handleFormFailed(event) {\n    console.log('Form mail sending failed');\n    // Add custom failure handling if needed\n  }\n\n  /**\n   * Reinitialize modules when content is dynamically loaded\n   * Useful for AJAX-loaded content\n   */\n  reinitializeOnDynamicContent() {\n    // Observer for dynamically added content\n    const observer = new MutationObserver(mutations => {\n      mutations.forEach(mutation => {\n        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {\n          // Check if any added nodes contain forms that need our modules\n          const hasRegistrationForm = Array.from(mutation.addedNodes).some(node => {\n            return node.nodeType === Node.ELEMENT_NODE && (node.matches('.registration-form') || node.querySelector('.registration-form'));\n          });\n          if (hasRegistrationForm) {\n            console.log('Dynamic content detected, reinitializing modules');\n            this.reinitializeModules();\n          }\n        }\n      });\n    });\n\n    // Start observing\n    observer.observe(document.body, {\n      childList: true,\n      subtree: true\n    });\n  }\n\n  /**\n   * Reinitialize modules (useful for dynamic content)\n   */\n  reinitializeModules() {\n    // Clean up existing modules\n    this.destroyModules();\n\n    // Reinitialize\n    this.initializeModules();\n  }\n\n  /**\n   * Destroy all modules\n   */\n  destroyModules() {\n    Object.keys(this.modules).forEach(key => {\n      if (this.modules[key] && typeof this.modules[key].destroy === 'function') {\n        this.modules[key].destroy();\n      }\n      this.modules[key] = null;\n    });\n\n    // Clear singleton instances\n    FileUpload.clearInstance();\n  }\n\n  /**\n   * Get module instance\n   * @param {string} moduleName - Name of the module\n   * @returns {Object|null} Module instance\n   */\n  getModule(moduleName) {\n    return this.modules[moduleName] || null;\n  }\n\n  /**\n   * Check if application is ready\n   * @returns {boolean}\n   */\n  isReady() {\n    return this.isInitialized;\n  }\n\n  /**\n   * Destroy the application\n   */\n  destroy() {\n    this.destroyModules();\n    this.isInitialized = false;\n    console.log('Theme application destroyed');\n  }\n}\n\n// Initialize the application\nconst app = new ThemeApp();\n\n// Make app available globally for debugging and external access\nwindow.ThemeApp = app;\n\n// For development debugging\nif (true) {\n  window.ThemeAppDebug = {\n    app,\n    modules: app.modules,\n    dom: dom\n    // Add other utilities for debugging\n  };\n}\n\n//# sourceURL=webpack:///./src/js/main.js_+_5_modules?");
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AresHandler: () => (/* binding */ AresHandler)
+/* harmony export */ });
+/* harmony import */ var _utils_api_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/api.js */ "./src/js/utils/api.js");
+/* harmony import */ var _utils_validation_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/validation.js */ "./src/js/utils/validation.js");
+/**
+ * ARES Company Data Handler
+ * Handles Czech company registration data lookup and form population
+ */
+
+
+
+class AresHandler {
+  constructor() {
+    this.form = null;
+    this.fields = {
+      ico: null,
+      companyName: null,
+      address: null,
+      status: null,
+      loadButton: null
+    };
+    this.lastFetchedIco = null;
+    this.isInitialized = false;
+    this.init();
+  }
+
+  /**
+   * Initialize the ARES handler
+   */
+  init() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.setup());
+    } else {
+      this.setup();
+    }
+  }
+  setup() {
+    this.setupElements();
+    if (this.isValidSetup()) {
+      this.bindEvents();
+      this.isInitialized = true;
+      console.log('ARES Handler initialized successfully');
+    }
+  }
+
+  /**
+   * Set up DOM elements and validate they exist
+   */
+  setupElements() {
+    this.form = document.querySelector('.registration-form');
+    if (!this.form) {
+      console.warn('Registration form container ".registration-form" not found.');
+      return;
+    }
+    this.fields = {
+      ico: this.form.querySelector('[name="ico"]'),
+      companyName: this.form.querySelector('[name="company-name"]'),
+      address: this.form.querySelector('[name="address"]'),
+      status: this.form.querySelector('#aresStatus'),
+      loadButton: this.form.querySelector('#loadAresData')
+    };
+  }
+
+  /**
+   * Validate that all required elements are present
+   * @returns {boolean}
+   */
+  isValidSetup() {
+    const requiredFields = ['ico', 'companyName', 'address', 'status', 'loadButton'];
+    const missingFields = requiredFields.filter(field => !this.fields[field]);
+    if (missingFields.length > 0) {
+      console.warn(`ARES Handler: Missing required fields: ${missingFields.join(', ')}`);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Bind event listeners
+   */
+  bindEvents() {
+    // Load ARES data button click
+    this.fields.loadButton.addEventListener('click', e => {
+      e.preventDefault();
+      this.loadAresData();
+    });
+
+    // IČO field input change
+    this.fields.ico.addEventListener('input', () => {
+      this.handleIcoChange();
+    });
+
+    // Enter key in IČO field
+    this.fields.ico.addEventListener('keypress', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.loadAresData();
+      }
+    });
+  }
+
+  /**
+   * Load company data from ARES API
+   */
+  async loadAresData() {
+    const ico = this.fields.ico.value.trim();
+
+    // Validate IČO format
+    const icoValidation = _utils_validation_js__WEBPACK_IMPORTED_MODULE_1__.validation.ico(ico);
+    if (!icoValidation.valid) {
+      this.showError(icoValidation.error);
+      this.clearFields();
+      return;
+    }
+    this.showStatus('Ověřuji IČO...', 'loading');
+    this.clearFields();
+    this.lastFetchedIco = null;
+    try {
+      const data = await _utils_api_js__WEBPACK_IMPORTED_MODULE_0__.api.withTimeout(_utils_api_js__WEBPACK_IMPORTED_MODULE_0__.api.get(`https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/${ico}`), 15000 // 15 second timeout
+      );
+      this.handleAresSuccess(data, ico);
+    } catch (error) {
+      this.handleAresError(error);
+    }
+  }
+
+  /**
+   * Handle successful ARES API response
+   * @param {Object} data - ARES API response data
+   * @param {string} ico - The IČO that was looked up
+   */
+  handleAresSuccess(data, ico) {
+    if (data && data.obchodniJmeno) {
+      this.fields.companyName.value = data.obchodniJmeno;
+      if (data.sidlo && data.sidlo.textovaAdresa) {
+        this.fields.address.value = data.sidlo.textovaAdresa;
+      }
+      this.showStatus('Údaje načteny', 'success');
+      this.lastFetchedIco = ico;
+    } else {
+      this.showError('Společnost nenalezena nebo odpověď neobsahuje název');
+    }
+  }
+
+  /**
+   * Handle ARES API errors
+   * @param {Error} error - Error object
+   */
+  handleAresError(error) {
+    const errorMessages = {
+      404: 'IČO nebylo nalezeno v ARES',
+      400: 'Chybný formát IČO pro ARES (zkontrolujte)',
+      500: 'Služba ARES je dočasně nedostupná. Zkuste později',
+      503: 'Služba ARES je dočasně nedostupná. Zkuste později',
+      timeout: 'Požadavek na ARES vypršel. Zkuste později',
+      network: 'Chyba připojení k ARES API',
+      default: 'Chyba při komunikaci s ARES API'
+    };
+    const errorMessage = _utils_api_js__WEBPACK_IMPORTED_MODULE_0__.api.handleError(error, errorMessages);
+    this.showError(errorMessage);
+    console.error('ARES API Error:', error);
+  }
+
+  /**
+   * Handle changes to the IČO field
+   */
+  handleIcoChange() {
+    const currentIco = this.fields.ico.value.trim();
+    const hasCompanyData = this.fields.companyName.value !== '' || this.fields.address.value !== '';
+    if (this.lastFetchedIco && currentIco !== this.lastFetchedIco && hasCompanyData) {
+      this.showStatus('IČO bylo změněno. Klikněte na "Načíst údaje" pro aktualizaci', 'warning');
+    } else if (!this.lastFetchedIco && hasCompanyData && currentIco !== '') {
+      this.showStatus('Zadejte IČO a klikněte na "Načíst údaje"', 'info');
+    } else if (currentIco === '' && this.lastFetchedIco) {
+      this.clearStatus();
+      this.lastFetchedIco = null;
+    }
+  }
+
+  /**
+   * Show status message
+   * @param {string} message - Status message
+   * @param {string} type - Status type: 'loading', 'success', 'error', 'warning', 'info'
+   */
+  showStatus(message, type = 'info') {
+    const colors = {
+      loading: '#ff9500',
+      success: '#4CAF50',
+      error: '#D32F2F',
+      warning: '#ff9500',
+      info: '#2196F3'
+    };
+    this.fields.status.textContent = message;
+    this.fields.status.style.color = colors[type] || colors.info;
+  }
+
+  /**
+   * Show error message
+   * @param {string} message - Error message
+   */
+  showError(message) {
+    this.showStatus(message, 'error');
+  }
+
+  /**
+   * Clear status message
+   */
+  clearStatus() {
+    this.fields.status.textContent = '';
+    this.fields.status.style.color = '';
+  }
+
+  /**
+   * Clear company data fields
+   */
+  clearFields() {
+    this.fields.companyName.value = '';
+    this.fields.address.value = '';
+  }
+
+  /**
+   * Check if handler is properly initialized
+   * @returns {boolean}
+   */
+  isReady() {
+    return this.isInitialized;
+  }
+
+  /**
+   * Destroy the handler and clean up event listeners
+   */
+  destroy() {
+    // Note: In a full implementation, you'd want to track and remove specific event listeners
+    // For now, this is a placeholder for cleanup functionality
+    this.isInitialized = false;
+    this.lastFetchedIco = null;
+    console.log('ARES Handler destroyed');
+  }
+}
+
+/***/ }),
+
+/***/ "./src/js/modules/file-upload.js":
+/*!***************************************!*\
+  !*** ./src/js/modules/file-upload.js ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FileUpload: () => (/* binding */ FileUpload)
+/* harmony export */ });
+/* harmony import */ var _utils_validation_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/validation.js */ "./src/js/utils/validation.js");
+/**
+ * Enhanced File Upload Handler
+ * Provides drag & drop functionality for Contact Form 7 file uploads
+ */
+
+
+class FileUpload {
+  constructor() {
+    // Singleton pattern
+    if (FileUpload.instance) {
+      return FileUpload.instance;
+    }
+    this.fileInput = null;
+    this.originalContainer = null;
+    this.customContainer = null;
+    this.previewContainer = null;
+    this.errorContainer = null;
+    this.selectedFiles = [];
+    this.config = {
+      maxFileSize: 5 * 1024 * 1024,
+      // 5MB
+      allowedTypes: ["image/jpeg", "image/jpg", "image/png"],
+      allowedExtensions: [".jpg", ".jpeg", ".png"]
+    };
+    this.isInitialized = false;
+    FileUpload.instance = this;
+    this.init();
+  }
+
+  /**
+   * Initialize the file upload handler
+   */
+  init() {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => this.setup());
+    } else {
+      this.setup();
+    }
+  }
+
+  /**
+   * Set up the enhanced file upload interface
+   */
+  setup() {
+    this.fileInput = document.querySelector('.registration-form input[name="fotky-realizace"]');
+    if (!this.fileInput) {
+      console.warn("File input not found");
+      return;
+    }
+    this.originalContainer = this.fileInput.closest(".wpcf7-form-control-wrap");
+    if (!this.originalContainer) {
+      console.warn("File input container not found");
+      return;
+    }
+    this.cleanup();
+    this.createCustomInterface();
+    this.bindEvents();
+    this.syncWithOriginalInput();
+    this.isInitialized = true;
+    console.log("Enhanced File Upload initialized successfully");
+  }
+
+  /**
+   * Create the custom drag & drop interface
+   */
+  createCustomInterface() {
+    // Create upload zone
+    this.customContainer = document.createElement("div");
+    this.customContainer.className = "file-upload-zone";
+
+    // File icon SVG
+    const iconSvg = this.createFileIcon();
+    const uploadText = document.createElement("div");
+    uploadText.className = "file-upload-text";
+    uploadText.innerHTML = "Přetáhněte fotky sem nebo<br><span>klikněte pro nahrání</span>";
+    this.customContainer.innerHTML = iconSvg;
+    this.customContainer.appendChild(uploadText);
+
+    // Create preview container
+    this.previewContainer = document.createElement("div");
+    this.previewContainer.className = "file-preview-container";
+    const previewList = document.createElement("div");
+    previewList.className = "file-preview-list";
+    this.previewContainer.appendChild(previewList);
+
+    // Create error container
+    this.errorContainer = document.createElement("div");
+    this.errorContainer.className = "file-upload-error";
+
+    // Insert before original container
+    const parent = this.originalContainer.parentNode;
+    parent.insertBefore(this.customContainer, this.originalContainer);
+    parent.insertBefore(this.previewContainer, this.originalContainer);
+    parent.insertBefore(this.errorContainer, this.originalContainer);
+    this.hideOriginalElements();
+  }
+
+  /**
+   * Create file icon SVG
+   * @returns {string} SVG markup
+   */
+  createFileIcon() {
+    return `<svg class="file-upload-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3.55556 32C2.57778 32 1.74104 31.6521 1.04533 30.9564C0.34963 30.2607 0.00118519 29.4234 0 28.4444V3.55556C0 2.57778 0.348445 1.74104 1.04533 1.04533C1.74222 0.34963 2.57896 0.00118519 3.55556 0H28.4444C29.4222 0 30.2596 0.348445 30.9564 1.04533C31.6533 1.74222 32.0012 2.57896 32 3.55556V28.4444C32 29.4222 31.6521 30.2596 30.9564 30.9564C30.2607 31.6533 29.4234 32.0012 28.4444 32H3.55556ZM3.55556 28.4444H28.4444V3.55556H3.55556V28.4444ZM5.33333 24.8889H26.6667L20 16L14.6667 23.1111L10.6667 17.7778L5.33333 24.8889Z" fill="#CCCCCC"/>
+    </svg>`;
+  }
+
+  /**
+   * Hide original form elements
+   */
+  hideOriginalElements() {
+    const br = this.originalContainer.nextElementSibling;
+    if (br && br.tagName === "BR") {
+      br.style.display = "none";
+      const small = br.nextElementSibling;
+      if (small && small.tagName === "SMALL") {
+        small.style.display = "none";
+      }
+    }
+  }
+
+  /**
+   * Show original form elements
+   */
+  showOriginalElements() {
+    if (!this.originalContainer) return;
+    const br = this.originalContainer.nextElementSibling;
+    if (br && br.tagName === "BR") {
+      br.style.display = "";
+      const small = br.nextElementSibling;
+      if (small && small.tagName === "SMALL") {
+        small.style.display = "";
+      }
+    }
+  }
+
+  /**
+   * Bind event listeners
+   */
+  bindEvents() {
+    // Click to upload
+    this.customContainer.addEventListener("click", () => {
+      this.fileInput.click();
+    });
+
+    // File input change
+    this.fileInput.addEventListener("change", e => {
+      this.handleFileSelection(e.target.files);
+    });
+
+    // Drag and drop events
+    this.bindDragDropEvents();
+
+    // Prevent default drag behaviors globally
+    this.preventDefaultDragBehaviors();
+  }
+
+  /**
+   * Bind drag and drop event listeners
+   */
+  bindDragDropEvents() {
+    this.customContainer.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.customContainer.classList.add("drag-over");
+    });
+    this.customContainer.addEventListener("dragleave", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!this.customContainer.contains(e.relatedTarget)) {
+        this.customContainer.classList.remove("drag-over");
+      }
+    });
+    this.customContainer.addEventListener("drop", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.customContainer.classList.remove("drag-over");
+      const files = Array.from(e.dataTransfer.files);
+      this.setFilesToInput(files);
+    });
+  }
+
+  /**
+   * Prevent default drag behaviors on document
+   */
+  preventDefaultDragBehaviors() {
+    ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
+      document.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+      }, false);
+    });
+  }
+
+  /**
+   * Set files to the original input element
+   * @param {FileList|Array} files - Files to set
+   */
+  setFilesToInput(files) {
+    if (!files || files.length === 0) return;
+    try {
+      if (typeof DataTransfer !== "undefined") {
+        const dt = new DataTransfer();
+        Array.from(files).forEach(file => {
+          dt.items.add(file);
+        });
+        this.fileInput.files = dt.files;
+        this.fileInput.dispatchEvent(new Event("change", {
+          bubbles: true
+        }));
+      } else {
+        this.showError("Drag and drop není podporován v tomto prohlížeči. Použijte tlačítko pro výběr souborů.");
+      }
+    } catch (error) {
+      console.warn("DataTransfer not supported:", error);
+      this.showError("Drag and drop není podporován. Použijte tlačítko pro výběr souborů.");
+    }
+  }
+
+  /**
+   * Handle file selection (both click and drag & drop)
+   * @param {FileList} files - Selected files
+   */
+  handleFileSelection(files) {
+    this.clearErrors();
+    this.selectedFiles = [];
+    if (!files || files.length === 0) {
+      this.updatePreviewVisibility();
+      return;
+    }
+    const validFiles = [];
+    const errors = [];
+    Array.from(files).forEach(file => {
+      const fileValidation = this.validateFile(file);
+      if (fileValidation.valid) {
+        validFiles.push(file);
+      } else {
+        errors.push(`${file.name}: ${fileValidation.error}`);
+      }
+    });
+    if (errors.length > 0) {
+      this.showError(errors.join("<br>"));
+    }
+    if (validFiles.length > 0) {
+      this.addFiles(validFiles);
+    }
+    this.updatePreviewVisibility();
+  }
+
+  /**
+   * Validate a single file
+   * @param {File} file - File to validate
+   * @returns {Object} Validation result
+   */
+  validateFile(file) {
+    // File type validation
+    const typeValidation = _utils_validation_js__WEBPACK_IMPORTED_MODULE_0__.validation.fileType(file, this.config.allowedTypes);
+    if (!typeValidation.valid) {
+      return typeValidation;
+    }
+
+    // File size validation
+    const sizeValidation = _utils_validation_js__WEBPACK_IMPORTED_MODULE_0__.validation.fileSize(file, this.config.maxFileSize);
+    if (!sizeValidation.valid) {
+      return sizeValidation;
+    }
+    return {
+      valid: true
+    };
+  }
+
+  /**
+   * Add files to the preview
+   * @param {Array} files - Valid files to add
+   */
+  addFiles(files) {
+    files.forEach(file => {
+      const fileData = {
+        file: file,
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: file.size,
+        status: "selected"
+      };
+      this.selectedFiles.push(fileData);
+      this.createFilePreview(fileData);
+    });
+  }
+
+  /**
+   * Create preview element for a file
+   * @param {Object} fileData - File data object
+   */
+  createFilePreview(fileData) {
+    const previewItem = document.createElement("div");
+    previewItem.className = "file-preview-item";
+    previewItem.dataset.fileId = fileData.id;
+
+    // Thumbnail
+    const thumbnail = document.createElement("div");
+    thumbnail.className = "file-preview-thumbnail";
+    if (fileData.file.type.startsWith("image/")) {
+      const img = document.createElement("img");
+      const reader = new FileReader();
+      reader.onload = e => {
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(fileData.file);
+      thumbnail.appendChild(img);
+    } else {
+      thumbnail.innerHTML = "📄";
+    }
+
+    // File info
+    const info = document.createElement("div");
+    info.className = "file-preview-info";
+    const name = document.createElement("div");
+    name.className = "file-preview-name";
+    name.textContent = fileData.name;
+    const size = document.createElement("div");
+    size.className = "file-preview-size";
+    size.textContent = _utils_validation_js__WEBPACK_IMPORTED_MODULE_0__.validation.formatFileSize(fileData.size);
+    const status = document.createElement("div");
+    status.className = "file-preview-status";
+    status.textContent = "Připraven k nahrání";
+    info.appendChild(name);
+    info.appendChild(size);
+    info.appendChild(status);
+    previewItem.appendChild(thumbnail);
+    previewItem.appendChild(info);
+    const previewList = this.previewContainer.querySelector(".file-preview-list");
+    previewList.appendChild(previewItem);
+  }
+
+  /**
+   * Sync with original input changes (e.g., from WPCF7 validation)
+   */
+  syncWithOriginalInput() {
+    const observer = new MutationObserver(() => {
+      if (this.fileInput.files && this.fileInput.files.length === 0) {
+        this.selectedFiles = [];
+        const previewList = this.previewContainer.querySelector(".file-preview-list");
+        if (previewList) {
+          previewList.innerHTML = "";
+        }
+        this.updatePreviewVisibility();
+      }
+    });
+    observer.observe(this.fileInput, {
+      attributes: true,
+      attributeFilter: ["value"]
+    });
+  }
+
+  /**
+   * Update preview container visibility
+   */
+  updatePreviewVisibility() {
+    if (this.selectedFiles.length > 0) {
+      this.previewContainer.classList.add("has-files");
+    } else {
+      this.previewContainer.classList.remove("has-files");
+    }
+  }
+
+  /**
+   * Show error message
+   * @param {string} message - Error message
+   */
+  showError(message) {
+    this.errorContainer.innerHTML = message;
+    this.errorContainer.classList.add("show");
+    this.customContainer.classList.add("has-error");
+    setTimeout(() => {
+      this.clearErrors();
+    }, 5000);
+  }
+
+  /**
+   * Clear error messages
+   */
+  clearErrors() {
+    this.errorContainer.classList.remove("show");
+    this.customContainer.classList.remove("has-error");
+  }
+
+  /**
+   * Reset the upload interface
+   */
+  reset() {
+    this.selectedFiles = [];
+    const previewList = this.previewContainer.querySelector(".file-preview-list");
+    if (previewList) {
+      previewList.innerHTML = "";
+    }
+    this.updatePreviewVisibility();
+    this.clearErrors();
+  }
+
+  /**
+   * Clean up and remove custom elements
+   */
+  cleanup() {
+    if (this.customContainer && this.customContainer.parentNode) {
+      this.customContainer.parentNode.removeChild(this.customContainer);
+    }
+    if (this.previewContainer && this.previewContainer.parentNode) {
+      this.previewContainer.parentNode.removeChild(this.previewContainer);
+    }
+    if (this.errorContainer && this.errorContainer.parentNode) {
+      this.errorContainer.parentNode.removeChild(this.errorContainer);
+    }
+    if (this.originalContainer) {
+      this.showOriginalElements();
+    }
+    this.customContainer = null;
+    this.previewContainer = null;
+    this.errorContainer = null;
+    this.selectedFiles = [];
+  }
+
+  /**
+   * Check if handler is properly initialized
+   * @returns {boolean}
+   */
+  isReady() {
+    return this.isInitialized;
+  }
+
+  /**
+   * Handle WPCF7 form submission success
+   */
+  onFormSuccess() {
+    setTimeout(() => {
+      this.reset();
+    }, 100);
+  }
+
+  /**
+   * Clear singleton instance
+   */
+  static clearInstance() {
+    if (FileUpload.instance) {
+      FileUpload.instance.cleanup();
+      FileUpload.instance = null;
+    }
+  }
+
+  /**
+   * Destroy the handler
+   */
+  destroy() {
+    this.cleanup();
+    this.isInitialized = false;
+    console.log("Enhanced File Upload destroyed");
+  }
+}
+
+/***/ }),
+
+/***/ "./src/js/utils/api.js":
+/*!*****************************!*\
+  !*** ./src/js/utils/api.js ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   api: () => (/* binding */ api)
+/* harmony export */ });
+/**
+ * API utility functions
+ * Modern fetch-based AJAX helpers
+ */
+
+const api = {
+  /**
+   * Make GET request
+   * @param {string} url - Request URL
+   * @param {Object} options - Request options
+   * @returns {Promise}
+   */
+  async get(url, options = {}) {
+    return this.request(url, {
+      method: 'GET',
+      ...options
+    });
+  },
+  /**
+   * Make POST request
+   * @param {string} url - Request URL
+   * @param {Object} data - Request data
+   * @param {Object} options - Request options
+   * @returns {Promise}
+   */
+  async post(url, data = {}, options = {}) {
+    return this.request(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    });
+  },
+  /**
+   * Generic request handler
+   * @param {string} url - Request URL
+   * @param {Object} options - Fetch options
+   * @returns {Promise}
+   */
+  async request(url, options = {}) {
+    const defaults = {
+      headers: {
+        'Accept': 'application/json'
+      },
+      credentials: 'same-origin'
+    };
+    const config = {
+      ...defaults,
+      ...options
+    };
+    try {
+      const response = await fetch(url, config);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        return await response.text();
+      }
+    } catch (error) {
+      console.error('API Request failed:', error);
+      throw error;
+    }
+  },
+  /**
+   * WordPress AJAX helper
+   * @param {string} action - WordPress AJAX action
+   * @param {Object} data - Request data
+   * @param {Object} options - Request options
+   * @returns {Promise}
+   */
+  async wpAjax(action, data = {}, options = {}) {
+    const url = window.wpAjax?.ajaxurl || '/wp-admin/admin-ajax.php';
+    const nonce = window.wpAjax?.nonce || '';
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('nonce', nonce);
+    Object.keys(data).forEach(key => {
+      formData.append(key, data[key]);
+    });
+    return this.request(url, {
+      method: 'POST',
+      body: formData,
+      ...options
+    });
+  },
+  /**
+   * Handle API errors with user-friendly messages
+   * @param {Error} error - Error object
+   * @param {Object} messages - Custom error messages
+   * @returns {string} User-friendly error message
+   */
+  handleError(error, messages = {}) {
+    const defaultMessages = {
+      404: 'Požadovaný zdroj nebyl nalezen',
+      400: 'Chybný formát požadavku',
+      500: 'Chyba serveru',
+      503: 'Služba je dočasně nedostupná',
+      network: 'Chyba připojení k internetu',
+      timeout: 'Požadavek vypršel',
+      default: 'Nastala neočekávaná chyba'
+    };
+    const errorMessages = {
+      ...defaultMessages,
+      ...messages
+    };
+    if (error.message.includes('HTTP 404')) {
+      return errorMessages[404];
+    } else if (error.message.includes('HTTP 400')) {
+      return errorMessages[400];
+    } else if (error.message.includes('HTTP 500')) {
+      return errorMessages[500];
+    } else if (error.message.includes('HTTP 503')) {
+      return errorMessages[503];
+    } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      return errorMessages.network;
+    } else if (error.name === 'AbortError') {
+      return errorMessages.timeout;
+    } else {
+      return errorMessages.default;
+    }
+  },
+  /**
+   * Add request timeout
+   * @param {Promise} request - Request promise
+   * @param {number} timeout - Timeout in milliseconds
+   * @returns {Promise}
+   */
+  withTimeout(request, timeout = 10000) {
+    return Promise.race([request, new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), timeout))]);
+  }
+};
+
+/***/ }),
+
+/***/ "./src/js/utils/validation.js":
+/*!************************************!*\
+  !*** ./src/js/utils/validation.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   validation: () => (/* binding */ validation)
+/* harmony export */ });
+/**
+ * Form validation utilities
+ * Czech-specific validation rules
+ */
+
+const validation = {
+  /**
+   * Validate Czech IČO (company registration number)
+   * @param {string} ico - IČO to validate
+   * @returns {Object} Validation result
+   */
+  ico(ico) {
+    const cleaned = ico.replace(/\s/g, '');
+    if (!/^\d{8}$/.test(cleaned)) {
+      return {
+        valid: false,
+        error: 'IČO musí mít 8 číslic'
+      };
+    }
+
+    // Czech IČO checksum validation
+    const digits = cleaned.split('').map(Number);
+    const weights = [8, 7, 6, 5, 4, 3, 2];
+    const sum = digits.slice(0, 7).reduce((acc, digit, index) => acc + digit * weights[index], 0);
+    const remainder = sum % 11;
+    const checksum = remainder < 2 ? remainder : 11 - remainder;
+    if (digits[7] !== checksum) {
+      return {
+        valid: false,
+        error: 'Neplatné IČO (chybný kontrolní součet)'
+      };
+    }
+    return {
+      valid: true
+    };
+  },
+  /**
+   * Validate email address
+   * @param {string} email - Email to validate
+   * @returns {Object} Validation result
+   */
+  email(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return {
+        valid: false,
+        error: 'Neplatný formát e-mailové adresy'
+      };
+    }
+    return {
+      valid: true
+    };
+  },
+  /**
+   * Validate Czech phone number
+   * @param {string} phone - Phone to validate
+   * @returns {Object} Validation result
+   */
+  phone(phone) {
+    const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+    const phoneRegex = /^(\+420)?[0-9]{9}$/;
+    if (!phoneRegex.test(cleaned)) {
+      return {
+        valid: false,
+        error: 'Neplatný formát telefonního čísla'
+      };
+    }
+    return {
+      valid: true
+    };
+  },
+  /**
+   * Validate required field
+   * @param {string} value - Value to validate
+   * @param {string} fieldName - Field name for error message
+   * @returns {Object} Validation result
+   */
+  required(value, fieldName = 'Pole') {
+    if (!value || value.trim() === '') {
+      return {
+        valid: false,
+        error: `${fieldName} je povinné`
+      };
+    }
+    return {
+      valid: true
+    };
+  },
+  /**
+   * Validate file type
+   * @param {File} file - File to validate
+   * @param {Array} allowedTypes - Allowed MIME types
+   * @returns {Object} Validation result
+   */
+  fileType(file, allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']) {
+    if (!allowedTypes.includes(file.type)) {
+      const allowedExtensions = allowedTypes.map(type => {
+        switch (type) {
+          case 'image/jpeg':
+            return 'JPG';
+          case 'image/jpg':
+            return 'JPG';
+          case 'image/png':
+            return 'PNG';
+          default:
+            return type;
+        }
+      });
+      return {
+        valid: false,
+        error: `Pouze soubory typu ${allowedExtensions.join(', ')} jsou povoleny`
+      };
+    }
+    return {
+      valid: true
+    };
+  },
+  /**
+   * Validate file size
+   * @param {File} file - File to validate
+   * @param {number} maxSize - Maximum size in bytes
+   * @returns {Object} Validation result
+   */
+  fileSize(file, maxSize = 5 * 1024 * 1024) {
+    // 5MB default
+    if (file.size > maxSize) {
+      const maxSizeMB = Math.round(maxSize / (1024 * 1024));
+      return {
+        valid: false,
+        error: `Soubor je příliš velký (maximum ${maxSizeMB}MB)`
+      };
+    }
+    return {
+      valid: true
+    };
+  },
+  /**
+   * Format file size for display
+   * @param {number} bytes - File size in bytes
+   * @returns {string} Formatted size string
+   */
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  },
+  /**
+   * Validate multiple rules for a single value
+   * @param {any} value - Value to validate
+   * @param {Array} rules - Array of validation rules
+   * @returns {Object} Validation result
+   */
+  validate(value, rules) {
+    for (const rule of rules) {
+      const result = rule(value);
+      if (!result.valid) {
+        return result;
+      }
+    }
+    return {
+      valid: true
+    };
+  }
+};
 
 /***/ })
 
 /******/ 	});
 /************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
 /******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module can't be inlined because the eval devtool is used.
-/******/ 	var __webpack_exports__ = {};
-/******/ 	__webpack_modules__["./src/js/main.js"]();
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
 /******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry needs to be wrapped in an IIFE because it needs to be isolated against other modules in the chunk.
+(() => {
+/*!************************!*\
+  !*** ./src/js/main.js ***!
+  \************************/
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _modules_ares_handler_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./modules/ares-handler.js */ "./src/js/modules/ares-handler.js");
+/* harmony import */ var _modules_file_upload_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./modules/file-upload.js */ "./src/js/modules/file-upload.js");
+/**
+ * Main JavaScript Entry Point
+ * Imports and initializes all modules for the theme
+ */
+
+
+
+
+/**
+ * Theme Application Class
+ * Manages initialization and lifecycle of all modules
+ */
+class ThemeApp {
+  constructor() {
+    this.modules = {
+      aresHandler: null,
+      fileUpload: null
+    };
+    this.isInitialized = false;
+    this.init();
+  }
+
+  /**
+   * Initialize the application
+   */
+  init() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.setup());
+    } else {
+      this.setup();
+    }
+  }
+  setup() {
+    this.initializeModules();
+    this.bindGlobalEvents();
+    this.isInitialized = true;
+    console.log('Theme application initialized successfully');
+  }
+
+  /**
+   * Initialize all modules
+   */
+  initializeModules() {
+    // Initialize ARES handler for company data lookup
+    if (document.querySelector('.registration-form')) {
+      try {
+        this.modules.aresHandler = new _modules_ares_handler_js__WEBPACK_IMPORTED_MODULE_0__.AresHandler();
+        console.log('ARES handler initialized');
+      } catch (error) {
+        console.error('Failed to initialize ARES handler:', error);
+      }
+    }
+
+    // Initialize enhanced file upload
+    if (document.querySelector('.registration-form input[name="fotky-realizace"]')) {
+      try {
+        this.modules.fileUpload = new _modules_file_upload_js__WEBPACK_IMPORTED_MODULE_1__.FileUpload();
+        console.log('File upload handler initialized');
+      } catch (error) {
+        console.error('Failed to initialize file upload handler:', error);
+      }
+    }
+  }
+
+  /**
+   * Bind global event listeners
+   */
+  bindGlobalEvents() {
+    // Handle Contact Form 7 submission success
+    if (typeof window.wpcf7 !== 'undefined') {
+      document.addEventListener('wpcf7mailsent', event => {
+        this.handleFormSuccess(event);
+      });
+      document.addEventListener('wpcf7invalid', event => {
+        this.handleFormError(event);
+      });
+      document.addEventListener('wpcf7spam', event => {
+        this.handleFormSpam(event);
+      });
+      document.addEventListener('wpcf7mailfailed', event => {
+        this.handleFormFailed(event);
+      });
+    }
+
+    // Handle dynamic content loading (if needed for AJAX)
+    document.addEventListener('DOMContentLoaded', () => {
+      this.reinitializeOnDynamicContent();
+    });
+  }
+
+  /**
+   * Handle successful form submission
+   * @param {Event} event - WPCF7 event
+   */
+  handleFormSuccess(event) {
+    console.log('Form submitted successfully');
+
+    // Reset file upload interface
+    if (this.modules.fileUpload && this.modules.fileUpload.isReady()) {
+      this.modules.fileUpload.onFormSuccess();
+    }
+
+    // You can add more success handling here
+    // e.g., analytics tracking, user notifications, etc.
+  }
+
+  /**
+   * Handle form validation errors
+   * @param {Event} event - WPCF7 event
+   */
+  handleFormError(event) {
+    console.log('Form validation failed');
+    // Add custom error handling if needed
+  }
+
+  /**
+   * Handle spam detection
+   * @param {Event} event - WPCF7 event
+   */
+  handleFormSpam(event) {
+    console.log('Form marked as spam');
+    // Add custom spam handling if needed
+  }
+
+  /**
+   * Handle mail sending failure
+   * @param {Event} event - WPCF7 event
+   */
+  handleFormFailed(event) {
+    console.log('Form mail sending failed');
+    // Add custom failure handling if needed
+  }
+
+  /**
+   * Reinitialize modules when content is dynamically loaded
+   * Useful for AJAX-loaded content
+   */
+  reinitializeOnDynamicContent() {
+    // Observer for dynamically added content
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          // Check if any added nodes contain forms that need our modules
+          const hasRegistrationForm = Array.from(mutation.addedNodes).some(node => {
+            return node.nodeType === Node.ELEMENT_NODE && (node.matches('.registration-form') || node.querySelector('.registration-form'));
+          });
+          if (hasRegistrationForm) {
+            console.log('Dynamic content detected, reinitializing modules');
+            this.reinitializeModules();
+          }
+        }
+      });
+    });
+
+    // Start observing
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  /**
+   * Reinitialize modules (useful for dynamic content)
+   */
+  reinitializeModules() {
+    // Clean up existing modules
+    this.destroyModules();
+
+    // Reinitialize
+    this.initializeModules();
+  }
+
+  /**
+   * Destroy all modules
+   */
+  destroyModules() {
+    Object.keys(this.modules).forEach(key => {
+      if (this.modules[key] && typeof this.modules[key].destroy === 'function') {
+        this.modules[key].destroy();
+      }
+      this.modules[key] = null;
+    });
+
+    // Clear singleton instances
+    _modules_file_upload_js__WEBPACK_IMPORTED_MODULE_1__.FileUpload.clearInstance();
+  }
+
+  /**
+   * Get module instance
+   * @param {string} moduleName - Name of the module
+   * @returns {Object|null} Module instance
+   */
+  getModule(moduleName) {
+    return this.modules[moduleName] || null;
+  }
+
+  /**
+   * Check if application is ready
+   * @returns {boolean}
+   */
+  isReady() {
+    return this.isInitialized;
+  }
+
+  /**
+   * Destroy the application
+   */
+  destroy() {
+    this.destroyModules();
+    this.isInitialized = false;
+    console.log('Theme application destroyed');
+  }
+}
+
+// Initialize the application
+const app = new ThemeApp();
+
+// Make app available globally for debugging and external access
+window.ThemeApp = app;
+
+// For development debugging
+if (true) {
+  window.ThemeAppDebug = {
+    app,
+    modules: app.modules
+    // Add other utilities for debugging
+  };
+}
+})();
+
 /******/ })()
 ;
+//# sourceMappingURL=main.js.map

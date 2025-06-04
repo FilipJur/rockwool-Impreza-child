@@ -1,0 +1,270 @@
+---
+description: myCred system architecture and component relationships
+globs: ["src/includes/mycred/**/*.php", "src/includes/mycred-integration.php"]
+alwaysApply: false
+---
+
+# myCred System Architecture
+
+## Component Overview
+
+The myCred integration follows a modular, object-oriented architecture with clear separation of concerns.
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────────┐
+│   WordPress     │    │   WooCommerce    │    │    myCred Plugin    │
+│   Hooks/Filters │◄───┤   Events         │◄───┤    Point System     │
+└─────────────────┘    └──────────────────┘    └─────────────────────┘
+         ▲                       ▲                        ▲
+         │                       │                        │
+         └───────────────────────┼────────────────────────┘
+                                 │
+                    ┌─────────────▼──────────────┐
+                    │     MyCred_Manager         │
+                    │   (Singleton Pattern)      │
+                    └─────────────┬──────────────┘
+                                  │
+            ┌─────────────────────┼─────────────────────┐
+            │                     │                     │
+            ▼                     ▼                     ▼
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│ MyCred_Cart_     │  │ MyCred_Purchase  │  │ MyCred_UI_       │
+│ Calculator       │  │ ability          │  │ Modifier         │
+├──────────────────┤  ├──────────────────┤  ├──────────────────┤
+│ • Point costs    │  │ • Affordability  │  │ • Button states  │
+│ • Cart totals    │  │ • Filter hooks   │  │ • UI messages    │
+│ • User balance   │  │ • Product checks │  │ • Styling        │
+│ • Calculations   │  │ • Cart awareness │  │ • User feedback  │
+└──────────────────┘  └──────────────────┘  └──────────────────┘
+```
+
+## Design Patterns
+
+### Singleton Pattern (Manager Only)
+- **Purpose**: Single point of coordination
+- **Scope**: Only `MyCred_Manager` class
+- **Benefits**: Consistent state, easy access
+- **Implementation**: Private constructor, static instance
+
+### Dependency Injection
+- **Purpose**: Loose coupling between components
+- **Implementation**: Constructor injection
+- **Benefits**: Testability, maintainability
+- **Example**: Calculator injected into Purchasability
+
+### Strategy Pattern (Implicit)
+- **Purpose**: Different affordability strategies
+- **Implementation**: Method-based strategies in Calculator
+- **Benefits**: Flexibility for future enhancements
+
+## Data Flow
+
+### Product Affordability Check
+```
+User views product
+        │
+        ▼
+WooCommerce calls is_purchasable filter
+        │
+        ▼
+MyCred_Purchasability::check_product_affordability()
+        │
+        ▼
+MyCred_Cart_Calculator::can_user_afford_product()
+        │
+        ├── get_user_balance()
+        ├── get_cart_points_total()
+        └── get_product_point_cost()
+        │
+        ▼
+Return true/false to WooCommerce
+        │
+        ▼
+MyCred_UI_Modifier updates button if needed
+```
+
+### Cart Calculation Flow
+```
+User adds/modifies cart
+        │
+        ▼
+MyCred_Cart_Calculator::get_cart_points_total()
+        │
+        ▼
+Loop through cart items
+        │
+        ├── get_product_point_cost() for each item
+        ├── Multiply by quantity
+        └── Sum total points
+        │
+        ▼
+Return total cart value in points
+```
+
+## Component Responsibilities
+
+### MyCred_Manager
+- **Primary Role**: System orchestrator
+- **Responsibilities**:
+  - Initialize all components
+  - Provide component access
+  - Manage point type configuration
+  - Coordinate between components
+- **Pattern**: Singleton
+- **Dependencies**: None (creates others)
+
+### MyCred_Cart_Calculator
+- **Primary Role**: All calculations
+- **Responsibilities**:
+  - Product point cost retrieval
+  - Cart total calculations
+  - User balance queries
+  - Affordability determinations
+- **Pattern**: Standard class
+- **Dependencies**: Manager (for point type)
+
+### MyCred_Purchasability
+- **Primary Role**: WordPress integration
+- **Responsibilities**:
+  - Hook into WooCommerce filters
+  - Determine product availability
+  - Apply business logic
+  - Coordinate with calculator
+- **Pattern**: Standard class
+- **Dependencies**: Calculator (injected)
+
+### MyCred_UI_Modifier
+- **Primary Role**: User interface
+- **Responsibilities**:
+  - Modify "Add to Cart" buttons
+  - Apply disabled styling
+  - Provide user feedback
+  - Handle different product types
+- **Pattern**: Standard class
+- **Dependencies**: None (accesses Manager)
+
+## Integration Points
+
+### WordPress Hooks
+```php
+// Primary integration points
+add_filter('woocommerce_is_purchasable', [$this, 'check_affordability'], 10, 2);
+add_filter('woocommerce_variation_is_purchasable', [$this, 'check_affordability'], 10, 2);
+add_filter('woocommerce_loop_add_to_cart_link', [$this, 'modify_button'], 20, 3);
+```
+
+### myCred API Integration
+```php
+// Point type detection
+mycred_get_woo_point_type()
+get_option('woocommerce_mycred_settings')
+
+// Balance retrieval
+mycred($point_type)->get_users_balance($user_id)
+```
+
+### WooCommerce Integration
+```php
+// Product data
+$product->get_price()
+$product->is_type()
+$product->is_purchasable()
+
+// Cart data
+WC()->cart->get_cart()
+WC()->cart->is_empty()
+```
+
+## State Management
+
+### Session State
+- **Cart calculations**: Recalculated on each request
+- **User balance**: Fetched from myCred in real-time
+- **Product costs**: Retrieved from WooCommerce product data
+
+### Caching Strategy
+- **No persistent caching**: Points and cart change frequently
+- **Request-level caching**: Avoid duplicate calculations within single request
+- **Future consideration**: Transient caching for expensive operations
+
+## Error Handling Strategy
+
+### Graceful Degradation
+```php
+// If myCred unavailable, allow normal WooCommerce behavior
+if (!function_exists('mycred')) {
+    return $is_purchasable; // Don't interfere
+}
+
+// If calculations fail, default to allowing purchase
+if (is_null($product_cost)) {
+    return $is_purchasable; // Don't block
+}
+```
+
+### Validation Layers
+1. **Plugin availability**: Check myCred/WooCommerce active
+2. **User authentication**: Verify logged-in user
+3. **Data validity**: Validate product objects and IDs
+4. **Calculation accuracy**: Ensure numeric types
+
+## Extensibility Points
+
+### New Calculation Types
+- Add methods to `MyCred_Cart_Calculator`
+- Maintain existing public API
+- Follow type consistency patterns
+
+### Additional UI Modifications
+- Extend `MyCred_UI_Modifier` with new methods
+- Follow WordPress filter patterns
+- Maintain styling consistency
+
+### Different Point Types
+- Extend Manager's point type detection
+- Add configuration methods
+- Support multiple point types (future)
+
+### Custom Business Rules
+- Extend `MyCred_Purchasability` with new filters
+- Add configuration options
+- Maintain backward compatibility
+
+## Security Architecture
+
+### Input Validation
+- All user inputs validated at entry points
+- WordPress sanitization functions used
+- Type checking before processing
+
+### Permission Checks
+- User authentication verified
+- WordPress capability system respected
+- No elevation of privileges
+
+### Data Protection
+- No sensitive data in logs
+- Point balances handled securely
+- Follow WordPress security patterns
+
+## Performance Considerations
+
+### Database Queries
+- Minimize myCred balance lookups
+- Use WooCommerce's built-in cart caching
+- Avoid queries in loops
+
+### Hook Efficiency
+- Use appropriate hook priorities
+- Early returns for invalid states
+- Minimal processing in filters
+
+### Memory Usage
+- Single Manager instance (singleton)
+- Efficient object creation
+- Clean dependency chains
+
+See also:
+- `.cursor/rules/mycred-php.mdc` - PHP coding standards
+- `.cursor/rules/testing.mdc` - Testing guidelines
+- `CLAUDE.md` - Project overview
