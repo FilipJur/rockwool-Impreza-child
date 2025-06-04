@@ -1,0 +1,63 @@
+---
+description: DOM utility patterns to replace jQuery
+globs: ["src/js/**/*.js"]
+alwaysApply: false
+---
+
+# DOM Utilities - jQuery Replacement
+
+Always use `dom` utility instead of jQuery:
+
+## Element Selection
+```javascript
+// Instead of: $('.selector')
+dom.find('.selector')
+
+// Instead of: $('#id')  
+dom.findOne('#id')
+
+// Instead of: $('.selector').length > 0
+dom.exists('.selector')
+```
+
+## Content Manipulation
+```javascript
+// Instead of: $('#id').text('content')
+dom.text('#id', 'content')
+
+// Instead of: $('#id').html('<span>content</span>')
+dom.html('#id', '<span>content</span>')
+
+// Instead of: $('#id').val('value')
+dom.val('#id', 'value')
+```
+
+## Event Handling
+```javascript
+// Instead of: $('.btn').on('click', handler)
+dom.on('.btn', 'click', handler)
+
+// Event delegation:
+dom.on('.container', 'click', handler, '.btn')
+```
+
+## CSS Classes
+```javascript
+// Instead of: $('.el').addClass('class')
+dom.class('.el', 'class', 'add')
+
+// Instead of: $('.el').removeClass('class')
+dom.class('.el', 'class', 'remove')
+
+// Instead of: $('.el').toggleClass('class')
+dom.class('.el', 'class', 'toggle')
+```
+
+## Styles
+```javascript
+// Instead of: $('.el').css('color', 'red')
+dom.css('.el', 'color', 'red')
+
+// Multiple styles:
+dom.css('.el', { color: 'red', fontSize: '16px' })
+```

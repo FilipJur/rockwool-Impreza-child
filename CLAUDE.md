@@ -7,6 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build:css` - Compile SCSS to CSS with source maps
 - `npm run watch:css` - Watch SCSS files for changes and auto-compile
 - `npm run build:css:prod` - Production build (compressed CSS, no source maps)
+- `npm run build:js` - Build JavaScript for production
+- `npm run build:js:dev` - Build JavaScript for development
+- `npm run watch:js` - Watch JavaScript files for changes and auto-compile
+- `npm run build` - Build both CSS and JS for production
+- `npm run dev` - Build both CSS and JS for development
+- `npm run watch` - Watch both CSS and JS files
 
 ## Architecture Overview
 
@@ -19,6 +25,14 @@ Uses modern SCSS with `@use` modules. Main entry point is `src/scss/main.scss`. 
 - `src/scss/components/` - UI component styles  
 - `src/scss/layout/` - Grid and layout systems
 - `src/scss/utilities/` - Helper classes
+
+### JavaScript Architecture
+Uses modern ES6 modules with `@wordpress/scripts` build system. Main entry point is `src/js/main.js`. Never edit `build/js/*` directly - it's auto-generated.
+
+- `src/js/utils/` - Shared utility modules (DOM, API, validation)
+- `src/js/modules/` - Feature-specific modules (ARES, file upload)
+- `build/js/` - Built/bundled JavaScript ready for WordPress
+- Entry point initializes all modules and handles global events
 
 ### Key Integrations
 

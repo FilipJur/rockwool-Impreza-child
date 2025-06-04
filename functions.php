@@ -33,27 +33,23 @@ function impreza_child_enqueue_custom_assets()
 		'1.0.0'
 	);
 
+	// Enqueue built JavaScript bundle
+	$js_asset_file = get_stylesheet_directory() . '/build/js/main.asset.php';
+	$js_asset = file_exists($js_asset_file) ? include $js_asset_file : array('dependencies' => array(), 'version' => '1.0.0');
+	
 	wp_enqueue_script(
-		'file-upload-enhanced',
-		get_stylesheet_directory_uri() . '/src/js/file-upload-enhanced.js',
-		array(),
-		'1.0.0',
+		'theme-main-js',
+		get_stylesheet_directory_uri() . '/build/js/main.js',
+		$js_asset['dependencies'],
+		$js_asset['version'],
 		true
 	);
-	wp_enqueue_script(
-		'ares-handler',
-		get_stylesheet_directory_uri() . '/src/js/ares-handler.js',
-		array(),
-		'1.0.0',
-		true
-	);
-	wp_enqueue_script(
-		'functions.js',
-		get_stylesheet_directory_uri() . '/src/js/functions.js',
-		array(),
-		'1.0.0',
-		true
-	);
+
+	// Add any WordPress AJAX data if needed
+	wp_localize_script('theme-main-js', 'wpAjax', array(
+		'ajaxurl' => admin_url('admin-ajax.php'),
+		'nonce' => wp_create_nonce('wp_ajax_nonce'),
+	));
 }
 
 

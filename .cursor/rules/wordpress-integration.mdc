@@ -1,0 +1,58 @@
+---
+description: WordPress-specific integration patterns
+globs: ["functions.php", "src/js/**/*.js"]
+alwaysApply: false
+---
+
+# WordPress Integration Patterns
+
+## Asset Enqueuing
+Always use WordPress-generated asset files:
+
+```php
+$js_asset_file = get_stylesheet_directory() . '/build/js/main.asset.php';
+$js_asset = file_exists($js_asset_file) ? include $js_asset_file : 
+  array('dependencies' => array(), 'version' => '1.0.0');
+
+wp_enqueue_script(
+  'theme-main-js',
+  get_stylesheet_directory_uri() . '/build/js/main.js',
+  $js_asset['dependencies'], // Auto-managed dependencies
+  $js_asset['version'],      // Auto-generated hash
+  true
+);
+```
+
+## AJAX Data Localization
+Provide AJAX endpoints and nonces:
+
+```php
+wp_localize_script('theme-main-js', 'wpAjax', array(
+  'ajaxurl' => admin_url('admin-ajax.php'),
+  'nonce' => wp_create_nonce('wp_ajax_nonce'),
+));
+```
+
+## Contact Form 7 Integration
+Listen for WPCF7 events in JavaScript:
+
+```javascript
+document.addEventListener('wpcf7mailsent', (event) => {
+  // Handle successful form submission
+  if (this.modules.fileUpload) {
+    this.modules.fileUpload.onFormSuccess();
+  }
+});
+```
+
+## Plugin Compatibility
+- **WooCommerce**: Test with cart/checkout functionality
+- **myCred**: Integrate with points system
+- **Contact Form 7**: Handle form events and file uploads
+- **Impreza**: Ensure parent theme compatibility
+
+## Security Best Practices
+- Always verify nonces in AJAX handlers
+- Sanitize all input data
+- Use `wp_send_json_success()` and `wp_send_json_error()`
+- Check user permissions before processing

@@ -1,0 +1,57 @@
+---
+description: Czech localization and validation patterns
+globs: ["src/js/**/*.js", "functions.php"]
+alwaysApply: false
+---
+
+# Czech Localization Rules
+
+## User-Facing Text
+All error messages and user text must be in Czech:
+
+```javascript
+// Good
+'IČO musí mít 8 číslic'
+'Údaje načteny'
+'Chyba při komunikaci s ARES API'
+
+// Bad  
+'ICO must have 8 digits'
+'Data loaded'
+'Error communicating with ARES API'
+```
+
+## Czech-Specific Validation
+
+### IČO Validation
+```javascript
+const icoResult = validation.ico('12345678');
+if (!icoResult.valid) {
+  showError(icoResult.error); // Czech error message
+}
+```
+
+### Phone Numbers
+```javascript
+const phoneResult = validation.phone('+420123456789');
+// Accepts: +420123456789, 123456789, 123 456 789
+```
+
+### Common Error Messages
+- `'Neplatný formát e-mailové adresy'`
+- `'Neplatný formát telefonního čísla'`  
+- `'Pole je povinné'`
+- `'Soubor je příliš velký'`
+- `'Pouze obrázky (JPG, PNG) jsou povoleny'`
+
+## ARES Integration
+- Always use Czech company registry API
+- Handle ARES-specific error codes (404, 400, 500, 503)
+- Display Czech address format from `sidlo.textovaAdresa`
+
+## WordPress Integration
+Use Czech text in WordPress hooks and filters:
+
+```php
+$message = esc_html__('Not enough points (inc. cart)', 'woocommerce');
+```

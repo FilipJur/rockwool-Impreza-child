@@ -1,0 +1,77 @@
+---
+description: JavaScript module architecture and patterns
+globs: ["src/js/**/*.js"]
+alwaysApply: false
+---
+
+# JavaScript Module Architecture
+
+## Module Creation Pattern
+
+When creating new JS modules, always follow this structure:
+
+```javascript
+import { dom } from '../utils/dom.js';
+import { api } from '../utils/api.js';
+import { validation } from '../utils/validation.js';
+
+export class ModuleName {
+  constructor() {
+    this.isInitialized = false;
+    this.init();
+  }
+
+  init() {
+    dom.ready(() => {
+      if (this.setupElements()) {
+        this.bindEvents();
+        this.isInitialized = true;
+        console.log('ModuleName initialized');
+      }
+    });
+  }
+
+  setupElements() {
+    if (!dom.exists('.required-selector')) {
+      console.warn('Required elements not found');
+      return false;
+    }
+    return true;
+  }
+
+  bindEvents() {
+    // Event listeners here
+  }
+
+  isReady() {
+    return this.isInitialized;
+  }
+
+  destroy() {
+    this.isInitialized = false;
+    console.log('ModuleName destroyed');
+  }
+}
+```
+
+## Registration in main.js
+
+Add to initializeModules():
+
+```javascript
+if (dom.exists('.required-selector')) {
+  try {
+    this.modules.moduleName = new ModuleName();
+    console.log('ModuleName initialized');
+  } catch (error) {
+    console.error('Failed to initialize ModuleName:', error);
+  }
+}
+```
+
+## Utility Usage
+
+- Use `dom.*` instead of jQuery for DOM operations
+- Use `api.*` for AJAX requests  
+- Use `validation.*` for form validation
+- All user-facing text in Czech
