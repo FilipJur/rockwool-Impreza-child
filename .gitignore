@@ -76,3 +76,5 @@ coverage/
 
 # WordPress uploads (if in theme)
 uploads/
+repomix-output.txt
+.repomix/bundles.json
