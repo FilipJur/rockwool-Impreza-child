@@ -25,12 +25,15 @@ wp-config-local.php
 .vscode/
 .idea/
 .cursor/
-.claude/settings.local.json
+.claude/
 *.swp
 *.swo
 *~
 .DS_Store
 Thumbs.db
+
+# Documentation files
+CLAUDE.md
 
 # Cache and temporary files
 .cache/
