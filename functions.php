@@ -6,7 +6,7 @@
  *
  * @package impreza-child
  */
-
+include("./includes/leadhub.php");
 
 /**
  * Enqueue scripts and styles.
@@ -42,7 +42,7 @@ function impreza_child_enqueue_custom_assets()
 
 /**
  * myCred WooCommerce Integration
- *
+ * 
  * Load the organized myCred functionality from separate files.
  */
 require_once get_stylesheet_directory() . '/src/includes/mycred-integration.php';

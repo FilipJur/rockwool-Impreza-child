@@ -54,14 +54,29 @@ class ThemeApp {
       }
     }
 
-    // Initialize enhanced file upload
-    if (document.querySelector('.registration-form input[name="fotky-realizace"]')) {
+    // Initialize enhanced file upload for plugin (try multiple selectors)
+    if (document.querySelector('#realizace-upload, input[data-name="mfile-747"], .wpcf7-drag-n-drop-file, .codedropz-upload-wrapper')) {
       try {
         this.modules.fileUpload = new FileUpload();
-        console.log('File upload handler initialized');
+        console.log('File upload handler initialized for plugin');
       } catch (error) {
         console.error('Failed to initialize file upload handler:', error);
       }
+    } else {
+      console.log('No file upload plugin elements found on page - will retry in 2 seconds');
+      // Try again after a delay in case plugin loads dynamically
+      setTimeout(() => {
+        if (document.querySelector('#realizace-upload, input[data-name="mfile-747"], .wpcf7-drag-n-drop-file, .codedropz-upload-wrapper')) {
+          try {
+            this.modules.fileUpload = new FileUpload();
+            console.log('File upload handler initialized for plugin (delayed)');
+          } catch (error) {
+            console.error('Failed to initialize file upload handler (delayed):', error);
+          }
+        } else {
+          console.log('No file upload plugin found after delay - plugin may not be active or form may not be on this page');
+        }
+      }, 2000);
     }
 
   }

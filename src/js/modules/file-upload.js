@@ -4,8 +4,11 @@
  */
 
 import { validation } from "../utils/validation.js";
+console.log("FileUpload.js loaded");
 
 export class FileUpload {
+
+
 	constructor() {
 		// Singleton pattern
 		if (FileUpload.instance) {
@@ -46,28 +49,56 @@ export class FileUpload {
 	 * Set up the enhanced file upload interface
 	 */
 	setup() {
-		this.fileInput = document.querySelector(
-			'.registration-form input[name="fotky-realizace"]',
-		);
+		// Target the plugin input with specific ID, or fallback to plugin selectors
+		this.fileInput = document.querySelector('#realizace-upload');
+		console.log("[FileUpload] Looking for plugin input with ID 'realizace-upload':", this.fileInput);
+
+		// Fallback to plugin selectors if ID not found
+		if (!this.fileInput) {
+			this.fileInput = document.querySelector('input[data-name="mfile-747"]');
+			console.log("[FileUpload] Fallback to data-name selector:", this.fileInput);
+		}
+
+		// Another fallback to any plugin input
+		if (!this.fileInput) {
+			this.fileInput = document.querySelector('.wpcf7-drag-n-drop-file');
+			console.log("[FileUpload] Fallback to class selector:", this.fileInput);
+		}
 
 		if (!this.fileInput) {
-			console.warn("File input not found");
+			console.warn("[FileUpload] No plugin input found - debugging available elements:");
+			console.log("[FileUpload] All file inputs:", document.querySelectorAll('input[type="file"]'));
+			console.log("[FileUpload] All mfile inputs:", document.querySelectorAll('input[data-name*="mfile"]'));
+			console.log("[FileUpload] All plugin inputs:", document.querySelectorAll('.wpcf7-drag-n-drop-file'));
+			console.log("[FileUpload] All codedropz wrappers:", document.querySelectorAll('.codedropz-upload-wrapper'));
+			console.log("[FileUpload] All wpcf7 wraps:", document.querySelectorAll('.wpcf7-form-control-wrap'));
+			console.log("[FileUpload] Page HTML contains 'mfile':", document.documentElement.innerHTML.includes('mfile'));
+			console.log("[FileUpload] Page HTML contains 'codedropz':", document.documentElement.innerHTML.includes('codedropz'));
 			return;
 		}
 
-		this.originalContainer = this.fileInput.closest(
-			".wpcf7-form-control-wrap",
-		);
+		console.log("[FileUpload] Found plugin input:", this.fileInput.outerHTML);
+
+		// Get the plugin wrapper (this should always exist for our plugin)
+		this.originalContainer = this.fileInput.closest(".codedropz-upload-wrapper");
+		this.pluginWrapper = this.originalContainer;
+		this.isPluginUpload = true; // We only support plugin now
+
+		console.log("[FileUpload] Plugin wrapper found:", this.originalContainer);
 
 		if (!this.originalContainer) {
-			console.warn("File input container not found");
+			console.warn("[FileUpload] Plugin wrapper .codedropz-upload-wrapper not found");
 			return;
 		}
 
 		this.cleanup();
 		this.createCustomInterface();
 		this.bindEvents();
-		this.syncWithOriginalInput();
+		if (this.isPluginUpload) {
+			this.syncWithPluginInput();
+		} else {
+			this.syncWithOriginalInput();
+		}
 		this.isInitialized = true;
 
 		console.log("Enhanced File Upload initialized successfully");
@@ -110,6 +141,14 @@ export class FileUpload {
 		parent.insertBefore(this.previewContainer, this.originalContainer);
 		parent.insertBefore(this.errorContainer, this.originalContainer);
 
+		// Hide plugin's default upload handler
+		if (this.isPluginUpload) {
+			const uploadHandler = this.originalContainer.querySelector('.codedropz-upload-handler');
+			if (uploadHandler) {
+				uploadHandler.style.display = 'none';
+			}
+		}
+
 		this.hideOriginalElements();
 	}
 
@@ -127,12 +166,27 @@ export class FileUpload {
 	 * Hide original form elements
 	 */
 	hideOriginalElements() {
-		const br = this.originalContainer.nextElementSibling;
-		if (br && br.tagName === "BR") {
-			br.style.display = "none";
-			const small = br.nextElementSibling;
-			if (small && small.tagName === "SMALL") {
-				small.style.display = "none";
+		if (this.isPluginUpload) {
+			// Hide plugin's upload handler and existing previews
+			const uploadHandler = this.originalContainer.querySelector('.codedropz-upload-handler');
+			if (uploadHandler) {
+				uploadHandler.style.display = 'none';
+			}
+
+			// Hide any existing plugin preview items
+			const existingPreviews = this.originalContainer.querySelectorAll('.dnd-upload-status');
+			existingPreviews.forEach(preview => {
+				preview.style.display = 'none';
+			});
+		} else {
+			// Original WPCF7 behavior
+			const br = this.originalContainer.nextElementSibling;
+			if (br && br.tagName === "BR") {
+				br.style.display = "none";
+				const small = br.nextElementSibling;
+				if (small && small.tagName === "SMALL") {
+					small.style.display = "none";
+				}
 			}
 		}
 	}
@@ -143,12 +197,27 @@ export class FileUpload {
 	showOriginalElements() {
 		if (!this.originalContainer) return;
 
-		const br = this.originalContainer.nextElementSibling;
-		if (br && br.tagName === "BR") {
-			br.style.display = "";
-			const small = br.nextElementSibling;
-			if (small && small.tagName === "SMALL") {
-				small.style.display = "";
+		if (this.isPluginUpload) {
+			// Show plugin's upload handler
+			const uploadHandler = this.originalContainer.querySelector('.codedropz-upload-handler');
+			if (uploadHandler) {
+				uploadHandler.style.display = '';
+			}
+
+			// Show plugin preview items
+			const existingPreviews = this.originalContainer.querySelectorAll('.dnd-upload-status');
+			existingPreviews.forEach(preview => {
+				preview.style.display = '';
+			});
+		} else {
+			// Original WPCF7 behavior
+			const br = this.originalContainer.nextElementSibling;
+			if (br && br.tagName === "BR") {
+				br.style.display = "";
+				const small = br.nextElementSibling;
+				if (small && small.tagName === "SMALL") {
+					small.style.display = "";
+				}
 			}
 		}
 	}
@@ -233,9 +302,17 @@ export class FileUpload {
 					dt.items.add(file);
 				});
 				this.fileInput.files = dt.files;
-				this.fileInput.dispatchEvent(
-					new Event("change", { bubbles: true }),
-				);
+
+				if (this.isPluginUpload) {
+					// Trigger plugin's change event
+					this.fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+					// Also trigger input event which some plugins listen to
+					this.fileInput.dispatchEvent(new Event("input", { bubbles: true }));
+				} else {
+					this.fileInput.dispatchEvent(
+						new Event("change", { bubbles: true }),
+					);
+				}
 			} else {
 				this.showError(
 					"Drag and drop není podporován v tomto prohlížeči. Použijte tlačítko pro výběr souborů.",
@@ -258,7 +335,7 @@ export class FileUpload {
 		console.log(`[FileUpload] Current selectedFiles before handling: ${this.selectedFiles.length}`);
 		console.log(`[FileUpload] Current selectedFiles names:`, this.selectedFiles.map(f => f.name));
 		console.log(`[FileUpload] FileInput files count:`, this.fileInput.files ? this.fileInput.files.length : 0);
-		
+
 		this.clearErrors();
 
 		// Don't clear if files is empty but we have existing files (user cancelled dialog)
@@ -305,6 +382,11 @@ export class FileUpload {
 			this.addFiles(validFiles);
 			// Update the file input to include all files (existing + new)
 			this.updateFileInput();
+
+			// For plugin uploads, create hidden inputs for form submission
+			if (this.isPluginUpload) {
+				this.createPluginHiddenInputs();
+			}
 		}
 
 		console.log(`[FileUpload] Final selectedFiles count: ${this.selectedFiles.length}`);
@@ -363,10 +445,18 @@ export class FileUpload {
 	 */
 	createFilePreview(fileData) {
 		console.log(`[FileUpload] Creating preview for file:`, { id: fileData.id, name: fileData.name });
-		
+
 		const previewItem = document.createElement("div");
 		previewItem.className = "file-preview-item";
 		previewItem.dataset.fileId = fileData.id;
+		
+		// Add staggered animation delay for multiple files
+		const existingPreviews = this.previewContainer.querySelectorAll('.file-preview-item');
+		const animationDelay = existingPreviews.length * 0.1;
+		previewItem.style.animationDelay = `${animationDelay}s`;
+		
+		// Set view transition name for smooth transitions
+		previewItem.style.viewTransitionName = `file-preview-${fileData.id}`;
 
 		// Thumbnail
 		const thumbnail = document.createElement("div");
@@ -404,26 +494,33 @@ export class FileUpload {
 		info.appendChild(size);
 		info.appendChild(status);
 
-		// Remove button
-		const removeButton = document.createElement("button");
-		removeButton.type = "button";
-		removeButton.className = "file-preview-remove";
-		removeButton.innerHTML = "×";
-		removeButton.setAttribute("aria-label", "Odstranit soubor");
-		removeButton.addEventListener("click", (e) => {
+		// Make entire preview clickable for removal
+		previewItem.addEventListener("click", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			this.removeFile(fileData.id);
 		});
+		
+		// Add visual feedback for clickable area
+		previewItem.setAttribute("title", "Klikněte pro odstranění souboru");
+		previewItem.setAttribute("role", "button");
+		previewItem.setAttribute("tabindex", "0");
+		
+		// Add keyboard support
+		previewItem.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				this.removeFile(fileData.id);
+			}
+		});
 
 		previewItem.appendChild(thumbnail);
 		previewItem.appendChild(info);
-		previewItem.appendChild(removeButton);
 
 		const previewList =
 			this.previewContainer.querySelector(".file-preview-list");
 		previewList.appendChild(previewItem);
-		
+
 		console.log(`[FileUpload] Preview created and added to DOM for file ID: ${fileData.id}`);
 		console.log(`[FileUpload] Total preview items in DOM: ${previewList.children.length}`);
 	}
@@ -451,13 +548,84 @@ export class FileUpload {
 	}
 
 	/**
-	 * Update preview container visibility
+	 * Sync with plugin input changes
+	 */
+	syncWithPluginInput() {
+		// Watch for plugin-generated hidden inputs being added/removed
+		const observer = new MutationObserver((mutations) => {
+			mutations.forEach((mutation) => {
+				if (mutation.type === 'childList') {
+					// Check if plugin cleared files (form reset or validation)
+					const hiddenInputs = this.originalContainer.querySelectorAll('input[type="hidden"]');
+					if (hiddenInputs.length === 0 && this.selectedFiles.length > 0) {
+						this.selectedFiles = [];
+						const previewList = this.previewContainer.querySelector(".file-preview-list");
+						if (previewList) {
+							previewList.innerHTML = "";
+						}
+						this.updatePreviewVisibility();
+					}
+				}
+			});
+		});
+
+		observer.observe(this.originalContainer, {
+			childList: true,
+			subtree: true
+		});
+	}
+
+	/**
+	 * Update plugin's file counter
+	 */
+	updatePluginCounter() {
+		// Update plugin counter if it exists
+		if (this.isPluginUpload) {
+			const pluginCounter = this.originalContainer.querySelector('.dnd-upload-counter span');
+			if (pluginCounter) {
+				pluginCounter.textContent = this.selectedFiles.length;
+			}
+		}
+	}
+
+	/**
+	 * Create hidden inputs for plugin form submission
+	 */
+	createPluginHiddenInputs() {
+		if (!this.isPluginUpload) return;
+
+		// Remove existing hidden inputs from our files
+		const existingInputs = this.originalContainer.querySelectorAll('input[type="hidden"][name*="mfile-747"]');
+		existingInputs.forEach(input => {
+			// Only remove if it was created by our handler (has our data attribute)
+			if (input.hasAttribute('data-custom-upload')) {
+				input.remove();
+			}
+		});
+
+		// Create new hidden inputs for each selected file
+		this.selectedFiles.forEach((fileData) => {
+			const hiddenInput = document.createElement('input');
+			hiddenInput.type = 'hidden';
+			hiddenInput.name = 'mfile-747[]';
+			hiddenInput.value = `${fileData.id}/${fileData.name}`;
+			hiddenInput.setAttribute('data-custom-upload', 'true');
+
+			// Add to the plugin wrapper
+			this.originalContainer.appendChild(hiddenInput);
+		});
+
+		console.log(`[FileUpload] Created ${this.selectedFiles.length} hidden inputs for plugin`);
+	}
+
+	/**
+	 * Update preview container visibility with animations
 	 */
 	updatePreviewVisibility() {
 		if (this.selectedFiles.length > 0) {
-			this.previewContainer.classList.add("has-files");
+			this.animateContainerAppearance();
 		} else {
-			this.previewContainer.classList.remove("has-files");
+			this.animateContainerDisappearance();
 		}
 	}
 
@@ -539,7 +707,7 @@ export class FileUpload {
 	}
 
 	/**
-	 * Remove a specific file from selection
+	 * Remove a specific file from selection with smooth animation
 	 * @param {string} fileId - ID of file to remove
 	 */
 	removeFile(fileId) {
@@ -560,11 +728,11 @@ export class FileUpload {
 		this.selectedFiles = this.selectedFiles.filter(fileData => fileData.id !== fileId);
 		console.log(`[FileUpload] Filtered selectedFiles: ${originalLength} -> ${this.selectedFiles.length}`);
 
-		// Remove preview element
+		// Remove preview element with animation
 		const previewItem = this.previewContainer.querySelector(`[data-file-id="${fileId}"]`);
 		if (previewItem) {
 			console.log(`[FileUpload] Removing preview element for file ID: ${fileId}`);
-			previewItem.remove();
+			this.animateFileRemoval(previewItem);
 		} else {
 			console.warn(`[FileUpload] Preview element not found for file ID: ${fileId}`);
 		}
@@ -575,6 +743,12 @@ export class FileUpload {
 
 		// Update file input with remaining files
 		this.updateFileInput();
+
+		// For plugin uploads, update hidden inputs
+		if (this.isPluginUpload) {
+			this.createPluginHiddenInputs();
+		}
+
 		this.updatePreviewVisibility();
 
 		console.log(`[FileUpload] File removal completed for ID: ${fileId}`);
@@ -585,7 +759,7 @@ export class FileUpload {
 	 */
 	updateFileInput() {
 		console.log(`[FileUpload] Updating file input with ${this.selectedFiles.length} files`);
-		
+
 		try {
 			if (typeof DataTransfer !== "undefined") {
 				const dt = new DataTransfer();
@@ -593,26 +767,84 @@ export class FileUpload {
 					console.log(`[FileUpload] Adding file ${index + 1}:`, fileData.name);
 					dt.items.add(fileData.file);
 				});
-				
+
 				const previousFileCount = this.fileInput.files ? this.fileInput.files.length : 0;
-				
+
 				// Temporarily remove event listener to prevent recursive calls
 				this.fileInput.removeEventListener("change", this.boundHandleFileSelection);
-				
+
 				this.fileInput.files = dt.files;
 				console.log(`[FileUpload] File input updated: ${previousFileCount} -> ${this.fileInput.files.length} files`);
-				
+
+				if (this.isPluginUpload) {
+					// For plugin, also trigger input event and update counter
+					this.updatePluginCounter();
+					this.fileInput.dispatchEvent(new Event("input", { bubbles: true }));
+				}
+
 				// Re-add event listener after a brief delay
 				setTimeout(() => {
 					this.fileInput.addEventListener("change", this.boundHandleFileSelection);
 				}, 0);
-				
+
 				console.log(`[FileUpload] File input updated without triggering change event`);
 			} else {
 				console.warn("[FileUpload] DataTransfer not supported");
 			}
 		} catch (error) {
 			console.error("[FileUpload] Could not update file input:", error);
+		}
+	}
+
+	/**
+	 * Animate file removal with View Transitions API or CSS fallback
+	 * @param {HTMLElement} previewItem - Preview item to remove
+	 */
+	animateFileRemoval(previewItem) {
+		// Check for View Transitions API support
+		if (document.startViewTransition && 'viewTransitionName' in previewItem.style) {
+			// Use View Transitions API for smooth removal
+			document.startViewTransition(() => {
+				previewItem.remove();
+			});
+		} else {
+			// Fallback to improved CSS animation
+			previewItem.classList.add('removing');
+			
+			// Wait for improved animation to complete before removing
+			setTimeout(() => {
+				if (previewItem.parentNode) {
+					previewItem.remove();
+				}
+			}, 600); // Match the slideOutFileImproved animation duration
+		}
+	}
+
+	/**
+	 * Animate container appearance
+	 */
+	animateContainerAppearance() {
+		// Use View Transitions for smooth container transitions
+		if (document.startViewTransition && this.previewContainer) {
+			document.startViewTransition(() => {
+				this.previewContainer.classList.add('has-files');
+			});
+		} else {
+			// Fallback to CSS transition
+			this.previewContainer.classList.add('has-files');
+		}
+	}
+
+	/**
+	 * Animate container disappearance
+	 */
+	animateContainerDisappearance() {
+		if (document.startViewTransition && this.previewContainer) {
+			document.startViewTransition(() => {
+				this.previewContainer.classList.remove('has-files');
+			});
+		} else {
+			this.previewContainer.classList.remove('has-files');
 		}
 	}
 
