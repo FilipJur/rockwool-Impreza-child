@@ -1,3 +1,75 @@
-node_modules
+# Dependencies
+node_modules/
+vendor/
+
+# Build artifacts
+build/
+dist/
+*.css.map
+style.css
+
+# WordPress specific
 debug.log
-build
+error_log
+wp-config-local.php
+.htaccess
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# IDE and editor files
+.vscode/
+.idea/
+.cursor/
+.claude/settings.local.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Cache and temporary files
+.cache/
+.tmp/
+*.tmp
+*.log
+
+# Package manager files
+package-lock.json
+yarn.lock
+composer.lock
+
+# Backup files
+*.bak
+*.backup
+*-backup/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Hidden directories (dot directories)
+.git/
+.svn/
+.hg/
+.bzr/
+
+# Testing
+coverage/
+.nyc_output/
+.phpunit.result.cache
+
+# Sass cache
+.sass-cache/
+
+# WordPress uploads (if in theme)
+uploads/

@@ -9,9 +9,11 @@ export class FileUpload {
 	constructor() {
 		// Singleton pattern
 		if (FileUpload.instance) {
+			console.log(`[FileUpload] Returning existing singleton instance with ${FileUpload.instance.selectedFiles.length} files`);
 			return FileUpload.instance;
 		}
 
+		console.log(`[FileUpload] Creating new FileUpload instance`);
 		this.fileInput = null;
 		this.originalContainer = null;
 		this.customContainer = null;
@@ -160,10 +162,11 @@ export class FileUpload {
 			this.fileInput.click();
 		});
 
-		// File input change
-		this.fileInput.addEventListener("change", (e) => {
+		// File input change - store bound function for later removal
+		this.boundHandleFileSelection = (e) => {
 			this.handleFileSelection(e.target.files);
-		});
+		};
+		this.fileInput.addEventListener("change", this.boundHandleFileSelection);
 
 		// Drag and drop events
 		this.bindDragDropEvents();
@@ -251,18 +254,40 @@ export class FileUpload {
 	 * @param {FileList} files - Selected files
 	 */
 	handleFileSelection(files) {
+		console.log(`[FileUpload] handleFileSelection called with ${files ? files.length : 0} files`);
+		console.log(`[FileUpload] Current selectedFiles before handling: ${this.selectedFiles.length}`);
+		console.log(`[FileUpload] Current selectedFiles names:`, this.selectedFiles.map(f => f.name));
+		console.log(`[FileUpload] FileInput files count:`, this.fileInput.files ? this.fileInput.files.length : 0);
+		
 		this.clearErrors();
-		this.selectedFiles = [];
 
+		// Don't clear if files is empty but we have existing files (user cancelled dialog)
 		if (!files || files.length === 0) {
-			this.updatePreviewVisibility();
+			if (this.selectedFiles.length === 0) {
+				console.log(`[FileUpload] No files and no existing files, clearing all`);
+				const previewList = this.previewContainer.querySelector(".file-preview-list");
+				if (previewList) {
+					previewList.innerHTML = "";
+					console.log(`[FileUpload] Cleared DOM preview list`);
+				}
+				this.updatePreviewVisibility();
+			} else {
+				console.log(`[FileUpload] No new files but keeping existing ${this.selectedFiles.length} files (user cancelled dialog)`);
+			}
 			return;
 		}
 
 		const validFiles = [];
 		const errors = [];
+		const existingFileNames = this.selectedFiles.map(f => f.name);
 
 		Array.from(files).forEach((file) => {
+			// Check for duplicates
+			if (existingFileNames.includes(file.name)) {
+				errors.push(`${file.name}: Soubor již byl vybrán`);
+				return;
+			}
+
 			const fileValidation = this.validateFile(file);
 			if (fileValidation.valid) {
 				validFiles.push(file);
@@ -276,9 +301,13 @@ export class FileUpload {
 		}
 
 		if (validFiles.length > 0) {
+			console.log(`[FileUpload] Adding ${validFiles.length} new valid files to existing ${this.selectedFiles.length}`);
 			this.addFiles(validFiles);
+			// Update the file input to include all files (existing + new)
+			this.updateFileInput();
 		}
 
+		console.log(`[FileUpload] Final selectedFiles count: ${this.selectedFiles.length}`);
 		this.updatePreviewVisibility();
 	}
 
@@ -333,6 +362,8 @@ export class FileUpload {
 	 * @param {Object} fileData - File data object
 	 */
 	createFilePreview(fileData) {
+		console.log(`[FileUpload] Creating preview for file:`, { id: fileData.id, name: fileData.name });
+		
 		const previewItem = document.createElement("div");
 		previewItem.className = "file-preview-item";
 		previewItem.dataset.fileId = fileData.id;
@@ -373,12 +404,28 @@ export class FileUpload {
 		info.appendChild(size);
 		info.appendChild(status);
 
+		// Remove button
+		const removeButton = document.createElement("button");
+		removeButton.type = "button";
+		removeButton.className = "file-preview-remove";
+		removeButton.innerHTML = "×";
+		removeButton.setAttribute("aria-label", "Odstranit soubor");
+		removeButton.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.removeFile(fileData.id);
+		});
+
 		previewItem.appendChild(thumbnail);
 		previewItem.appendChild(info);
+		previewItem.appendChild(removeButton);
 
 		const previewList =
 			this.previewContainer.querySelector(".file-preview-list");
 		previewList.appendChild(previewItem);
+		
+		console.log(`[FileUpload] Preview created and added to DOM for file ID: ${fileData.id}`);
+		console.log(`[FileUpload] Total preview items in DOM: ${previewList.children.length}`);
 	}
 
 	/**
@@ -489,6 +536,84 @@ export class FileUpload {
 		setTimeout(() => {
 			this.reset();
 		}, 100);
+	}
+
+	/**
+	 * Remove a specific file from selection
+	 * @param {string} fileId - ID of file to remove
+	 */
+	removeFile(fileId) {
+		console.log(`[FileUpload] Removing file with ID: ${fileId}`);
+		console.log(`[FileUpload] Current selectedFiles count: ${this.selectedFiles.length}`);
+		console.log(`[FileUpload] Current selectedFiles:`, this.selectedFiles.map(f => ({ id: f.id, name: f.name })));
+
+		// Find file before removal for debugging
+		const fileToRemove = this.selectedFiles.find(fileData => fileData.id === fileId);
+		if (!fileToRemove) {
+			console.warn(`[FileUpload] File with ID ${fileId} not found in selectedFiles array`);
+			return;
+		}
+		console.log(`[FileUpload] Found file to remove:`, { id: fileToRemove.id, name: fileToRemove.name });
+
+		// Remove from selectedFiles array
+		const originalLength = this.selectedFiles.length;
+		this.selectedFiles = this.selectedFiles.filter(fileData => fileData.id !== fileId);
+		console.log(`[FileUpload] Filtered selectedFiles: ${originalLength} -> ${this.selectedFiles.length}`);
+
+		// Remove preview element
+		const previewItem = this.previewContainer.querySelector(`[data-file-id="${fileId}"]`);
+		if (previewItem) {
+			console.log(`[FileUpload] Removing preview element for file ID: ${fileId}`);
+			previewItem.remove();
+		} else {
+			console.warn(`[FileUpload] Preview element not found for file ID: ${fileId}`);
+		}
+
+		// Verify preview elements count matches selectedFiles count
+		const remainingPreviews = this.previewContainer.querySelectorAll('.file-preview-item');
+		console.log(`[FileUpload] Remaining preview elements: ${remainingPreviews.length}, selectedFiles: ${this.selectedFiles.length}`);
+
+		// Update file input with remaining files
+		this.updateFileInput();
+		this.updatePreviewVisibility();
+
+		console.log(`[FileUpload] File removal completed for ID: ${fileId}`);
+	}
+
+	/**
+	 * Update the file input with current selected files
+	 */
+	updateFileInput() {
+		console.log(`[FileUpload] Updating file input with ${this.selectedFiles.length} files`);
+		
+		try {
+			if (typeof DataTransfer !== "undefined") {
+				const dt = new DataTransfer();
+				this.selectedFiles.forEach((fileData, index) => {
+					console.log(`[FileUpload] Adding file ${index + 1}:`, fileData.name);
+					dt.items.add(fileData.file);
+				});
+				
+				const previousFileCount = this.fileInput.files ? this.fileInput.files.length : 0;
+				
+				// Temporarily remove event listener to prevent recursive calls
+				this.fileInput.removeEventListener("change", this.boundHandleFileSelection);
+				
+				this.fileInput.files = dt.files;
+				console.log(`[FileUpload] File input updated: ${previousFileCount} -> ${this.fileInput.files.length} files`);
+				
+				// Re-add event listener after a brief delay
+				setTimeout(() => {
+					this.fileInput.addEventListener("change", this.boundHandleFileSelection);
+				}, 0);
+				
+				console.log(`[FileUpload] File input updated without triggering change event`);
+			} else {
+				console.warn("[FileUpload] DataTransfer not supported");
+			}
+		} catch (error) {
+			console.error("[FileUpload] Could not update file input:", error);
+		}
 	}
 
 	/**
