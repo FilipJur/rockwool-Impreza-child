@@ -156,6 +156,11 @@
             background: #fef2f2;
         }
 
+        &.removing {
+            pointer-events: none;
+            z-index: -1;
+        }
+
         // &:focus, &:active styles from old .file-preview-item can be adapted
 
         // Removal animation: If plugin removes element, CSS exit animation might not fire nicely.

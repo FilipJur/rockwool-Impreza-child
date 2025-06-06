@@ -117,45 +117,69 @@ export class PreviewManager {
 	 * @param {HTMLElement} item 
 	 */
 	_attemptRemoval(removeButton, item) {
-		// Strategy 1: Simulate mousedown/mouseup sequence
-		const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-		const mouseupEvent = new MouseEvent('mouseup', { bubbles: true, cancelable: true });
-		const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
-
-		removeButton.dispatchEvent(mousedownEvent);
-		removeButton.dispatchEvent(mouseupEvent);
+		// Prevent scrolling by temporarily changing href
+		const originalHref = removeButton.href;
+		removeButton.href = 'javascript:void(0)';
 		
-		// Delay the click slightly
+		// Strategy 1: Direct click with preventDefault
+		const clickHandler = (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			console.log("[PreviewManager] Click intercepted, preventing scroll");
+		};
+		
+		// Add preventDefault handler
+		removeButton.addEventListener('click', clickHandler, { once: true });
+		
+		// Try the plugin's native removal via data attributes
+		if (removeButton.dataset.storage) {
+			// Try to trigger plugin's removal logic via the data-storage attribute
+			this._triggerPluginRemoval(removeButton, item);
+		}
+		
+		// Restore href after attempt
 		setTimeout(() => {
-			removeButton.dispatchEvent(clickEvent);
-			
-			// Check if removal worked after a delay
-			setTimeout(() => {
-				if (document.contains(item)) {
-					console.log("[PreviewManager] Item still exists, trying alternative removal");
-					this._alternativeRemoval(removeButton, item);
-				} else {
-					console.log("[PreviewManager] Item successfully removed");
-				}
-			}, 100);
-		}, 10);
+			removeButton.href = originalHref;
+		}, 100);
+		
+		// Check if removal worked
+		setTimeout(() => {
+			if (document.contains(item)) {
+				console.log("[PreviewManager] Plugin removal failed, using smooth manual removal");
+				this._smoothRemoval(item);
+			} else {
+				console.log("[PreviewManager] Item successfully removed");
+			}
+		}, 150);
 	}
 
 	/**
-	 * Alternative removal strategy
+	 * Try to trigger plugin's native removal
 	 * @private
 	 * @param {HTMLElement} removeButton 
 	 * @param {HTMLElement} item 
 	 */
-	_alternativeRemoval(removeButton, item) {
-		// Try to find and call jQuery event handlers if they exist
-		if (window.jQuery && window.jQuery(removeButton).data('events')) {
-			const events = window.jQuery(removeButton).data('events');
-			console.log("[PreviewManager] Found jQuery events:", events);
-			if (events.click) {
-				events.click.forEach(handler => {
+	_triggerPluginRemoval(removeButton, item) {
+		// Look for global plugin functions
+		if (window.codedropz || window.Codedropz) {
+			console.log("[PreviewManager] Found plugin global object");
+			// Try to call plugin's remove function if it exists
+		}
+
+		// Try jQuery approach if available
+		if (window.jQuery) {
+			const $button = window.jQuery(removeButton);
+			
+			// Try triggering click via jQuery
+			$button.trigger('click');
+			
+			// Check for bound events
+			const events = $button.data('events') || jQuery._data(removeButton, 'events');
+			if (events && events.click) {
+				console.log("[PreviewManager] Found jQuery click events, triggering manually");
+				events.click.forEach(eventHandler => {
 					try {
-						handler.handler.call(removeButton);
+						eventHandler.handler.call(removeButton);
 					} catch (e) {
 						console.log("[PreviewManager] Error calling jQuery handler:", e);
 					}
@@ -163,20 +187,42 @@ export class PreviewManager {
 			}
 		}
 
-		// Try manual removal as last resort
+		// Try direct DOM event approach
+		removeButton.click();
+	}
+
+	/**
+	 * Smooth manual removal with animation
+	 * @private
+	 * @param {HTMLElement} item 
+	 */
+	_smoothRemoval(item) {
+		console.log("[PreviewManager] Performing smooth manual removal");
+		
+		// Add removing class for CSS animations
+		item.classList.add('removing');
+		
+		// Smooth animation
+		item.style.transition = 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+		item.style.opacity = '0';
+		item.style.transform = 'translateX(-60px) scale(0.8) rotateY(-15deg)';
+		item.style.maxHeight = item.offsetHeight + 'px';
+		
+		// Collapse height
 		setTimeout(() => {
-			if (document.contains(item)) {
-				console.log("[PreviewManager] Manual removal - hiding item");
-				item.style.transition = 'all 0.3s ease';
-				item.style.opacity = '0';
-				item.style.transform = 'translateX(-100%)';
-				setTimeout(() => {
-					if (item.parentNode) {
-						item.parentNode.removeChild(item);
-					}
-				}, 300);
-			}
+			item.style.maxHeight = '0';
+			item.style.marginBottom = '0';
+			item.style.paddingTop = '0';
+			item.style.paddingBottom = '0';
 		}, 200);
+		
+		// Remove from DOM
+		setTimeout(() => {
+			if (item.parentNode) {
+				item.parentNode.removeChild(item);
+				console.log("[PreviewManager] Item removed from DOM");
+			}
+		}, 600);
 	}
 
 	/**
