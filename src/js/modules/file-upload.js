@@ -4,7 +4,7 @@
  */
 
 import { validation } from "../utils/validation.js";
-import { FILE_UPLOAD_CONFIG, FILE_UPLOAD_ICON } from "./file-upload-constants.js";
+import { FILE_UPLOAD_CONFIG } from "./file-upload-constants.js";
 console.log("FileUpload.js loaded");
 
 export class FileUpload {
@@ -100,11 +100,11 @@ export class FileUpload {
 	}
 
 	/**
-	 * Create file icon SVG
-	 * @returns {string} SVG markup
+	 * Create file icon element
+	 * @returns {string} Image element markup
 	 */
 	createFileIcon() {
-		return FILE_UPLOAD_ICON;
+		return `<img class="file-upload-icon" src="${this.config.iconPath}" width="32" height="32" alt="File upload icon">`;
 	}
 
 	/**
