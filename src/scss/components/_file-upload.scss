@@ -20,6 +20,9 @@
 .dnd-icon-remove:after{
 	background-image: url("data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22utf-8%22%3F%3E%3C!--%20License%3A%20MIT.%20Made%20by%20Financial%20Times%3A%20https%3A%2F%2Fgithub.com%2FFinancial-Times%2Ffticons%20--%3E%3Csvg%20fill%3D%22%23000000%22%20width%3D%22800px%22%20height%3D%22800px%22%20viewBox%3D%220%200%201024%201024%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M697.4%20759.2l61.8-61.8L573.8%20512l185.4-185.4-61.8-61.8L512%20450.2%20326.6%20264.8l-61.8%2061.8L450.2%20512%20264.8%20697.4l61.8%2061.8L512%20573.8z%22%2F%3E%3C%2Fsvg%3E") !important;
 }
+#page-content .file-preview-item-enhanced{
+	user-select: none;
+}
 #page-content .file-preview-item-enhanced:hover {
 	.remove-file {
 		background-color: #fee2e2 !important;
