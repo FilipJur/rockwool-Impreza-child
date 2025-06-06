@@ -5,6 +5,8 @@
 
 import { validation } from "../utils/validation.js";
 import { FILE_UPLOAD_CONFIG } from "./file-upload-constants.js";
+import { PreviewManager } from "./preview-manager.js";
+import { AnimationManager } from "./animation-manager.js";
 console.log("FileUpload.js loaded");
 
 export class FileUpload {
@@ -24,6 +26,10 @@ export class FileUpload {
 		this.config = FILE_UPLOAD_CONFIG;
 		this.isInitialized = false;
 		this.observer = null; // For MutationObserver
+
+		// Initialize managers
+		this.previewManager = null;
+		this.animationManager = new AnimationManager(this.config);
 
 		FileUpload.instance = this;
 		this.init();
@@ -93,7 +99,7 @@ export class FileUpload {
 		}
 
 		this.enhancePluginUI();
-		this.observePluginPreviewItems();
+		this.setupPreviewManager();
 		this.setupClickableZone();
 
 		this.isInitialized = true;
@@ -175,48 +181,18 @@ export class FileUpload {
 	}
 
 	/**
-	 * Use MutationObserver to detect when the plugin adds/removes its preview items (.dnd-upload-status) and apply classes for animations.
+	 * Setup preview manager for handling file previews
 	 */
-	observePluginPreviewItems() {
+	setupPreviewManager() {
 		if (!this.originalContainer) return;
 
-		this.observer = new MutationObserver((mutationsList) => {
-			for (const mutation of mutationsList) {
-				if (mutation.type === 'childList') {
-					mutation.addedNodes.forEach(node => {
-						if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('dnd-upload-status')) {
-							console.log('[FileUpload] Plugin added preview item:', node);
-							// Add a class to trigger SCSS animations for entry
-							node.classList.add('file-preview-item-enhanced', 'slide-in'); // 'slide-in' can be animated by SCSS
-
-							// Apply staggered animation delay
-							const existingItems = this.originalContainer.querySelectorAll('.dnd-upload-status.file-preview-item-enhanced');
-							const itemIndex = existingItems.length - 1; // Current item is the last one
-							node.style.animationDelay = `${itemIndex * this.config.animation.staggerDelay}s`;
-							
-							// Add view transition name for View Transitions API
-							if (document.startViewTransition) {
-								node.style.viewTransitionName = `file-preview-${Date.now()}-${itemIndex}`;
-							}
-							
-							// Make entire preview clickable for removal
-							this._makePreviewClickable(node);
-						}
-					});
-					mutation.removedNodes.forEach(node => {
-						 if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('dnd-upload-status')) {
-							console.log('[FileUpload] Plugin removed preview item:', node);
-							// If complex exit animations are needed that CSS can't handle on simple removal,
-							// this is where JS would intercept, add a .removing class, wait for animation, then let plugin fully remove.
-							// For now, we assume CSS can handle exit if plugin just removes the element.
-						}
-					});
-				}
-			}
+		this.previewManager = new PreviewManager(this.originalContainer);
+		this.previewManager.startObserving((item) => {
+			// Apply animations when item is added
+			this.animationManager.applyStaggeredAnimation(item, this.originalContainer);
 		});
 
-		this.observer.observe(this.originalContainer, { childList: true, subtree: false }); // Observe direct children of originalContainer
-		console.log("[FileUpload] Observer started for plugin preview items.");
+		console.log("[FileUpload] Preview manager initialized");
 	}
 
 	/**
@@ -258,30 +234,6 @@ export class FileUpload {
 		console.log("[FileUpload] Clickable zone setup completed");
 	}
 
-	/**
-	 * Make a preview item clickable for removal
-	 * @private
-	 * @param {HTMLElement} previewNode 
-	 */
-	_makePreviewClickable(previewNode) {
-		if (!previewNode) return;
-
-		previewNode.addEventListener('click', (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-
-			// Find the hidden remove button and trigger it
-			const removeButton = previewNode.querySelector('a[class*="remove"]');
-			if (removeButton) {
-				removeButton.click();
-				console.log("[FileUpload] Preview clicked, removing file");
-			}
-		});
-
-		// Add visual feedback
-		previewNode.style.cursor = 'pointer';
-		previewNode.title = 'Click to remove file';
-	}
 
 	/**
 	 * Check if handler is properly initialized
@@ -303,14 +255,15 @@ export class FileUpload {
 	 * Clean up and remove custom elements
 	 */
 	cleanup() {
-		// Add to existing cleanup logic
+		if (this.previewManager) {
+			this.previewManager.stopObserving();
+			this.previewManager = null;
+		}
 		if (this.observer) {
 			this.observer.disconnect();
 			this.observer = null;
-			console.log("[FileUpload] Observer disconnected.");
 		}
-		// No custom elements to remove in this version
-		console.log("[FileUpload] Cleanup completed (no custom elements to remove).");
+		console.log("[FileUpload] Cleanup completed.");
 	}
 
 	/**

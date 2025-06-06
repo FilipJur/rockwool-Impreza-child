@@ -248,9 +248,34 @@
 
             //&:hover .name span:first-child { color: var(--color-content-link); } // From old preview item hover
 
-            // Hide the native remove button since whole item is clickable
+            // Style the native remove button (visible for debugging)
             a[class*="remove"] {
-                display: none;
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                width: 20px;
+                height: 20px;
+                border-radius: 4px;
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid #e1e5e9;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+                
+                .dnd-icon-remove {
+                    color: #6b7280;
+                    font-size: 12px;
+                }
+                
+                &:hover {
+                    background: #fee2e2;
+                    border-color: #fca5a5;
+                    
+                    .dnd-icon-remove {
+                        color: #dc2626;
+                    }
+                }
             }
 
             .dnd-progress-bar {
