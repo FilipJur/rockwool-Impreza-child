@@ -17,313 +17,318 @@
 	cursor: pointer;
 	z-index: 2;
 }
-
-
-
-
+.dnd-icon-remove:after{
+	background-image: url("data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22utf-8%22%3F%3E%3C!--%20License%3A%20MIT.%20Made%20by%20Financial%20Times%3A%20https%3A%2F%2Fgithub.com%2FFinancial-Times%2Ffticons%20--%3E%3Csvg%20fill%3D%22%23000000%22%20width%3D%22800px%22%20height%3D%22800px%22%20viewBox%3D%220%200%201024%201024%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M697.4%20759.2l61.8-61.8L573.8%20512l185.4-185.4-61.8-61.8L512%20450.2%20326.6%20264.8l-61.8%2061.8L450.2%20512%20264.8%20697.4l61.8%2061.8L512%20573.8z%22%2F%3E%3C%2Fsvg%3E") !important;
+}
+#page-content .file-preview-item-enhanced:hover {
+	.remove-file {
+		background-color: #fee2e2 !important;
+	}
+}
 /* Hide any additional elements after plugin wrapper */
 .wpcf7-form-control-wrap[data-name="mfile-747"] + br,
 .wpcf7-form-control-wrap[data-name="mfile-747"] + br + small {
 	display: none;
 }
 
-.codedropz-upload-wrapper { // Parent for context if needed
-    .codedropz-upload-handler {
-        // Potentially minimal styles, or if it's the main clickable/droppable area for plugin
-        // it might get some base styles. Let's assume .codedropz-upload-inner is the main visual box.
-        background: #ffffff; // From old .file-upload-zone
-        border: 1px dashed #cccccc; // From old .file-upload-zone
-        border-radius: 6px; // From old .file-upload-zone
-        padding: 20px 16px; // Reduced padding for tighter layout
-        margin-bottom: 16px;
-        cursor: pointer; // If the whole area is clickable via plugin
-        transition: all 0.3s ease; // From old .file-upload-zone
+.codedropz-upload-wrapper {
+	// Parent for context if needed
+	.codedropz-upload-handler {
+		// Potentially minimal styles, or if it's the main clickable/droppable area for plugin
+		// it might get some base styles. Let's assume .codedropz-upload-inner is the main visual box.
+		background: #ffffff; // From old .file-upload-zone
+		border: 1px dashed #cccccc; // From old .file-upload-zone
+		border-radius: 6px; // From old .file-upload-zone
+		padding: 20px 16px; // Reduced padding for tighter layout
+		margin-bottom: 16px;
+		cursor: pointer; // If the whole area is clickable via plugin
+		transition: all 0.3s ease; // From old .file-upload-zone
 
-        &:hover {
-            border-color: var(--color-content-link);
-            background-color: rgba(51, 167, 204, 0.02);
-        }
+		&:hover {
+			transition: all 0.3s ease;
+			border-color: var(--color-content-link);
+			background-color: rgba(51, 167, 204, 0.02);
+			.cd-upload-btn span{
+				text-decoration: none !important;
+			}
+		}
 
-        &.drag-over {
-            border-color: var(--color-content-link);
-            background-color: rgba(51, 167, 204, 0.08);
-            transform: scale(1.01);
-            border-style: solid;
-        }
-    }
+		&.drag-over {
+			border-color: var(--color-content-link);
+			background-color: rgba(51, 167, 204, 0.08);
+			transform: scale(1.01);
+			border-style: solid;
+		}
+	}
 
-    .codedropz-upload-inner {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0px; // Tighter spacing
-        text-align: center; // From old .file-upload-text container
+	.codedropz-upload-inner {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0px; // Tighter spacing
+		text-align: center; // From old .file-upload-text container
 
-        .file-upload-icon { // Style for the icon injected by JS
-            width: 28px;
-            height: 28px;
-            opacity: 0.6;
-            filter: grayscale(1);
-        }
+		.file-upload-icon {
+			// Style for the icon injected by JS
+			width: 28px;
+			height: 28px;
+			opacity: 0.6;
+			filter: grayscale(1);
+		}
 
-        h3 { // Plugin's H3, text changed by JS
-            font-weight: 500; // From old .file-upload-text
-            font-size: 16px; // From old .file-upload-text
-            line-height: 1.35; // From old .file-upload-text
-            color: black; // From old .file-upload-text
-            margin: 0; // Reset default margin
-            white-space: pre-line; // From old .file-upload-text
-        }
+		h3 {
+			// Plugin's H3, text changed by JS
+			font-weight: 500; // From old .file-upload-text
+			font-size: 16px; // From old .file-upload-text
+			line-height: 1.35; // From old .file-upload-text
+			color: black; // From old .file-upload-text
+			margin: 0; // Reset default margin
+			white-space: pre-line; // From old .file-upload-text
+		}
 
-        > span { // Plugin's "or" span, text changed by JS
-            font-weight: 500;
-            font-size: 16px;
-            line-height: 1.35;
-            color: black;
-        }
+		> span {
+			// Plugin's "or" span, text changed by JS
+			font-weight: 500;
+			font-size: 16px;
+			line-height: 1.35;
+			color: black;
+		}
 
-        .cd-upload-btn { // Plugin's "Browse Files" link, text changed by JS
-            span { // If JS wraps new text in span
-               color: var(--color-content-link); // From old .file-upload-text span
-               text-decoration: underline; // From old .file-upload-text span
-            }
-            &:hover span {
-                text-decoration: none;
-            }
-        }
-    }
-    // Hide plugin's original browse button if it's visually replaced by clickable zone
-    // .codedropz-btn-wrap { display: none; } // If you want the whole zone to be clickable via JS
-    // For now, we assume the plugin's browse button is styled and used.
+		.cd-upload-btn {
+			// Plugin's "Browse Files" link, text changed by JS
+			span {
+				// If JS wraps new text in span
+				color: var(
+					--color-content-link
+				); // From old .file-upload-text span
+				text-decoration: underline; // From old .file-upload-text span
+			}
+			&:hover span {
+				text-decoration: none;
+			}
+		}
+	}
+	// Hide plugin's original browse button if it's visually replaced by clickable zone
+	// .codedropz-btn-wrap { display: none; } // If you want the whole zone to be clickable via JS
+	// For now, we assume the plugin's browse button is styled and used.
 
-    .dnd-upload-counter {
-        position: absolute;
-        bottom: 12px;
-        right: 12px;
-        background: rgba(0, 0, 0, 0.05);
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 12px;
-        color: #666;
-        font-weight: 500;
-    }
+	.dnd-upload-counter {
+		position: absolute;
+		bottom: 12px;
+		right: 12px;
+		background: rgba(0, 0, 0, 0.05);
+		padding: 4px 8px;
+		border-radius: 12px;
+		font-size: 12px;
+		color: #666;
+		font-weight: 500;
+	}
 }
 
 .codedropz-upload-wrapper {
-    // Container for plugin's previews - no direct equivalent to old .file-preview-container for animations
-    // Animations will be on individual items.
-    // Add margin if needed:
-    // margin-top: 15px; (like old .file-preview-container)
-    // display: flex; flex-direction: column; gap: 10px; (like old .file-preview-list, applied to parent of .dnd-upload-status)
-    // The plugin's .codedropz-upload-wrapper itself might be the "list" container.
+	// Container for plugin's previews - no direct equivalent to old .file-preview-container for animations
+	// Animations will be on individual items.
+	// Add margin if needed:
+	// margin-top: 15px; (like old .file-preview-container)
+	// display: flex; flex-direction: column; gap: 10px; (like old .file-preview-list, applied to parent of .dnd-upload-status)
+	// The plugin's .codedropz-upload-wrapper itself might be the "list" container.
 
-    .dnd-upload-status.file-preview-item-enhanced {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        background: #ffffff;
-        border: 1px solid #e1e5e9;
-        border-radius: 8px;
-        position: relative;
-        margin-bottom: 8px;
-        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        view-transition-name: file-preview;
-        user-select: none;
-        cursor: pointer;
+	.dnd-upload-status.file-preview-item-enhanced {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 12px;
+		background: #ffffff;
+		border: 1px solid #e1e5e9;
+		border-radius: 8px;
+		position: relative;
+		margin-bottom: 8px;
+		transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+		view-transition-name: file-preview;
+		user-select: none;
+		cursor: pointer;
 
-        &.slide-in {
-            opacity: 0;
-            animation: slideInSimple 0.3s ease-out forwards;
-        }
+		&.slide-in {
+			opacity: 0;
+			animation: slideInSimple 0.3s ease-out forwards;
+		}
 
-        // Support for View Transitions API
-        @supports (view-transition-name: auto) {
-            &.slide-in {
-                animation: none; // Let view transitions handle it
-            }
-        }
+		// Support for View Transitions API
+		@supports (view-transition-name: auto) {
+			&.slide-in {
+				animation: none; // Let view transitions handle it
+			}
+		}
 
-        // Staggered animation if JS adds inline style
-        // animation-delay: var(--animation-delay, 0s); // If JS sets --animation-delay
+		// Staggered animation if JS adds inline style
+		// animation-delay: var(--animation-delay, 0s); // If JS sets --animation-delay
 
-        &:hover {
-            border-color: #ef4444;
-            background: #fef2f2;
-        }
+		&:hover {
+			border-color: #ef4444;
+			background: #fef2f2;
+		}
 
-        &.removing {
-            pointer-events: none;
-        }
+		&.removing {
+			view-transition-name: file-preview;
+			pointer-events: none;
+		}
 
-        // &:focus, &:active styles from old .file-preview-item can be adapted
+		// Style plugin's internal preview structure
+		.dnd-upload-image {
+			width: 40px;
+			height: 40px;
+			border-radius: 6px;
+			background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+			border: 1px solid #e1e5e9;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			overflow: hidden;
+			position: relative;
 
-        // Removal animation: If plugin removes element, CSS exit animation might not fire nicely.
-        // If JS adds a .removing class before plugin removes:
-        // &.removing { // From old .file-preview-item.removing
-        //    animation: slideOutFileImproved 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-        //    pointer-events: none;
-        // }
+			// Default file icon fallback
+			&::before {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background: url("/wp-content/themes/Impreza-child/src/images/icons/file.svg")
+					no-repeat center;
+				background-size: 20px;
+				opacity: 0.4;
+				z-index: 0;
+			}
 
-        // Style plugin's internal preview structure
-        .dnd-upload-image {
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border: 1px solid #e1e5e9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            overflow: hidden;
-            position: relative;
+			span.file {
+				display: none;
+			}
 
-            // Default file icon fallback
-            &::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background: url('/wp-content/themes/Impreza-child/src/images/icons/file.svg') no-repeat center;
-                background-size: 20px;
-                opacity: 0.4;
-                z-index: 0;
-            }
+			// Plugin's thumbnail image (when available)
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				border-radius: 5px;
+				position: relative;
+				z-index: 1;
 
-            span.file {
-                display: none;
-            }
+				// Hide fallback icon when image loads
+				&:not([src=""]) ~ &::before {
+					display: none;
+				}
+			}
 
-            // Plugin's thumbnail image (when available)
-            img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                border-radius: 5px;
-                position: relative;
-                z-index: 1;
+			// When image is present, hide the fallback icon
+			&:has(img[src]:not([src=""])) {
+				&::before {
+					display: none;
+				}
+			}
+		}
 
-                // Hide fallback icon when image loads
-                &:not([src=""]) ~ &::before {
-                    display: none;
-                }
-            }
+		.dnd-upload-details {
+			flex: 1;
+			min-width: 0;
 
-            // When image is present, hide the fallback icon
-            &:has(img[src]:not([src=""])) {
-                &::before {
-                    display: none;
-                }
-            }
-        }
+			.name {
+				display: flex;
+				align-items: baseline;
+				gap: 8px;
+				margin-bottom: 6px;
 
-        .dnd-upload-details {
-            flex: 1;
-            min-width: 0;
+				span:first-child {
+					font-weight: 500;
+					font-size: 14px;
+					color: #1f2937;
+					white-space: nowrap;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					max-width: 220px;
+					line-height: 1.4;
+				}
 
-            .name {
-                display: flex;
-                align-items: baseline;
-                gap: 8px;
-                margin-bottom: 6px;
+				em {
+					font-size: 11px;
+					color: #9ca3af;
+					font-weight: 400;
+					white-space: nowrap;
+				}
+			}
+			//&:hover .name span:first-child { color: var(--color-content-link); } // From old preview item hover
+			// Style the native remove button (visible for debugging)
+			a[class*="remove"] {
+				position: absolute;
+				top: 8px;
+				right: 8px;
+				width: 20px;
+				height: 20px;
+				border-radius: 4px;
+				background: transparent;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 10;
 
-                span:first-child {
-                    font-weight: 500;
-                    font-size: 14px;
-                    color: #1f2937;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    max-width: 220px;
-                    line-height: 1.4;
-                }
+				.dnd-icon-remove {
+					color: #6b7280;
+					font-size: 12px;
+				}
 
-                em {
-                    font-size: 11px;
-                    color: #9ca3af;
-                    font-weight: 400;
-                    white-space: nowrap;
-                }
-            }
+				&:hover {
+					background: #fee2e2;
+					border-color: #fca5a5;
 
-            //&:hover .name span:first-child { color: var(--color-content-link); } // From old preview item hover
+					.dnd-icon-remove {
+						color: #dc2626;
+					}
+				}
+			}
 
-            // Style the native remove button (visible for debugging)
-            a[class*="remove"] {
-                position: absolute;
-                top: 8px;
-                right: 8px;
-                width: 20px;
-                height: 20px;
-                border-radius: 4px;
-                background: rgba(255, 255, 255, 0.9);
-                border: 1px solid #e1e5e9;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10;
+			.dnd-progress-bar {
+				display: none; // Hide progress bar completely
+			}
+		}
+		// Styling for error state
+		&:has(.has-error) {
+			border-color: #fca5a5;
+			background: #fef2f2;
 
-                .dnd-icon-remove {
-                    color: #6b7280;
-                    font-size: 12px;
-                }
+			.dnd-upload-image {
+				background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+				border-color: #fca5a5;
 
-                &:hover {
-                    background: #fee2e2;
-                    border-color: #fca5a5;
+				&::before {
+					opacity: 0.3;
+				}
+			}
 
-                    .dnd-icon-remove {
-                        color: #dc2626;
-                    }
-                }
-            }
+			.dnd-upload-details .dnd-progress-bar span {
+				background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+			}
 
-            .dnd-progress-bar {
-                display: none; // Hide progress bar completely
-            }
-        }
-        // Styling for error state
-        &:has(.has-error) {
-            border-color: #fca5a5;
-            background: #fef2f2;
+			.dnd-upload-details .name span:first-child {
+				color: #7f1d1d;
+			}
 
-            .dnd-upload-image {
-                background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-                border-color: #fca5a5;
-
-                &::before {
-                    opacity: 0.3;
-                }
-            }
-
-            .dnd-upload-details .dnd-progress-bar span {
-                background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
-            }
-
-            .dnd-upload-details .name span:first-child {
-                color: #7f1d1d;
-            }
-
-            .has-error {
-                color: #dc2626;
-                font-size: 11px;
-                font-weight: 500;
-                margin-top: 2px;
-            }
-        }
-    }
-    // General error message styling if plugin adds it below item
-    .dnd-upload-status + .upload-error-message-global { // Example selector
-         color: var(--color-error, #dc3545);
-         font-size: 12px;
-         margin-top: -5px; // Adjust to position below item
-         margin-bottom: 10px;
-    }
+			.has-error {
+				color: #dc2626;
+				font-size: 11px;
+				font-weight: 500;
+				margin-top: 2px;
+			}
+		}
+	}
+	// General error message styling if plugin adds it below item
+	.dnd-upload-status + .upload-error-message-global {
+		// Example selector
+		color: var(--color-error, #dc3545);
+		font-size: 12px;
+		margin-top: -5px; // Adjust to position below item
+		margin-bottom: 10px;
+	}
 }
-
-
 
 @keyframes spin {
 	0% {
@@ -398,32 +403,18 @@
 	}
 }
 
-@keyframes slideOutFileImproved {
+@keyframes fadeOutSmooth {
 	0% {
 		opacity: 1;
-		transform: translateX(0) scale(1) rotateY(0deg);
-		max-height: 80px;
-		margin-bottom: 10px;
-		filter: blur(0px);
+		transform: translateX(0) scale(1);
 	}
-	30% {
-		transform: translateX(-15px) scale(1.05) rotateY(-5deg);
-		background: #ffebee;
-		border-color: #f44336;
-	}
-	60% {
-		transform: translateX(-40px) scale(0.8) rotateY(-15deg);
-		opacity: 0.7;
-		filter: blur(1px);
+	40% {
+		opacity: 0.8;
+		transform: translateX(8px) scale(1.02);
 	}
 	100% {
 		opacity: 0;
-		transform: translateX(-60px) scale(0.3) rotateY(-45deg);
-		max-height: 0;
-		margin-bottom: 0;
-		padding-top: 0;
-		padding-bottom: 0;
-		filter: blur(3px);
+		transform: translateX(25px) scale(0.95);
 	}
 }
 
@@ -467,11 +458,11 @@
 
 	/* Smooth transitions for file list changes */
 	::view-transition-old(file-preview) {
-		animation: slideOutFileImproved 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+		animation: fadeOutSmooth 0.3s ease-out;
 	}
 
 	::view-transition-new(file-preview) {
-		animation: slideInFileImproved 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+		animation: slideInFile 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
 	/* Root transition for overall smoothness */

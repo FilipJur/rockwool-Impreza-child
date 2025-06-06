@@ -3,8 +3,8 @@
  * Handles Czech company registration data lookup and form population
  */
 
-import { api } from '../utils/api.js';
-import { validation } from '../utils/validation.js';
+import { api } from '../../utils/api.js';
+import { validation } from '../../utils/validation.js';
 
 export class AresHandler {
   constructor() {

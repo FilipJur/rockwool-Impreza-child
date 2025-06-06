@@ -199,23 +199,26 @@ export class PreviewManager {
 	_smoothRemoval(item) {
 		console.log("[PreviewManager] Performing clean removal");
 		
-		// Add removing class for CSS
-		item.classList.add('removing');
-		
-		// Force reflow to ensure styles are applied
-		item.offsetHeight;
-		
-		// Simple fade out without layout changes
-		item.style.transition = 'opacity 0.3s ease-out';
-		item.style.opacity = '0';
-		
-		// Wait for animation to complete before removing
-		setTimeout(() => {
-			if (item.parentNode) {
-				item.parentNode.removeChild(item);
-				console.log("[PreviewManager] Item removed from DOM after fade");
-			}
-		}, 320); // Slightly longer than animation duration
+		// Use View Transitions API if available
+		if ('startViewTransition' in document) {
+			item.classList.add('removing');
+			document.startViewTransition(() => {
+				if (item.parentNode) {
+					item.parentNode.removeChild(item);
+					console.log("[PreviewManager] Item removed with View Transition");
+				}
+			});
+		} else {
+			// Fallback for browsers without View Transitions API
+			item.style.transition = 'opacity 0.3s ease-out';
+			item.style.opacity = '0';
+			setTimeout(() => {
+				if (item.parentNode) {
+					item.parentNode.removeChild(item);
+					console.log("[PreviewManager] Item removed with fallback animation");
+				}
+			}, 300);
+		}
 	}
 
 	/**

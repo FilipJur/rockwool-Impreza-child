@@ -57,7 +57,7 @@ export class AnimationManager {
 		item.classList.add('removing');
 		
 		// Use CSS animation duration + buffer
-		const duration = 600;
+		const duration = 300;
 		
 		setTimeout(() => {
 			if (onComplete) onComplete();
