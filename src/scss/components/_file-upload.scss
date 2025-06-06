@@ -136,7 +136,7 @@
 
         &.slide-in {
             opacity: 0;
-            animation: slideInFileImproved 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: slideInSimple 0.3s ease-out forwards;
         }
 
         // Support for View Transitions API
@@ -150,15 +150,12 @@
         // animation-delay: var(--animation-delay, 0s); // If JS sets --animation-delay
 
         &:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border-color: #ef4444;
             background: #fef2f2;
         }
 
         &.removing {
             pointer-events: none;
-            z-index: -1;
         }
 
         // &:focus, &:active styles from old .file-preview-item can be adapted
@@ -367,6 +364,17 @@
 		opacity: 1;
 		transform: translateY(0) scale(1);
 		filter: blur(0);
+	}
+}
+
+@keyframes slideInSimple {
+	0% {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
 	}
 }
 

@@ -192,37 +192,30 @@ export class PreviewManager {
 	}
 
 	/**
-	 * Smooth manual removal with animation
+	 * Simple, performant removal animation
 	 * @private
 	 * @param {HTMLElement} item 
 	 */
 	_smoothRemoval(item) {
-		console.log("[PreviewManager] Performing smooth manual removal");
+		console.log("[PreviewManager] Performing clean removal");
 		
-		// Add removing class for CSS animations
+		// Add removing class for CSS
 		item.classList.add('removing');
 		
-		// Smooth animation
-		item.style.transition = 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+		// Force reflow to ensure styles are applied
+		item.offsetHeight;
+		
+		// Simple fade out without layout changes
+		item.style.transition = 'opacity 0.3s ease-out';
 		item.style.opacity = '0';
-		item.style.transform = 'translateX(-60px) scale(0.8) rotateY(-15deg)';
-		item.style.maxHeight = item.offsetHeight + 'px';
 		
-		// Collapse height
-		setTimeout(() => {
-			item.style.maxHeight = '0';
-			item.style.marginBottom = '0';
-			item.style.paddingTop = '0';
-			item.style.paddingBottom = '0';
-		}, 200);
-		
-		// Remove from DOM
+		// Wait for animation to complete before removing
 		setTimeout(() => {
 			if (item.parentNode) {
 				item.parentNode.removeChild(item);
-				console.log("[PreviewManager] Item removed from DOM");
+				console.log("[PreviewManager] Item removed from DOM after fade");
 			}
-		}, 600);
+		}, 320); // Slightly longer than animation duration
 	}
 
 	/**

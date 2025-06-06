@@ -24,7 +24,7 @@ export const FILE_UPLOAD_CONFIG = {
 	},
 	
 	animation: {
-		staggerDelay: 0.075
+		staggerDelay: 0.05
 	},
 	
 	iconPath: '/wp-content/themes/Impreza-child/src/images/icons/file.svg'
