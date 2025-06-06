@@ -3,8 +3,8 @@
  * Imports and initializes all modules for the theme
  */
 
-import { AresHandler } from './modules/ares-handler.js';
-import { FileUpload } from './modules/file-upload.js';
+import { AresHandler } from './features/ares/handler.js';
+import { FileUpload } from './features/file-upload/index.js';
 
 /**
  * Theme Application Class

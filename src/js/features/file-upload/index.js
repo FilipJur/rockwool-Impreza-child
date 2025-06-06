@@ -3,8 +3,9 @@
  * Provides drag & drop functionality for Contact Form 7 file uploads
  */
 
-import { validation } from "../utils/validation.js";
-import { FILE_UPLOAD_CONFIG } from "./file-upload-constants.js";
+// Remove unused import
+// import { validation } from "../../utils/validation.js";
+import { FILE_UPLOAD_CONFIG } from "./constants.js";
 import { PreviewManager } from "./preview-manager.js";
 import { AnimationManager } from "./animation-manager.js";
 console.log("FileUpload.js loaded");

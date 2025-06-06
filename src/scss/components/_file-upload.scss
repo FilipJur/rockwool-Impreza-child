@@ -99,7 +99,7 @@
 
     .dnd-upload-counter {
         position: absolute;
-        top: 12px;
+        bottom: 12px;
         right: 12px;
         background: rgba(0, 0, 0, 0.05);
         padding: 4px 8px;
@@ -180,7 +180,7 @@
             flex-shrink: 0;
             overflow: hidden;
             position: relative;
-            
+
             // Default file icon fallback
             &::before {
                 content: '';
@@ -195,22 +195,22 @@
             span.file {
                 display: none;
             }
-            
+
             // Plugin's thumbnail image (when available)
             img {
-                width: 100%; 
-                height: 100%; 
-                object-fit: cover; 
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
                 border-radius: 5px;
                 position: relative;
                 z-index: 1;
-                
+
                 // Hide fallback icon when image loads
                 &:not([src=""]) ~ &::before {
                     display: none;
                 }
             }
-            
+
             // When image is present, hide the fallback icon
             &:has(img[src]:not([src=""])) {
                 &::before {
@@ -228,20 +228,20 @@
                 align-items: baseline;
                 gap: 8px;
                 margin-bottom: 6px;
-                
+
                 span:first-child {
-                    font-weight: 500; 
-                    font-size: 14px; 
+                    font-weight: 500;
+                    font-size: 14px;
                     color: #1f2937;
-                    white-space: nowrap; 
-                    overflow: hidden; 
+                    white-space: nowrap;
+                    overflow: hidden;
                     text-overflow: ellipsis;
                     max-width: 220px;
                     line-height: 1.4;
                 }
-                
+
                 em {
-                    font-size: 11px; 
+                    font-size: 11px;
                     color: #9ca3af;
                     font-weight: 400;
                     white-space: nowrap;
@@ -264,16 +264,16 @@
                 align-items: center;
                 justify-content: center;
                 z-index: 10;
-                
+
                 .dnd-icon-remove {
                     color: #6b7280;
                     font-size: 12px;
                 }
-                
+
                 &:hover {
                     background: #fee2e2;
                     border-color: #fca5a5;
-                    
+
                     .dnd-icon-remove {
                         color: #dc2626;
                     }
@@ -288,24 +288,24 @@
         &:has(.has-error) {
             border-color: #fca5a5;
             background: #fef2f2;
-            
+
             .dnd-upload-image {
                 background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
                 border-color: #fca5a5;
-                
+
                 &::before {
                     opacity: 0.3;
                 }
             }
-            
+
             .dnd-upload-details .dnd-progress-bar span {
                 background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
             }
-            
+
             .dnd-upload-details .name span:first-child {
                 color: #7f1d1d;
             }
-            
+
             .has-error {
                 color: #dc2626;
                 font-size: 11px;
