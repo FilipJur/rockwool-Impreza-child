@@ -93,7 +93,8 @@ export class FileUpload {
 		}
 
 		this.enhancePluginUI();
-		this.observePluginPreviewItems(); // New method for MutationObserver
+		this.observePluginPreviewItems();
+		this.setupClickableZone();
 
 		this.isInitialized = true;
 		console.log("Enhanced File Upload (Plugin UI Mode) initialized successfully");
@@ -213,6 +214,45 @@ export class FileUpload {
 
 		this.observer.observe(this.originalContainer, { childList: true, subtree: false }); // Observe direct children of originalContainer
 		console.log("[FileUpload] Observer started for plugin preview items.");
+	}
+
+	/**
+	 * Setup clickable zone functionality
+	 */
+	setupClickableZone() {
+		if (!this.pluginDropZoneHandler || !this.fileInput) return;
+
+		// Make entire drop zone clickable
+		this.pluginDropZoneHandler.addEventListener('click', (e) => {
+			// Don't trigger if clicking on the browse button directly
+			if (e.target.closest('.cd-upload-btn')) return;
+			
+			// Trigger file input click
+			this.fileInput.click();
+			console.log("[FileUpload] Drop zone clicked, opening file dialog");
+		});
+
+		// Add visual feedback for clickable state
+		this.pluginDropZoneHandler.style.cursor = 'pointer';
+		
+		// Add drag visual feedback
+		this.pluginDropZoneHandler.addEventListener('dragover', (e) => {
+			e.preventDefault();
+			this.pluginDropZoneHandler.classList.add('drag-over');
+		});
+
+		this.pluginDropZoneHandler.addEventListener('dragleave', (e) => {
+			// Only remove if leaving the handler itself, not child elements
+			if (!this.pluginDropZoneHandler.contains(e.relatedTarget)) {
+				this.pluginDropZoneHandler.classList.remove('drag-over');
+			}
+		});
+
+		this.pluginDropZoneHandler.addEventListener('drop', () => {
+			this.pluginDropZoneHandler.classList.remove('drag-over');
+		});
+
+		console.log("[FileUpload] Clickable zone setup completed");
 	}
 
 	/**

@@ -39,18 +39,17 @@
         cursor: pointer; // If the whole area is clickable via plugin
         transition: all 0.3s ease; // From old .file-upload-zone
 
-        &:hover { // From old .file-upload-zone:hover
+        &:hover {
             border-color: var(--color-content-link);
             background-color: rgba(51, 167, 204, 0.02);
         }
 
-        // For drag-over, plugin might add its own class, or we rely on JS adding .drag-over to this
-        // Assuming plugin handles drag-over visual state or we add via JS if needed
-        // &.drag-over { // From old .file-upload-zone.drag-over
-        //    border-color: var(--color-content-link);
-        //    background-color: rgba(51, 167, 204, 0.1);
-        //    transform: scale(1.02);
-        // }
+        &.drag-over {
+            border-color: var(--color-content-link);
+            background-color: rgba(51, 167, 204, 0.08);
+            transform: scale(1.01);
+            border-style: solid;
+        }
     }
 
     .codedropz-upload-inner {
@@ -58,7 +57,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 8px; // Tighter spacing
+        gap: 0px; // Tighter spacing
         text-align: center; // From old .file-upload-text container
 
         .file-upload-icon { // Style for the icon injected by JS
@@ -82,7 +81,6 @@
             font-size: 16px;
             line-height: 1.35;
             color: black;
-            margin: 5px 0; // Example spacing
         }
 
         .cd-upload-btn { // Plugin's "Browse Files" link, text changed by JS
@@ -100,8 +98,15 @@
     // For now, we assume the plugin's browse button is styled and used.
 
     .dnd-upload-counter {
-        // Style or hide as desired
-        // display: none; // if not wanted
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        color: #666;
+        font-weight: 500;
     }
 }
 
@@ -132,7 +137,7 @@
             opacity: 0;
             animation: slideInFileImproved 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
-        
+
         // Support for View Transitions API
         @supports (view-transition-name: auto) {
             &.slide-in {
@@ -173,10 +178,8 @@
             // Apply fadeInUp animation if desired (might need to be on this element directly)
             // animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
 
-            span.file { // Plugin's default file icon placeholder
-                // Hide if plugin shows its own image, or style this as a fallback icon
-                // For images, plugin likely replaces this or puts an <img> tag here.
-                // Inspect plugin's output for images to style the <img> tag.
+            span.file {
+                display: none; // Hide plugin's default icon
             }
             img { // If plugin inserts an <img>
                  width: 100%; height: 100%; object-fit: cover; border-radius: 8px; // From old .file-preview-thumbnail img
@@ -220,9 +223,8 @@
                 border-radius: 50%; // For hover effect
                 transition: all 0.2s ease;
 
-                .dnd-icon-remove { // Assuming plugin uses this class for its 'X'
-                     // display: none; // If you want to use ::before or a background image for 'X'
-                     // Or style it directly
+                .dnd-icon-remove {
+                    display: none;
                 }
 
                 // Add custom X using ::before if plugin's icon is hard to style or replace
@@ -411,16 +413,16 @@
 	.dnd-upload-status.file-preview-item-enhanced {
 		contain: layout;
 	}
-	
+
 	/* Smooth transitions for file list changes */
 	::view-transition-old(file-preview) {
 		animation: slideOutFileImproved 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 	}
-	
+
 	::view-transition-new(file-preview) {
 		animation: slideInFileImproved 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
-	
+
 	/* Root transition for overall smoothness */
 	::view-transition-old(root),
 	::view-transition-new(root) {
