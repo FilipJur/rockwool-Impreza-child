@@ -198,6 +198,9 @@ export class FileUpload {
 							if (document.startViewTransition) {
 								node.style.viewTransitionName = `file-preview-${Date.now()}-${itemIndex}`;
 							}
+							
+							// Make entire preview clickable for removal
+							this._makePreviewClickable(node);
 						}
 					});
 					mutation.removedNodes.forEach(node => {
@@ -253,6 +256,31 @@ export class FileUpload {
 		});
 
 		console.log("[FileUpload] Clickable zone setup completed");
+	}
+
+	/**
+	 * Make a preview item clickable for removal
+	 * @private
+	 * @param {HTMLElement} previewNode 
+	 */
+	_makePreviewClickable(previewNode) {
+		if (!previewNode) return;
+
+		previewNode.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			// Find the hidden remove button and trigger it
+			const removeButton = previewNode.querySelector('a[class*="remove"]');
+			if (removeButton) {
+				removeButton.click();
+				console.log("[FileUpload] Preview clicked, removing file");
+			}
+		});
+
+		// Add visual feedback
+		previewNode.style.cursor = 'pointer';
+		previewNode.title = 'Click to remove file';
 	}
 
 	/**

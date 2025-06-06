@@ -120,19 +120,19 @@
 
     .dnd-upload-status.file-preview-item-enhanced {
         display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        padding: 16px;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
         background: #ffffff;
         border: 1px solid #e1e5e9;
-        border-radius: 16px;
+        border-radius: 8px;
         position: relative;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         view-transition-name: file-preview;
         user-select: none;
-        min-height: 72px;
+        cursor: pointer;
 
         &.slide-in {
             opacity: 0;
@@ -150,9 +150,10 @@
         // animation-delay: var(--animation-delay, 0s); // If JS sets --animation-delay
 
         &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            border-color: #3b82f6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #ef4444;
+            background: #fef2f2;
         }
 
         // &:focus, &:active styles from old .file-preview-item can be adapted
@@ -166,9 +167,9 @@
 
         // Style plugin's internal preview structure
         .dnd-upload-image {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             border: 1px solid #e1e5e9;
             display: flex;
@@ -178,34 +179,47 @@
             overflow: hidden;
             position: relative;
             
+            // Default file icon fallback
             &::before {
                 content: '';
                 position: absolute;
                 inset: 0;
                 background: url('/wp-content/themes/Impreza-child/src/images/icons/file.svg') no-repeat center;
-                background-size: 24px;
-                opacity: 0.5;
+                background-size: 20px;
+                opacity: 0.4;
+                z-index: 0;
             }
 
             span.file {
                 display: none;
             }
             
+            // Plugin's thumbnail image (when available)
             img {
                 width: 100%; 
                 height: 100%; 
                 object-fit: cover; 
-                border-radius: 11px;
+                border-radius: 5px;
                 position: relative;
                 z-index: 1;
+                
+                // Hide fallback icon when image loads
+                &:not([src=""]) ~ &::before {
+                    display: none;
+                }
+            }
+            
+            // When image is present, hide the fallback icon
+            &:has(img[src]:not([src=""])) {
+                &::before {
+                    display: none;
+                }
             }
         }
 
         .dnd-upload-details {
             flex: 1;
             min-width: 0;
-            padding-top: 4px;
-            padding-right: 36px; // Space for remove button
 
             .name {
                 display: flex;
@@ -214,104 +228,33 @@
                 margin-bottom: 6px;
                 
                 span:first-child {
-                    font-weight: 600; 
-                    font-size: 15px; 
+                    font-weight: 500; 
+                    font-size: 14px; 
                     color: #1f2937;
                     white-space: nowrap; 
                     overflow: hidden; 
                     text-overflow: ellipsis;
                     max-width: 220px;
-                    line-height: 1.3;
+                    line-height: 1.4;
                 }
                 
                 em {
-                    font-size: 12px; 
-                    color: #6b7280;
-                    font-weight: 500;
+                    font-size: 11px; 
+                    color: #9ca3af;
+                    font-weight: 400;
                     white-space: nowrap;
-                    background: #f3f4f6;
-                    padding: 2px 6px;
-                    border-radius: 4px;
                 }
             }
 
             //&:hover .name span:first-child { color: var(--color-content-link); } // From old preview item hover
 
-            // Style the native remove button
+            // Hide the native remove button since whole item is clickable
             a[class*="remove"] {
-                position: absolute;
-                top: 8px;
-                right: 8px;
-                width: 28px;
-                height: 28px;
-                border-radius: 6px;
-                background: rgba(255, 255, 255, 0.9);
-                border: 1px solid #e1e5e9;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.2s ease;
-                opacity: 0;
-                transform: scale(0.8);
-                
-                .dnd-icon-remove {
-                    color: #6b7280;
-                    font-size: 14px;
-                    transition: color 0.2s ease;
-                }
-                
-                &:hover {
-                    background: #fee2e2;
-                    border-color: #fca5a5;
-                    transform: scale(1);
-                    
-                    .dnd-icon-remove {
-                        color: #dc2626;
-                    }
-                }
-            }
-            
-            &:hover a[class*="remove"] {
-                opacity: 1;
-                transform: scale(1);
+                display: none;
             }
 
             .dnd-progress-bar {
-                height: 4px;
-                background-color: #f1f3f4;
-                border-radius: 0 0 11px 11px;
-                position: absolute; 
-                bottom: 0; 
-                left: 0; 
-                right: 0;
-                overflow: hidden;
-
-                span {
-                    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-                    display: block;
-                    height: 100%;
-                    border-radius: 0 0 11px 11px;
-                    transition: width 0.3s ease;
-                    position: relative;
-                    
-                    // Hide percentage text for cleaner look
-                    color: transparent;
-                    font-size: 0;
-                    
-                    // Add subtle shimmer effect for active progress
-                    &:not([style*="100%"]) {
-                        &::after {
-                            content: '';
-                            position: absolute;
-                            top: 0;
-                            left: -100%;
-                            width: 100%;
-                            height: 100%;
-                            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-                            animation: shimmer 1.5s infinite;
-                        }
-                    }
-                }
+                display: none; // Hide progress bar completely
             }
         }
         // Styling for error state
@@ -338,13 +281,9 @@
             
             .has-error {
                 color: #dc2626;
-                font-size: 12px;
-                font-weight: 600;
-                margin-top: 4px;
-                padding: 4px 8px;
-                background: rgba(220, 38, 38, 0.1);
-                border-radius: 6px;
-                border-left: 3px solid #dc2626;
+                font-size: 11px;
+                font-weight: 500;
+                margin-top: 2px;
             }
         }
     }
