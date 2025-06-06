@@ -78,19 +78,31 @@ export class PreviewManager {
 	 */
 	_makeClickable(item) {
 		item.addEventListener('click', (e) => {
-			// Don't trigger if clicking directly on remove button
-			if (e.target.closest('a[class*="remove"]')) return;
+			// Don't trigger if clicking directly on remove button or its children
+			const removeButton = e.target.closest('a[class*="remove"]');
+			if (removeButton) {
+				// Let the original button handle its own click
+				return;
+			}
 
+			// Prevent any default behavior and stop propagation
 			e.preventDefault();
 			e.stopPropagation();
 
 			console.log("[PreviewManager] Preview clicked, attempting removal");
-			console.log("[PreviewManager] Item structure:", item.outerHTML);
 
-			const removeButton = this._findRemoveButton(item);
-			if (removeButton) {
-				console.log("[PreviewManager] Found remove button:", removeButton);
-				this._triggerRemoval(removeButton);
+			// Find and programmatically trigger the remove button
+			const targetRemoveButton = this._findRemoveButton(item);
+			if (targetRemoveButton) {
+				console.log("[PreviewManager] Found remove button:", targetRemoveButton);
+				
+				// Prevent the href="#" from scrolling
+				targetRemoveButton.addEventListener('click', (removeEvent) => {
+					removeEvent.preventDefault();
+				}, { once: true });
+				
+				// Now trigger the click
+				targetRemoveButton.click();
 			} else {
 				console.warn("[PreviewManager] No remove button found");
 			}
@@ -133,21 +145,46 @@ export class PreviewManager {
 	 * @param {HTMLElement} removeButton 
 	 */
 	_triggerRemoval(removeButton) {
-		// Try multiple removal methods
-		if (removeButton.onclick) {
-			// If has onclick handler, call it
-			removeButton.onclick.call(removeButton);
-		} else if (removeButton.href && removeButton.href !== '#' && !removeButton.href.includes('javascript:')) {
-			// If has real href, navigate
-			window.location.href = removeButton.href;
-		} else {
-			// Simulate native click
-			const event = new MouseEvent('click', {
-				bubbles: true,
-				cancelable: true,
-				view: window
-			});
-			removeButton.dispatchEvent(event);
+		console.log("[PreviewManager] Attempting to trigger removal on:", removeButton);
+		
+		// First try - look for data attributes that might contain removal logic
+		const storage = removeButton.getAttribute('data-storage');
+		if (storage) {
+			console.log("[PreviewManager] Found data-storage:", storage);
+		}
+
+		// Try to trigger the actual plugin removal logic
+		// Create a more complete click event
+		const clickEvent = new MouseEvent('click', {
+			bubbles: true,
+			cancelable: false, // Don't allow preventDefault
+			view: window,
+			detail: 1,
+			button: 0,
+			buttons: 1
+		});
+
+		// Stop any default behavior on our preview
+		removeButton.addEventListener('click', (e) => {
+			e.stopPropagation();
+		}, { once: true });
+
+		// Dispatch the click event
+		const result = removeButton.dispatchEvent(clickEvent);
+		console.log("[PreviewManager] Click event dispatched, result:", result);
+
+		// Alternative: Try calling any attached event handlers directly
+		if (removeButton._events || removeButton.__eventListeners) {
+			console.log("[PreviewManager] Found attached events:", removeButton._events || removeButton.__eventListeners);
+		}
+
+		// If href is # but has click handlers, try simulating without href navigation
+		if (removeButton.href === window.location.href + '#') {
+			// This is likely handled by JavaScript, try triggering without navigation
+			setTimeout(() => {
+				// Give time for any async operations
+				console.log("[PreviewManager] Checking if item was removed...");
+			}, 100);
 		}
 	}
 
@@ -164,12 +201,76 @@ export class PreviewManager {
 		const existingImg = imageContainer.querySelector('img');
 		if (existingImg && existingImg.src && existingImg.src !== '') {
 			console.log("[PreviewManager] Thumbnail found:", existingImg.src);
-			// Image already exists, ensure it's properly styled
 			existingImg.style.display = 'block';
 			existingImg.style.zIndex = '2';
+			return;
+		}
+
+		// Plugin doesn't generate thumbnails, try to create our own for images
+		const fileName = this._getFileName(item);
+		if (fileName && this._isImageFile(fileName)) {
+			console.log("[PreviewManager] Attempting to create thumbnail for image:", fileName);
+			this._createImageThumbnail(item, imageContainer);
 		} else {
-			console.log("[PreviewManager] No thumbnail, using fallback icon");
-			// No thumbnail available, fallback icon will show via CSS
+			console.log("[PreviewManager] No thumbnail, using fallback icon for:", fileName || 'unknown file');
+		}
+	}
+
+	/**
+	 * Get filename from preview item
+	 * @private
+	 * @param {HTMLElement} item 
+	 * @returns {string|null}
+	 */
+	_getFileName(item) {
+		const nameSpan = item.querySelector('.name span:first-child');
+		return nameSpan ? nameSpan.textContent.trim() : null;
+	}
+
+	/**
+	 * Check if file is an image
+	 * @private
+	 * @param {string} fileName 
+	 * @returns {boolean}
+	 */
+	_isImageFile(fileName) {
+		const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
+		const extension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+		return imageExtensions.includes(extension);
+	}
+
+	/**
+	 * Create image thumbnail from file input
+	 * @private
+	 * @param {HTMLElement} item 
+	 * @param {HTMLElement} imageContainer 
+	 */
+	_createImageThumbnail(item, imageContainer) {
+		// Try to find the file from the file input
+		const hiddenInput = item.querySelector('input[type="hidden"]');
+		if (hiddenInput && hiddenInput.value) {
+			// The value contains the uploaded file path
+			const filePath = hiddenInput.value;
+			console.log("[PreviewManager] Found file path:", filePath);
+			
+			// Create thumbnail image
+			const img = document.createElement('img');
+			img.src = `/wp-content/uploads/wpcf7_uploads/${filePath}`;
+			img.style.width = '100%';
+			img.style.height = '100%';
+			img.style.objectFit = 'cover';
+			img.style.borderRadius = '5px';
+			img.style.position = 'relative';
+			img.style.zIndex = '1';
+			
+			img.onload = () => {
+				console.log("[PreviewManager] Thumbnail loaded successfully");
+				imageContainer.appendChild(img);
+			};
+			
+			img.onerror = () => {
+				console.log("[PreviewManager] Thumbnail failed to load, using fallback");
+			};
 		}
 	}
 }

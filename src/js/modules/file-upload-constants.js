@@ -9,7 +9,7 @@ export const FILE_UPLOAD_CONFIG = {
 	allowedExtensions: [".jpg", ".jpeg", ".png"],
 	
 	selectors: {
-		primaryInput: '#realizace-upload',
+		primaryInput: '#realize-upload', // Fixed: was 'realizace-upload' but actual ID is 'realize-upload'
 		fallbackDataName: 'input[data-name="mfile-747"]',
 		fallbackClass: '.wpcf7-drag-n-drop-file',
 		wrapper: '.codedropz-upload-wrapper',
