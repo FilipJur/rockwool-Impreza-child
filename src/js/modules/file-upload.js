@@ -188,11 +188,14 @@ export class FileUpload {
 							// Add a class to trigger SCSS animations for entry
 							node.classList.add('file-preview-item-enhanced', 'slide-in'); // 'slide-in' can be animated by SCSS
 
-							// If staggered animation is desired and was based on index:
-							const previewItems = Array.from(this.originalContainer.querySelectorAll('.dnd-upload-status.file-preview-item-enhanced'));
-							const itemIndex = previewItems.indexOf(node);
-							if (itemIndex !== -1) {
-								node.style.animationDelay = `${itemIndex * this.config.animation.staggerDelay}s`;
+							// Apply staggered animation delay
+							const existingItems = this.originalContainer.querySelectorAll('.dnd-upload-status.file-preview-item-enhanced');
+							const itemIndex = existingItems.length - 1; // Current item is the last one
+							node.style.animationDelay = `${itemIndex * this.config.animation.staggerDelay}s`;
+							
+							// Add view transition name for View Transitions API
+							if (document.startViewTransition) {
+								node.style.viewTransitionName = `file-preview-${Date.now()}-${itemIndex}`;
 							}
 						}
 					});
