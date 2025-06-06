@@ -91,18 +91,16 @@ export class PreviewManager {
 
 			console.log("[PreviewManager] Preview clicked, attempting removal");
 
-			// Find and programmatically trigger the remove button
+			// Find and trigger the remove button differently
 			const targetRemoveButton = this._findRemoveButton(item);
 			if (targetRemoveButton) {
 				console.log("[PreviewManager] Found remove button:", targetRemoveButton);
+				console.log("[PreviewManager] Button href:", targetRemoveButton.href);
+				console.log("[PreviewManager] Button onclick:", targetRemoveButton.onclick);
+				console.log("[PreviewManager] Button data attributes:", [...targetRemoveButton.attributes].filter(attr => attr.name.startsWith('data-')));
 				
-				// Prevent the href="#" from scrolling
-				targetRemoveButton.addEventListener('click', (removeEvent) => {
-					removeEvent.preventDefault();
-				}, { once: true });
-				
-				// Now trigger the click
-				targetRemoveButton.click();
+				// Try multiple removal strategies
+				this._attemptRemoval(targetRemoveButton, item);
 			} else {
 				console.warn("[PreviewManager] No remove button found");
 			}
@@ -110,6 +108,75 @@ export class PreviewManager {
 
 		item.style.cursor = 'pointer';
 		item.title = 'Click to remove file';
+	}
+
+	/**
+	 * Try multiple removal strategies
+	 * @private
+	 * @param {HTMLElement} removeButton 
+	 * @param {HTMLElement} item 
+	 */
+	_attemptRemoval(removeButton, item) {
+		// Strategy 1: Simulate mousedown/mouseup sequence
+		const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+		const mouseupEvent = new MouseEvent('mouseup', { bubbles: true, cancelable: true });
+		const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+
+		removeButton.dispatchEvent(mousedownEvent);
+		removeButton.dispatchEvent(mouseupEvent);
+		
+		// Delay the click slightly
+		setTimeout(() => {
+			removeButton.dispatchEvent(clickEvent);
+			
+			// Check if removal worked after a delay
+			setTimeout(() => {
+				if (document.contains(item)) {
+					console.log("[PreviewManager] Item still exists, trying alternative removal");
+					this._alternativeRemoval(removeButton, item);
+				} else {
+					console.log("[PreviewManager] Item successfully removed");
+				}
+			}, 100);
+		}, 10);
+	}
+
+	/**
+	 * Alternative removal strategy
+	 * @private
+	 * @param {HTMLElement} removeButton 
+	 * @param {HTMLElement} item 
+	 */
+	_alternativeRemoval(removeButton, item) {
+		// Try to find and call jQuery event handlers if they exist
+		if (window.jQuery && window.jQuery(removeButton).data('events')) {
+			const events = window.jQuery(removeButton).data('events');
+			console.log("[PreviewManager] Found jQuery events:", events);
+			if (events.click) {
+				events.click.forEach(handler => {
+					try {
+						handler.handler.call(removeButton);
+					} catch (e) {
+						console.log("[PreviewManager] Error calling jQuery handler:", e);
+					}
+				});
+			}
+		}
+
+		// Try manual removal as last resort
+		setTimeout(() => {
+			if (document.contains(item)) {
+				console.log("[PreviewManager] Manual removal - hiding item");
+				item.style.transition = 'all 0.3s ease';
+				item.style.opacity = '0';
+				item.style.transform = 'translateX(-100%)';
+				setTimeout(() => {
+					if (item.parentNode) {
+						item.parentNode.removeChild(item);
+					}
+				}, 300);
+			}
+		}, 200);
 	}
 
 	/**
@@ -189,7 +256,7 @@ export class PreviewManager {
 	}
 
 	/**
-	 * Enhance thumbnail display
+	 * Enhance thumbnail display with actual file previews
 	 * @private
 	 * @param {HTMLElement} item 
 	 */
@@ -206,13 +273,13 @@ export class PreviewManager {
 			return;
 		}
 
-		// Plugin doesn't generate thumbnails, try to create our own for images
+		// Get the actual file from the file input to create real thumbnail
 		const fileName = this._getFileName(item);
 		if (fileName && this._isImageFile(fileName)) {
-			console.log("[PreviewManager] Attempting to create thumbnail for image:", fileName);
-			this._createImageThumbnail(item, imageContainer);
+			console.log("[PreviewManager] Creating real thumbnail for image:", fileName);
+			this._createRealImageThumbnail(item, imageContainer, fileName);
 		} else {
-			console.log("[PreviewManager] No thumbnail, using fallback icon for:", fileName || 'unknown file');
+			console.log("[PreviewManager] Non-image file, using fallback icon for:", fileName || 'unknown file');
 		}
 	}
 
@@ -240,37 +307,55 @@ export class PreviewManager {
 	}
 
 	/**
-	 * Create image thumbnail from file input
+	 * Create real image thumbnail from actual file data
 	 * @private
 	 * @param {HTMLElement} item 
 	 * @param {HTMLElement} imageContainer 
+	 * @param {string} fileName 
 	 */
-	_createImageThumbnail(item, imageContainer) {
-		// Try to find the file from the file input
-		const hiddenInput = item.querySelector('input[type="hidden"]');
-		if (hiddenInput && hiddenInput.value) {
-			// The value contains the uploaded file path
-			const filePath = hiddenInput.value;
-			console.log("[PreviewManager] Found file path:", filePath);
+	_createRealImageThumbnail(item, imageContainer, fileName) {
+		// Get the file input element
+		const fileInput = document.querySelector('#realize-upload, input[data-name="mfile-747"], .wpcf7-drag-n-drop-file');
+		if (!fileInput || !fileInput.files) {
+			console.log("[PreviewManager] No file input or files found");
+			return;
+		}
+
+		// Find the file that matches this preview item
+		const matchingFile = Array.from(fileInput.files).find(file => file.name === fileName);
+		if (!matchingFile) {
+			console.log("[PreviewManager] No matching file found for:", fileName);
+			return;
+		}
+
+		console.log("[PreviewManager] Found matching file:", matchingFile);
+
+		// Create thumbnail using FileReader
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			console.log("[PreviewManager] File read successfully, creating thumbnail");
 			
-			// Create thumbnail image
+			// Create img element with the file data
 			const img = document.createElement('img');
-			img.src = `/wp-content/uploads/wpcf7_uploads/${filePath}`;
+			img.src = e.target.result;
 			img.style.width = '100%';
 			img.style.height = '100%';
 			img.style.objectFit = 'cover';
 			img.style.borderRadius = '5px';
 			img.style.position = 'relative';
-			img.style.zIndex = '1';
+			img.style.zIndex = '2';
+			img.style.display = 'block';
 			
-			img.onload = () => {
-				console.log("[PreviewManager] Thumbnail loaded successfully");
-				imageContainer.appendChild(img);
-			};
-			
-			img.onerror = () => {
-				console.log("[PreviewManager] Thumbnail failed to load, using fallback");
-			};
-		}
+			// Add to container
+			imageContainer.appendChild(img);
+			console.log("[PreviewManager] Real thumbnail created successfully");
+		};
+
+		reader.onerror = () => {
+			console.log("[PreviewManager] Error reading file for thumbnail");
+		};
+
+		// Read the file as data URL
+		reader.readAsDataURL(matchingFile);
 	}
 }
