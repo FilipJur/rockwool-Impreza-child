@@ -120,18 +120,19 @@
 
     .dnd-upload-status.file-preview-item-enhanced {
         display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 16px;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px;
         background: #ffffff;
         border: 1px solid #e1e5e9;
-        border-radius: 12px;
+        border-radius: 16px;
         position: relative;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
         transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
         view-transition-name: file-preview;
         user-select: none;
+        min-height: 72px;
 
         &.slide-in {
             opacity: 0;
@@ -149,9 +150,9 @@
         // animation-delay: var(--animation-delay, 0s); // If JS sets --animation-delay
 
         &:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-color: var(--color-content-link);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-color: #3b82f6;
         }
 
         // &:focus, &:active styles from old .file-preview-item can be adapted
@@ -164,123 +165,187 @@
         // }
 
         // Style plugin's internal preview structure
-        .dnd-upload-image { // Plugin's thumbnail container
-            width: 40px; // From old .file-preview-thumbnail
-            height: 40px; // From old .file-preview-thumbnail
-            border-radius: 8px; // From old .file-preview-thumbnail
-            object-fit: cover;
-            background: #e9ecef; // From old .file-preview-thumbnail
+        .dnd-upload-image {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #e1e5e9;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
             overflow: hidden;
-            // Apply fadeInUp animation if desired (might need to be on this element directly)
-            // animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+            position: relative;
+            
+            &::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: url('/wp-content/themes/Impreza-child/src/images/icons/file.svg') no-repeat center;
+                background-size: 24px;
+                opacity: 0.5;
+            }
 
             span.file {
-                display: none; // Hide plugin's default icon
+                display: none;
             }
-            img { // If plugin inserts an <img>
-                 width: 100%; height: 100%; object-fit: cover; border-radius: 8px; // From old .file-preview-thumbnail img
+            
+            img {
+                width: 100%; 
+                height: 100%; 
+                object-fit: cover; 
+                border-radius: 11px;
+                position: relative;
+                z-index: 1;
             }
         }
 
-        .dnd-upload-details { // Plugin's info container
-            flex: 1; // From old .file-preview-info
-            min-width: 0; // From old .file-preview-info
-            // Apply fadeInUp animation if desired (might need to be on this element directly)
-            // animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+        .dnd-upload-details {
+            flex: 1;
+            min-width: 0;
+            padding-top: 4px;
+            padding-right: 36px; // Space for remove button
 
-            .name { // Plugin's file name container
-                span:first-child { // The actual name part
-                    font-weight: 500; font-size: 14px; color: #333; // From old .file-preview-name
-                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            .name {
+                display: flex;
+                align-items: baseline;
+                gap: 8px;
+                margin-bottom: 6px;
+                
+                span:first-child {
+                    font-weight: 600; 
+                    font-size: 15px; 
+                    color: #1f2937;
+                    white-space: nowrap; 
+                    overflow: hidden; 
+                    text-overflow: ellipsis;
+                    max-width: 220px;
+                    line-height: 1.3;
                 }
-                em { // The size part (e.g., (1.27MB))
-                    font-size: 12px; color: #666; margin-left: 5px; // Adapted from old .file-preview-size
+                
+                em {
+                    font-size: 12px; 
+                    color: #6b7280;
+                    font-weight: 500;
+                    white-space: nowrap;
+                    background: #f3f4f6;
+                    padding: 2px 6px;
+                    border-radius: 4px;
                 }
             }
 
             //&:hover .name span:first-child { color: var(--color-content-link); } // From old preview item hover
 
-            .remove-file { // Plugin's remove button/link
-                // Style it like old .file-remove-btn or your custom X
-                // Example:
-                background: none; border: none;
-                color: #999; // From old &::after
-                cursor: pointer; font-size: 18px; // Make X larger
-                line-height: 1;
-                padding: 0; // Reset padding
+            // Style the native remove button
+            a[class*="remove"] {
                 position: absolute;
-                top: 10px; // Adjust for precise positioning
-                right: 10px; // Adjust for precise positioning
-                width: 24px; // Clickable area
-                height: 24px; // Clickable area
+                top: 8px;
+                right: 8px;
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid #e1e5e9;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border-radius: 50%; // For hover effect
                 transition: all 0.2s ease;
-
+                opacity: 0;
+                transform: scale(0.8);
+                
                 .dnd-icon-remove {
-                    display: none;
+                    color: #6b7280;
+                    font-size: 14px;
+                    transition: color 0.2s ease;
                 }
-
-                // Add custom X using ::before if plugin's icon is hard to style or replace
-                &::before {
-                    content: "✕";
-                    font-weight: bold;
-                }
-
-
+                
                 &:hover {
-                    color: #dc3545; // Hover color
-                    background-color: rgba(220, 53, 69, 0.1); // Light red background on hover
-                    transform: scale(1.1); // Slight scale on hover
+                    background: #fee2e2;
+                    border-color: #fca5a5;
+                    transform: scale(1);
+                    
+                    .dnd-icon-remove {
+                        color: #dc2626;
+                    }
                 }
+            }
+            
+            &:hover a[class*="remove"] {
+                opacity: 1;
+                transform: scale(1);
             }
 
             .dnd-progress-bar {
-                // Style as desired, or hide if not needed: display: none;
-                // Or make it subtle like old .file-progress
-                border-radius: 0 0 7px 7px; // Match item's border-radius for bottom corners
-                height: 4px; // Slightly thicker to match screenshot better
-                background-color: #e9ecef; // Default background for the track
-                position: absolute; bottom: 0; left: 0; right: 0;
+                height: 4px;
+                background-color: #f1f3f4;
+                border-radius: 0 0 11px 11px;
+                position: absolute; 
+                bottom: 0; 
+                left: 0; 
+                right: 0;
+                overflow: hidden;
 
-                span { // This is the actual progress fill
-                    background-color: var(--color-success, #28a745); // Green for success
+                span {
+                    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
                     display: block;
                     height: 100%;
-                    border-radius: 0 0 7px 7px; // If fill reaches 100%
+                    border-radius: 0 0 11px 11px;
+                    transition: width 0.3s ease;
                     position: relative;
-
-                    // If plugin's span contains text:
-                    color: white;
-                    font-size: 10px;
-                    position: absolute;
-                    right: 5px;
-                    top: 50%;
-                    transform: translateY(-50%);
+                    
+                    // Hide percentage text for cleaner look
+                    color: transparent;
+                    font-size: 0;
+                    
+                    // Add subtle shimmer effect for active progress
+                    &:not([style*="100%"]) {
+                        &::after {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: -100%;
+                            width: 100%;
+                            height: 100%;
+                            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+                            animation: shimmer 1.5s infinite;
+                        }
+                    }
                 }
             }
         }
-        // Styling for error state based on screenshot
-        &.error { // Assuming plugin adds 'error' class to dnd-upload-status
-           .dnd-upload-details .dnd-progress-bar span {
-                background-color: var(--color-grey-dark, #343a40); // Dark grey for error progress bar
-                &::after { display: none; } // No percentage text for error usually
-           }
-           .dnd-upload-details .name span:first-child {
-               color: var(--color-grey-dark); // Filename color for error
-           }
-           // Style for the error message text itself if it's inside .dnd-upload-details
-           .upload-error-message { // Assuming a class for the error text, e.g. "Uploaded file is too large"
-                color: var(--color-error, #dc3545);
+        // Styling for error state
+        &:has(.has-error) {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            
+            .dnd-upload-image {
+                background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+                border-color: #fca5a5;
+                
+                &::before {
+                    opacity: 0.3;
+                }
+            }
+            
+            .dnd-upload-details .dnd-progress-bar span {
+                background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+            }
+            
+            .dnd-upload-details .name span:first-child {
+                color: #7f1d1d;
+            }
+            
+            .has-error {
+                color: #dc2626;
                 font-size: 12px;
+                font-weight: 600;
                 margin-top: 4px;
-           }
+                padding: 4px 8px;
+                background: rgba(220, 38, 38, 0.1);
+                border-radius: 6px;
+                border-left: 3px solid #dc2626;
+            }
         }
     }
     // General error message styling if plugin adds it below item
@@ -405,6 +470,15 @@
 	}
 	100% {
 		transform: scale(1);
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		left: -100%;
+	}
+	100% {
+		left: 100%;
 	}
 }
 
