@@ -17,330 +17,328 @@
 	cursor: pointer;
 	z-index: 2;
 }
-
-/* Hide plugin's default upload interface */
-.codedropz-upload-wrapper .codedropz-upload-handler {
-	display: none !important;
+.dnd-icon-remove:after{
+	background-image: url("data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22utf-8%22%3F%3E%3C!--%20License%3A%20MIT.%20Made%20by%20Financial%20Times%3A%20https%3A%2F%2Fgithub.com%2FFinancial-Times%2Ffticons%20--%3E%3Csvg%20fill%3D%22%23000000%22%20width%3D%22800px%22%20height%3D%22800px%22%20viewBox%3D%220%200%201024%201024%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M697.4%20759.2l61.8-61.8L573.8%20512l185.4-185.4-61.8-61.8L512%20450.2%20326.6%20264.8l-61.8%2061.8L450.2%20512%20264.8%20697.4l61.8%2061.8L512%20573.8z%22%2F%3E%3C%2Fsvg%3E") !important;
 }
-
-/* Hide plugin's default file previews */
-.codedropz-upload-wrapper .dnd-upload-status {
-	display: none !important;
+#page-content .file-preview-item-enhanced{
+	user-select: none;
 }
-
-/* Custom drop zone with icon and text */
-.file-upload-zone {
-	position: relative;
-	width: 100%;
-	min-height: 120px;
-	border: 1px dashed #cccccc;
-	border-radius: 6px;
-	background: #ffffff;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 10px;
-	padding: 30px 20px;
-	cursor: pointer;
-	transition: all 0.3s ease;
-	margin-bottom: 10px;
-}
-
-.file-upload-zone:hover {
-	border-color: var(--color-content-link);
-	background-color: rgba(51, 167, 204, 0.02);
-}
-
-.file-upload-zone.drag-over {
-	border-color: var(--color-content-link);
-	background-color: rgba(51, 167, 204, 0.1);
-	transform: scale(1.02);
-}
-
-.file-upload-zone.has-error {
-	border-color: var(--color-content-link);
-	background-color: rgba(220, 53, 69, 0.05);
-}
-
-/* Icon styling */
-.file-upload-icon {
-	width: 32px;
-	height: 32px;
-	opacity: 0.7;
-}
-
-/* Upload text styling */
-.file-upload-text {
-	font-weight: 500;
-	font-size: 16px;
-	line-height: 1.35;
-	color: black;
-	text-align: center;
-	white-space: pre-line;
-	span {
-		color: var(--color-content-link);
-		text-decoration: underline;
+#page-content .file-preview-item-enhanced:hover {
+	.remove-file {
+		background-color: #fee2e2 !important;
 	}
 }
-
 /* Hide any additional elements after plugin wrapper */
 .wpcf7-form-control-wrap[data-name="mfile-747"] + br,
 .wpcf7-form-control-wrap[data-name="mfile-747"] + br + small {
 	display: none;
 }
 
-/* File preview container with smooth transitions */
-.file-preview-container {
-	margin-top: 15px;
-	opacity: 0;
-	max-height: 0;
-	overflow: hidden;
-	transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-	transform: translateY(-10px);
-}
+.codedropz-upload-wrapper {
+	// Parent for context if needed
+	.codedropz-upload-handler {
+		// Potentially minimal styles, or if it's the main clickable/droppable area for plugin
+		// it might get some base styles. Let's assume .codedropz-upload-inner is the main visual box.
+		background: #ffffff; // From old .file-upload-zone
+		border: 1px dashed #cccccc; // From old .file-upload-zone
+		border-radius: 6px; // From old .file-upload-zone
+		padding: 20px 16px; // Reduced padding for tighter layout
+		margin-bottom: 16px;
+		cursor: pointer; // If the whole area is clickable via plugin
+		transition: all 0.3s ease; // From old .file-upload-zone
 
-.file-preview-container.has-files {
-	opacity: 1;
-	max-height: 1000px;
-	transform: translateY(0);
-}
+		&:hover {
+			transition: all 0.3s ease;
+			border-color: var(--color-content-link);
+			background-color: rgba(51, 167, 204, 0.02);
+			.cd-upload-btn span{
+				text-decoration: none !important;
+			}
+		}
 
-.file-preview-list {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	padding: 0;
-}
-
-.file-preview-item {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 12px;
-	background: #f8f9fa;
-	border: 1px solid #e9ecef;
-	border-radius: 8px;
-	position: relative;
-	transform: translateX(-20px) scale(0.95);
-	opacity: 0;
-	animation: slideInFile 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-	transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-	view-transition-name: file-preview;
-	cursor: pointer;
-	user-select: none;
-
-	&:hover {
-		transform: translateY(-2px) scale(1.02);
-		background: #ffffff;
-		border-color: var(--color-content-link);
+		&.drag-over {
+			border-color: var(--color-content-link);
+			background-color: rgba(51, 167, 204, 0.08);
+			transform: scale(1.01);
+			border-style: solid;
+		}
 	}
 
-	//   &:focus {
-	//     background-color: darken(white, 10%);
-	//   }
-	&:focus {
-		outline-offset: 4px;
-		outline-width: 1px;
-		outline-style: dashed;
-		outline-offset: 2px;
-		outline-color: $color-primary;
-	}
-	&:hover {
-		margin: 4px;
-	}
-	&:active {
-		transform: translateY(0) scale(0.98);
-	}
+	.codedropz-upload-inner {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0px; // Tighter spacing
+		text-align: center; // From old .file-upload-text container
 
-	&.removing {
-		animation: slideOutFileImproved 0.6s
-			cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-		pointer-events: none;
-	}
+		.file-upload-icon {
+			// Style for the icon injected by JS
+			width: 28px;
+			height: 28px;
+			opacity: 0.6;
+			filter: grayscale(1);
+		}
 
-	// Add visual hint for removal
-	&::after {
-		content: "✕";
+		h3 {
+			// Plugin's H3, text changed by JS
+			font-weight: 500; // From old .file-upload-text
+			font-size: 16px; // From old .file-upload-text
+			line-height: 1.35; // From old .file-upload-text
+			color: black; // From old .file-upload-text
+			margin: 0; // Reset default margin
+			white-space: pre-line; // From old .file-upload-text
+		}
+
+		> span {
+			// Plugin's "or" span, text changed by JS
+			font-weight: 500;
+			font-size: 16px;
+			line-height: 1.35;
+			color: black;
+		}
+
+		.cd-upload-btn {
+			// Plugin's "Browse Files" link, text changed by JS
+			span {
+				// If JS wraps new text in span
+				color: var(
+					--color-content-link
+				); // From old .file-upload-text span
+				text-decoration: underline; // From old .file-upload-text span
+			}
+			&:hover span {
+				text-decoration: none;
+			}
+		}
+	}
+	// Hide plugin's original browse button if it's visually replaced by clickable zone
+	// .codedropz-btn-wrap { display: none; } // If you want the whole zone to be clickable via JS
+	// For now, we assume the plugin's browse button is styled and used.
+
+	.dnd-upload-counter {
 		position: absolute;
-		top: 8px;
-		right: 8px;
-		font-size: 12px;
-		color: #999;
-		opacity: 0;
-		transition: opacity 0.2s ease;
-		pointer-events: none;
-	}
-
-	&:hover::after {
-		opacity: 1;
-		color: #dc3545;
-	}
-}
-
-.file-preview-thumbnail {
-	width: 40px;
-	height: 40px;
-	border-radius: 8px;
-	object-fit: cover;
-	background: #e9ecef;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	overflow: hidden;
-	transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-	animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
-
-	&:hover {
-		transform: scale(1.1) rotate(2deg);
+		bottom: 12px;
+		right: 12px;
+		background: rgba(0, 0, 0, 0.05);
+		padding: 4px 8px;
 		border-radius: 12px;
+		font-size: 12px;
+		color: #666;
+		font-weight: 500;
 	}
 }
 
-.file-preview-thumbnail img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	border-radius: 8px;
-	transition: all 0.3s ease;
+.codedropz-upload-wrapper {
+	// Container for plugin's previews - no direct equivalent to old .file-preview-container for animations
+	// Animations will be on individual items.
+	// Add margin if needed:
+	// margin-top: 15px; (like old .file-preview-container)
+	// display: flex; flex-direction: column; gap: 10px; (like old .file-preview-list, applied to parent of .dnd-upload-status)
+	// The plugin's .codedropz-upload-wrapper itself might be the "list" container.
 
-	&:hover {
-		transform: scale(1.05);
+	.dnd-upload-status.file-preview-item-enhanced {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 12px;
+		background: #ffffff;
+		border: 1px solid #e1e5e9;
+		border-radius: 8px;
+		position: relative;
+		margin-bottom: 8px;
+		transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+		view-transition-name: file-preview;
+		user-select: none;
+		cursor: pointer;
+
+		&.slide-in {
+			opacity: 0;
+			animation: slideInSimple 0.3s ease-out forwards;
+		}
+
+		// Support for View Transitions API
+		@supports (view-transition-name: auto) {
+			&.slide-in {
+				animation: none; // Let view transitions handle it
+			}
+		}
+
+		// Staggered animation if JS adds inline style
+		// animation-delay: var(--animation-delay, 0s); // If JS sets --animation-delay
+
+		&:hover {
+			border-color: #ef4444;
+			background: #fef2f2;
+		}
+
+		&.removing {
+			view-transition-name: file-preview;
+			pointer-events: none;
+		}
+
+		// Style plugin's internal preview structure
+		.dnd-upload-image {
+			width: 40px;
+			height: 40px;
+			border-radius: 6px;
+			background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+			border: 1px solid #e1e5e9;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			overflow: hidden;
+			position: relative;
+
+			// Default file icon fallback
+			&::before {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background: url("/wp-content/themes/Impreza-child/src/images/icons/file.svg")
+					no-repeat center;
+				background-size: 20px;
+				opacity: 0.4;
+				z-index: 0;
+			}
+
+			span.file {
+				display: none;
+			}
+
+			// Plugin's thumbnail image (when available)
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				border-radius: 5px;
+				position: relative;
+				z-index: 1;
+
+				// Hide fallback icon when image loads
+				&:not([src=""]) ~ &::before {
+					display: none;
+				}
+			}
+
+			// When image is present, hide the fallback icon
+			&:has(img[src]:not([src=""])) {
+				&::before {
+					display: none;
+				}
+			}
+		}
+
+		.dnd-upload-details {
+			flex: 1;
+			min-width: 0;
+
+			.name {
+				display: flex;
+				align-items: baseline;
+				gap: 8px;
+				margin-bottom: 6px;
+
+				span:first-child {
+					font-weight: 500;
+					font-size: 14px;
+					color: #1f2937;
+					white-space: nowrap;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					max-width: 220px;
+					line-height: 1.4;
+				}
+
+				em {
+					font-size: 11px;
+					color: #9ca3af;
+					font-weight: 400;
+					white-space: nowrap;
+				}
+			}
+			//&:hover .name span:first-child { color: var(--color-content-link); } // From old preview item hover
+			// Style the native remove button (visible for debugging)
+			a[class*="remove"] {
+				position: absolute;
+				top: 8px;
+				right: 8px;
+				width: 20px;
+				height: 20px;
+				border-radius: 4px;
+				background: transparent;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 10;
+
+				.dnd-icon-remove {
+					color: #6b7280;
+					font-size: 12px;
+				}
+
+				&:hover {
+					background: #fee2e2;
+					border-color: #fca5a5;
+
+					.dnd-icon-remove {
+						color: #dc2626;
+					}
+				}
+			}
+
+			.dnd-progress-bar {
+				display: none; // Hide progress bar completely
+			}
+		}
+		// Styling for error state
+		&:has(.has-error) {
+			border-color: #fca5a5;
+			background: #fef2f2;
+
+			.dnd-upload-image {
+				background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+				border-color: #fca5a5;
+
+				&::before {
+					opacity: 0.3;
+				}
+			}
+
+			.dnd-upload-details .dnd-progress-bar span {
+				background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+			}
+
+			.dnd-upload-details .name span:first-child {
+				color: #7f1d1d;
+			}
+
+			.has-error {
+				color: #dc2626;
+				font-size: 11px;
+				font-weight: 500;
+				margin-top: 2px;
+			}
+		}
 	}
-}
-
-.file-preview-info {
-	flex: 1;
-	min-width: 0;
-	animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
-}
-
-.file-preview-name {
-	font-weight: 500;
-	font-size: 14px;
-	color: #333;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	transition: color 0.2s ease;
-}
-
-.file-preview-size {
-	font-size: 12px;
-	color: #666;
-	margin-top: 2px;
-	opacity: 0.8;
-	transition: all 0.2s ease;
-}
-
-.file-preview-status {
-	font-size: 12px;
-	margin-top: 2px;
-	transition: all 0.2s ease;
-}
-
-.file-preview-item:hover .file-preview-name {
-	color: var(--color-content-link);
-}
-
-.file-preview-item:hover .file-preview-size {
-	opacity: 1;
-	color: #555;
-}
-
-.file-preview-status.uploading {
-	color: #007bff;
-}
-
-.file-preview-status.success {
-	color: #28a745;
-}
-
-.file-preview-status.error {
-	color: var(--color-content-link);
-}
-
-.file-remove-btn {
-	background: none;
-	border: none;
-	color: var(--color-content-link);
-	cursor: pointer;
-	font-size: 16px;
-	padding: 5px;
-	border-radius: 50%;
-	width: 24px;
-	height: 24px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-	opacity: 0;
-	transform: scale(0.8) rotate(90deg);
-	animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
-
-	&:hover {
-		background-color: rgba(220, 53, 69, 0.15);
-		transform: scale(1.2) rotate(0deg);
-		color: #dc3545;
-		animation: pulse 0.6s ease-in-out;
+	// General error message styling if plugin adds it below item
+	.dnd-upload-status + .upload-error-message-global {
+		// Example selector
+		color: var(--color-error, #dc3545);
+		font-size: 12px;
+		margin-top: -5px; // Adjust to position below item
+		margin-bottom: 10px;
 	}
-
-	&:active {
-		transform: scale(0.9);
-	}
-}
-
-/* Progress bar */
-.file-progress {
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	height: 2px;
-	background: #007bff;
-	transition: width 0.3s ease;
-	border-radius: 0 0 4px 4px;
-}
-
-/* Error messages */
-.file-upload-error {
-	color: var(--color-content-link);
-	font-size: 12px;
-	margin-top: 5px;
-	display: none;
-}
-
-.file-upload-error.show {
-	display: block;
-}
-
-/* Loading state */
-.file-upload-zone.loading {
-	pointer-events: none;
-	opacity: 0.7;
-}
-
-.file-upload-zone.loading::before {
-	content: "";
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	width: 20px;
-	height: 20px;
-	border: 2px solid #f3f3f3;
-	border-top: 2px solid var(--color-content-link);
-	border-radius: 50%;
-	animation: spin 1s linear infinite;
-	transform: translate(-50%, -50%);
-	z-index: 10;
 }
 
 @keyframes spin {
 	0% {
-		transform: translate(-50%, -50%) rotate(0deg);
+		transform: rotate(0deg);
 	}
 	100% {
-		transform: translate(-50%, -50%) rotate(360deg);
+		transform: rotate(360deg);
 	}
 }
 
@@ -356,6 +354,35 @@
 	100% {
 		opacity: 1;
 		transform: translateX(0) scale(1);
+	}
+}
+
+@keyframes slideInFileImproved {
+	0% {
+		opacity: 0;
+		transform: translateY(20px) scale(0.95);
+		filter: blur(4px);
+	}
+	50% {
+		opacity: 0.7;
+		transform: translateY(-2px) scale(1.02);
+		filter: blur(2px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+		filter: blur(0);
+	}
+}
+
+@keyframes slideInSimple {
+	0% {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
 	}
 }
 
@@ -379,32 +406,18 @@
 	}
 }
 
-@keyframes slideOutFileImproved {
+@keyframes fadeOutSmooth {
 	0% {
 		opacity: 1;
-		transform: translateX(0) scale(1) rotateY(0deg);
-		max-height: 80px;
-		margin-bottom: 10px;
-		filter: blur(0px);
+		transform: translateX(0) scale(1);
 	}
-	30% {
-		transform: translateX(-15px) scale(1.05) rotateY(-5deg);
-		background: #ffebee;
-		border-color: #f44336;
-	}
-	60% {
-		transform: translateX(-40px) scale(0.8) rotateY(-15deg);
-		opacity: 0.7;
-		filter: blur(1px);
+	40% {
+		opacity: 0.8;
+		transform: translateX(8px) scale(1.02);
 	}
 	100% {
 		opacity: 0;
-		transform: translateX(-60px) scale(0.3) rotateY(-45deg);
-		max-height: 0;
-		margin-bottom: 0;
-		padding-top: 0;
-		padding-bottom: 0;
-		filter: blur(3px);
+		transform: translateX(25px) scale(0.95);
 	}
 }
 
@@ -431,23 +444,33 @@
 	}
 }
 
-/* Mobile responsive adjustments */
-@media (max-width: 768px) {
-	.file-upload-zone {
-		padding: 20px 15px;
-		min-height: 100px;
+@keyframes shimmer {
+	0% {
+		left: -100%;
+	}
+	100% {
+		left: 100%;
+	}
+}
+
+/* View Transitions API Support */
+@supports (view-transition-name: auto) {
+	.dnd-upload-status.file-preview-item-enhanced {
+		contain: layout;
 	}
 
-	.file-upload-text {
-		font-size: 14px;
+	/* Smooth transitions for file list changes */
+	::view-transition-old(file-preview) {
+		animation: fadeOutSmooth 0.3s ease-out;
 	}
 
-	.file-preview-item {
-		padding: 8px;
+	::view-transition-new(file-preview) {
+		animation: slideInFile 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
-	.file-preview-thumbnail {
-		width: 35px;
-		height: 35px;
+	/* Root transition for overall smoothness */
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation-duration: 0.4s;
 	}
 }
