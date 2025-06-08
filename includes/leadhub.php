@@ -21,7 +21,7 @@ function odeslat_do_leadhubu_bez_oauth($contact_form) {
     $response = wp_remote_post('https://api.leadhub.co/interest-lists/predregistrace/subscriptions', [
         'headers' => [
             'Accept'  => 'application/json',
-            'Authorization' => 'ba52922c7e4b4d4ab54cb42e21b882018748a370ce2b40cfb9299b89f8faed51f21c9a1671cf47e8a3d7a6f82f64fcf887eea57b8ed14ecf9ca808959acc7de6', // <- zde dosaď svůj token
+            'Authorization' => LEADHUB_TOKEN, // <- hodnota uvedena ve wp-config
             'Content-Type'  => 'application/json',
         ],
         'body' => json_encode([
