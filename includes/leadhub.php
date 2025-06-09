@@ -20,16 +20,16 @@ function odeslat_do_leadhubu_bez_oauth($contact_form) {
     // Odeslání kontaktu přímo pomocí API tokenu
     $response = wp_remote_post('https://api.leadhub.co/interest-lists/predregistrace/subscriptions', [
         'headers' => [
-            'Accept'  => 'application/json',
-            'Authorization' => LEADHUB_TOKEN, // <- hodnota uvedena ve wp-config
-            'Content-Type'  => 'application/json',
+            'accept'  => 'application/json',
+            'authorization' => LEADHUB_TOKEN, // <- hodnota uvedena ve wp-config
+            'content-Type'  => 'application/json',
         ],
         'body' => json_encode([
             'operation' => 'subscribe',
-            'email_address'      => $email,
-            'first_name' => $first_name,
+            'email_address' => $email,
+            /*'first_name' => $first_name,
             'last_name'  => $last_name,
-            /*'tags'       => ['cf7-form', 'mistrfachman']*/
+            'tags'       => ['cf7-form', 'mistrfachman']*/
         ]),
         'timeout' => 10
     ]);
