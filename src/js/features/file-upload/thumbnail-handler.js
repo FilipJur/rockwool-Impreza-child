@@ -57,7 +57,7 @@ function isImageFile(fileName) {
  * @param {string} fileName 
  */
 function createImageThumbnail(item, imageContainer, fileName) {
-	const fileInput = document.querySelector('#realize-upload, input[data-name="mfile-747"], .wpcf7-drag-n-drop-file');
+	const fileInput = document.querySelector('#realizace-upload, input[data-name="mfile-747"], .wpcf7-drag-n-drop-file');
 	if (!fileInput || !fileInput.files) {
 		console.log("[ThumbnailHandler] No file input or files found");
 		return;

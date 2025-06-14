@@ -4,11 +4,16 @@
  */
 
 /**
- * Attempt file removal using multiple strategies
+ * Attempt file removal using plugin's native removal
  * @param {HTMLElement} removeButton 
  * @param {HTMLElement} item 
  */
 export function attemptRemoval(removeButton, item) {
+	console.log("[RemovalHandler] Starting removal process");
+	
+	// Disable pointer events during removal
+	item.classList.add('removing');
+	
 	const originalHref = removeButton.href;
 	removeButton.href = 'javascript:void(0)';
 
@@ -20,6 +25,7 @@ export function attemptRemoval(removeButton, item) {
 
 	removeButton.addEventListener('click', clickHandler, { once: true });
 
+	// Try plugin removal
 	if (removeButton.dataset.storage) {
 		triggerPluginRemoval(removeButton, item);
 	}
@@ -28,12 +34,15 @@ export function attemptRemoval(removeButton, item) {
 		removeButton.href = originalHref;
 	}, 100);
 
+	// Fallback cleanup if plugin doesn't handle removal
 	setTimeout(() => {
 		if (document.contains(item)) {
-			console.log("[RemovalHandler] Plugin removal failed, using smooth manual removal");
-			smoothRemoval(item);
+			console.log("[RemovalHandler] Plugin removal failed, removing manually");
+			if (item.parentNode) {
+				item.parentNode.removeChild(item);
+			}
 		} else {
-			console.log("[RemovalHandler] Item successfully removed");
+			console.log("[RemovalHandler] Item successfully removed by plugin");
 		}
 	}, 150);
 }
@@ -68,32 +77,6 @@ function triggerPluginRemoval(removeButton, item) {
 	removeButton.click();
 }
 
-/**
- * Simple, performant removal animation
- * @param {HTMLElement} item 
- */
-function smoothRemoval(item) {
-	console.log("[RemovalHandler] Performing clean removal");
-
-	if ('startViewTransition' in document) {
-		item.classList.add('removing');
-		document.startViewTransition(() => {
-			if (item.parentNode) {
-				item.parentNode.removeChild(item);
-				console.log("[RemovalHandler] Item removed with View Transition");
-			}
-		});
-	} else {
-		item.style.transition = 'opacity 0.3s ease-out';
-		item.style.opacity = '0';
-		setTimeout(() => {
-			if (item.parentNode) {
-				item.parentNode.removeChild(item);
-				console.log("[RemovalHandler] Item removed with fallback animation");
-			}
-		}, 300);
-	}
-}
 
 /**
  * Find the remove button using various selectors

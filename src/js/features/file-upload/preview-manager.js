@@ -86,6 +86,8 @@ export function setupPreviewObserver(container, onItemAdded) {
 							console.log('[PreviewObserver] Preview item added:', node);
 							console.log('[PreviewObserver] Mobile browser:', /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
 							console.log('[PreviewObserver] Node classes:', node.className);
+							
+							// Enhance preview item
 							enhancePreviewItem(node);
 							if (onItemAdded) onItemAdded(node);
 						}

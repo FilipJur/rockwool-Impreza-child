@@ -151,26 +151,18 @@
 		margin-bottom: 8px;
 		transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-		view-transition-name: file-preview;
 		user-select: none;
 		cursor: pointer;
 		opacity: 1 !important; // Ensure visible by default on all devices
 
 		&.slide-in {
 			opacity: 0;
-			animation: slideInSimple 0.3s ease-out forwards;
+			animation: slideInStaggered 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 		}
 
 		// Fallback for mobile: ensure items are visible even if animation fails
 		&:not(.slide-in) {
 			opacity: 1 !important;
-		}
-
-		// Support for View Transitions API
-		@supports (view-transition-name: auto) {
-			&.slide-in {
-				animation: none; // Let view transitions handle it
-			}
 		}
 
 		// Staggered animation if JS adds inline style
@@ -182,7 +174,6 @@
 		}
 
 		&.removing {
-			view-transition-name: file-preview;
 			pointer-events: none;
 		}
 
@@ -351,83 +342,21 @@
 }
 
 /* File preview animations */
-@keyframes slideInFile {
+@keyframes slideInStaggered {
 	0% {
 		opacity: 0;
-		transform: translateX(-20px) scale(0.95);
+		transform: translateY(15px) scale(0.96);
 	}
 	60% {
-		transform: translateX(5px) scale(1.02);
-	}
-	100% {
-		opacity: 1;
-		transform: translateX(0) scale(1);
-	}
-}
-
-@keyframes slideInFileImproved {
-	0% {
-		opacity: 0;
-		transform: translateY(20px) scale(0.95);
-		filter: blur(4px);
-	}
-	50% {
-		opacity: 0.7;
-		transform: translateY(-2px) scale(1.02);
-		filter: blur(2px);
+		opacity: 0.8;
+		transform: translateY(-2px) scale(1.01);
 	}
 	100% {
 		opacity: 1;
 		transform: translateY(0) scale(1);
-		filter: blur(0);
 	}
 }
 
-@keyframes slideInSimple {
-	0% {
-		opacity: 0;
-		transform: translateY(10px);
-	}
-	100% {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-@keyframes slideOutFile {
-	0% {
-		opacity: 1;
-		transform: translateX(0) scale(1);
-		max-height: 80px;
-		margin-bottom: 10px;
-	}
-	50% {
-		transform: translateX(-10px) scale(0.98);
-	}
-	100% {
-		opacity: 0;
-		transform: translateX(-30px) scale(0.9);
-		max-height: 0;
-		margin-bottom: 0;
-		padding-top: 0;
-		padding-bottom: 0;
-	}
-}
-
-@keyframes fadeOutSmooth {
-	0% {
-		opacity: 1;
-		transform: translateX(0) scale(1);
-	}
-	40% {
-		opacity: 0.8;
-		transform: translateX(8px) scale(1.02);
-	}
-	100% {
-		opacity: 0;
-		transform: translateX(25px) scale(0.95);
-	}
-}
 
 @keyframes fadeInUp {
 	from {
@@ -461,25 +390,3 @@
 	}
 }
 
-/* View Transitions API Support */
-@supports (view-transition-name: auto) {
-	.dnd-upload-status,
-	.dnd-upload-status.file-preview-item-enhanced {
-		contain: layout;
-	}
-
-	/* Smooth transitions for file list changes */
-	::view-transition-old(file-preview) {
-		animation: fadeOutSmooth 0.3s ease-out;
-	}
-
-	::view-transition-new(file-preview) {
-		animation: slideInFile 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-	}
-
-	/* Root transition for overall smoothness */
-	::view-transition-old(root),
-	::view-transition-new(root) {
-		animation-duration: 0.4s;
-	}
-}

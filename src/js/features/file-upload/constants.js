@@ -5,7 +5,7 @@
 
 export const FILE_UPLOAD_CONFIG = {
 	selectors: {
-		primaryInput: "#realize-upload", // Fixed: was 'realizace-upload' but actual ID is 'realize-upload'
+		primaryInput: "#realizace-upload", // Fixed: corrected to match actual ID
 		fallbackDataName: 'input[data-name="mfile-747"]',
 		fallbackClass: ".wpcf7-drag-n-drop-file",
 		wrapper: ".codedropz-upload-wrapper",
