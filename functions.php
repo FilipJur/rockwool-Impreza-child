@@ -6,7 +6,7 @@
  *
  * @package impreza-child
  */
-include("./includes/leadhub.php");
+include_once("includes/leadhub.php");
 
 /**
  * Enqueue scripts and styles.
