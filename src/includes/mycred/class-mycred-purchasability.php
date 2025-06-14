@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * MyCred Purchasability Class
  *
@@ -16,26 +19,14 @@ if (!defined('ABSPATH')) {
 
 class MyCred_Purchasability {
 
-    /**
-     * Cart calculator instance
-     *
-     * @var MyCred_Cart_Calculator
-     */
-    private $calculator;
-
-    /**
-     * Constructor
-     *
-     * @param MyCred_Cart_Calculator $calculator Cart calculator instance
-     */
-    public function __construct(MyCred_Cart_Calculator $calculator) {
-        $this->calculator = $calculator;
-    }
+    public function __construct(
+        private readonly MyCred_Cart_Calculator $calculator
+    ) {}
 
     /**
      * Initialize WordPress hooks
      */
-    public function init_hooks() {
+    public function init_hooks(): void {
         add_filter('woocommerce_is_purchasable', [$this, 'check_product_affordability'], 10, 2);
         add_filter('woocommerce_variation_is_purchasable', [$this, 'check_product_affordability'], 10, 2);
     }
@@ -49,43 +40,48 @@ class MyCred_Purchasability {
      * @param WC_Product $product Product object
      * @return bool Modified purchasability status
      */
-    public function check_product_affordability($is_purchasable, $product) {
-        // If product is already not purchasable for other reasons, don't change it
-        if (!$is_purchasable) {
-            return false;
-        }
+    public function check_product_affordability(bool $is_purchasable, WC_Product $product): bool {
+        // Log the incoming purchasability status and our decision
+        mycred_debug('Purchasability filter called', [
+            'product_id' => $product->get_id(),
+            'incoming_purchasable' => $is_purchasable,
+            'product_type' => $product->get_type(),
+            'product_status' => $product->get_status()
+        ], 'purchasability', 'verbose');
 
-        // Only work with logged-in users and when myCred is active
-        if (!$this->should_check_affordability($product)) {
+        if (!$is_purchasable || !$this->should_check_affordability($product)) {
+            mycred_debug('Skipping myCred check', [
+                'reason' => !$is_purchasable ? 'already_unpurchasable' : 'not_logged_in_or_no_mycred',
+                'is_purchasable' => $is_purchasable
+            ], 'purchasability', 'verbose');
             return $is_purchasable;
         }
 
         $user_id = get_current_user_id();
         $product_cost = $this->calculator->get_product_point_cost($product);
 
-        // If we can't determine product cost, don't change purchasability
-        if (is_null($product_cost)) {
+        if ($product_cost === null) {
+            mycred_debug('Cannot determine product cost, allowing purchase', $product->get_id(), 'purchasability', 'warning');
             return $is_purchasable;
         }
 
-        // Check if user can afford this product considering their cart
-        if (!$this->calculator->can_user_afford_product($product, $user_id)) {
-            return false;
-        }
+        $can_afford = $this->calculator->can_user_afford_product($product, $user_id);
 
-        return $is_purchasable;
+        mycred_debug('myCred purchasability decision', [
+            'product_id' => $product->get_id(),
+            'incoming_purchasable' => $is_purchasable,
+            'can_afford' => $can_afford,
+            'final_result' => $can_afford
+        ], 'purchasability', 'info');
+
+        return $can_afford;
     }
 
     /**
      * Determine if we should check affordability for this product
-     *
-     * @param WC_Product $product Product to check
-     * @return bool True if we should check affordability
      */
-    private function should_check_affordability($product) {
-        return is_user_logged_in()
-            && function_exists('mycred')
-            && $product instanceof WC_Product;
+    private function should_check_affordability(WC_Product $product): bool {
+        return is_user_logged_in() && function_exists('mycred');
     }
 
 
@@ -93,12 +89,8 @@ class MyCred_Purchasability {
      * Check if specific product is affordable for user
      *
      * Public method for external use.
-     *
-     * @param WC_Product|int $product Product object or ID
-     * @param int|null $user_id User ID (defaults to current user)
-     * @return bool True if affordable
      */
-    public function is_product_affordable($product, $user_id = null) {
+    public function is_product_affordable(WC_Product|int $product, ?int $user_id = null): bool {
         if (!$product instanceof WC_Product) {
             $product = wc_get_product($product);
         }

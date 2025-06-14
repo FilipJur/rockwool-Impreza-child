@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * MyCred Manager Class
  *
@@ -16,137 +19,86 @@ if (!defined('ABSPATH')) {
 
 class MyCred_Manager {
     
-    /**
-     * Single instance of this class
-     *
-     * @var MyCred_Manager|null
-     */
-    private static $instance = null;
+    private static ?self $instance = null;
+    private static ?string $cached_point_type = null;
     
-    /**
-     * Cart calculator instance
-     *
-     * @var MyCred_Cart_Calculator|null
-     */
-    private $cart_calculator;
-    
-    /**
-     * Purchasability checker instance
-     *
-     * @var MyCred_Purchasability|null
-     */
-    private $purchasability;
-    
-    /**
-     * UI modifier instance
-     *
-     * @var MyCred_UI_Modifier|null
-     */
-    private $ui_modifier;
+    public readonly MyCred_Cart_Calculator $cart_calculator;
+    public readonly MyCred_Purchasability $purchasability;
+    public readonly MyCred_UI_Modifier $ui_modifier;
     
     
     /**
      * Get singleton instance
-     *
-     * @return MyCred_Manager
      */
-    public static function get_instance() {
-        if (null === self::$instance) {
-            self::$instance = new self();
-        }
-        return self::$instance;
+    public static function get_instance(): self {
+        return self::$instance ??= new self();
     }
     
     /**
      * Private constructor to prevent direct instantiation
      */
     private function __construct() {
-        $this->init();
-    }
-    
-    /**
-     * Initialize the integration
-     */
-    private function init() {
-        // Initialize components
         $this->cart_calculator = new MyCred_Cart_Calculator();
         $this->purchasability = new MyCred_Purchasability($this->cart_calculator);
         $this->ui_modifier = new MyCred_UI_Modifier();
         
-        // Hook into WordPress
         $this->setup_hooks();
+        
+        mycred_debug('MyCred integration initialized', null, 'manager', 'info');
     }
     
     /**
      * Setup WordPress hooks
      */
-    private function setup_hooks() {
-        // Let purchasability component handle its own hooks
+    private function setup_hooks(): void {
         $this->purchasability->init_hooks();
-        
-        // Let UI modifier handle its own hooks
         $this->ui_modifier->init_hooks();
     }
     
-    /**
-     * Get the cart calculator instance
-     *
-     * @return MyCred_Cart_Calculator
-     */
-    public function get_cart_calculator() {
-        return $this->cart_calculator;
-    }
-    
-    /**
-     * Get the purchasability checker instance
-     *
-     * @return MyCred_Purchasability
-     */
-    public function get_purchasability() {
-        return $this->purchasability;
-    }
-    
-    /**
-     * Get the UI modifier instance
-     *
-     * @return MyCred_UI_Modifier
-     */
-    public function get_ui_modifier() {
-        return $this->ui_modifier;
-    }
     
     
     /**
      * Get myCred point type for WooCommerce
      * 
      * Handles fallback logic for determining the correct point type.
-     *
-     * @return string Point type key
+     * Uses caching to avoid repeated detection and logging spam.
      */
-    public function get_woo_point_type() {
-        // Try to use preferred myCred function if it exists
+    public function get_woo_point_type(): string {
+        // Return cached result if available
+        if (self::$cached_point_type !== null) {
+            return self::$cached_point_type;
+        }
+        
+        // Try preferred myCred function first
         if (function_exists('mycred_get_woo_point_type')) {
             $point_type = mycred_get_woo_point_type();
             if (!empty($point_type)) {
+                self::$cached_point_type = $point_type;
                 return $point_type;
             }
         }
         
-        // Fallback: direct reading of myCred gateway settings
-        $gateway_settings = get_option('woocommerce_mycred_settings');
-        return isset($gateway_settings['point_type']) 
-            ? $gateway_settings['point_type'] 
-            : (defined('MYCRED_DEFAULT_TYPE_KEY') ? MYCRED_DEFAULT_TYPE_KEY : 'mycred_default');
+        // Fallback to gateway settings
+        $gateway_settings = get_option('woocommerce_mycred_settings', []);
+        $point_type = match (true) {
+            isset($gateway_settings['point_type']) => $gateway_settings['point_type'],
+            defined('MYCRED_DEFAULT_TYPE_KEY') => MYCRED_DEFAULT_TYPE_KEY,
+            default => 'mycred_default'
+        };
+        
+        // Cache the result
+        self::$cached_point_type = $point_type;
+        
+        // Log once that we're using fallback (only on first detection)
+        if (!function_exists('mycred_get_woo_point_type')) {
+            mycred_debug('Using fallback point type detection - myCred gateway function not available', $point_type, 'manager', 'warning');
+        }
+        
+        return $point_type;
     }
     
-    /**
-     * Prevent cloning
-     */
     private function __clone() {}
-    
-
-    /**
-     * Prevent unserialization
-     */
-    public function __wakeup() {}
+    public function __wakeup(): void {
+        throw new \Exception('Cannot unserialize singleton');
+    }
 }
