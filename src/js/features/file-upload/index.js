@@ -6,8 +6,8 @@
 // Remove unused import
 // import { validation } from "../../utils/validation.js";
 import { FILE_UPLOAD_CONFIG } from "./constants.js";
-import { PreviewManager } from "./preview-manager.js";
-import { AnimationManager } from "./animation-manager.js";
+import { setupPreviewObserver } from "./preview-manager.js";
+import { applyStaggeredAnimation } from "./animation-manager.js";
 console.log("FileUpload.js loaded");
 
 export class FileUpload {
@@ -29,8 +29,7 @@ export class FileUpload {
 		this.observer = null; // For MutationObserver
 
 		// Initialize managers
-		this.previewManager = null;
-		this.animationManager = new AnimationManager(this.config);
+		this.previewObserver = null;
 
 		FileUpload.instance = this;
 		this.init();
@@ -182,18 +181,17 @@ export class FileUpload {
 	}
 
 	/**
-	 * Setup preview manager for handling file previews
+	 * Setup preview observer for handling file previews
 	 */
 	setupPreviewManager() {
 		if (!this.originalContainer) return;
 
-		this.previewManager = new PreviewManager(this.originalContainer);
-		this.previewManager.startObserving((item) => {
+		this.previewObserver = setupPreviewObserver(this.originalContainer, (item) => {
 			// Apply animations when item is added
-			this.animationManager.applyStaggeredAnimation(item, this.originalContainer);
+			applyStaggeredAnimation(item, this.originalContainer, this.config);
 		});
 
-		console.log("[FileUpload] Preview manager initialized");
+		console.log("[FileUpload] Preview observer initialized");
 	}
 
 	/**
@@ -256,9 +254,9 @@ export class FileUpload {
 	 * Clean up and remove custom elements
 	 */
 	cleanup() {
-		if (this.previewManager) {
-			this.previewManager.stopObserving();
-			this.previewManager = null;
+		if (this.previewObserver) {
+			this.previewObserver.stopObserving();
+			this.previewObserver = null;
 		}
 		if (this.observer) {
 			this.observer.disconnect();

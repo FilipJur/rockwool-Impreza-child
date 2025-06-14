@@ -3,7 +3,7 @@
  * Imports and initializes all modules for the theme
  */
 
-import { AresHandler } from './features/ares/handler.js';
+import { setupAresForm } from './features/ares/handler.js';
 import { FileUpload } from './features/file-upload/index.js';
 
 /**
@@ -47,7 +47,7 @@ class ThemeApp {
     // Initialize ARES handler for company data lookup
     if (document.querySelector('.registration-form')) {
       try {
-        this.modules.aresHandler = new AresHandler();
+        this.modules.aresHandler = setupAresForm();
         console.log('ARES handler initialized');
       } catch (error) {
         console.error('Failed to initialize ARES handler:', error);
@@ -199,7 +199,9 @@ class ThemeApp {
    */
   destroyModules() {
     Object.keys(this.modules).forEach(key => {
-      if (this.modules[key] && typeof this.modules[key].destroy === 'function') {
+      if (this.modules[key] && typeof this.modules[key].cleanup === 'function') {
+        this.modules[key].cleanup();
+      } else if (this.modules[key] && typeof this.modules[key].destroy === 'function') {
         this.modules[key].destroy();
       }
       this.modules[key] = null;
