@@ -1,4 +1,4 @@
-****# CLAUDE.md
+# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -60,6 +60,19 @@ JavaScript is organized into feature modules under `src/js/features/`:
   - `ShortcodeBase`: Abstract base class with validation and templating
   - `ShortcodeManager`: Auto-discovery registry with dependency injection
   - `ProductGridShortcode`: Component with balance filtering and React-like data props
+
+### Service Pattern Architecture
+- **Dependency Injection**: Shortcodes receive services via constructor injection, never create dependencies
+- **Service Layer**: `src/App/Services/` provides business logic abstraction between shortcodes and core domains
+- **ProductService**: Encapsulates WooCommerce product fetching and myCred balance filtering logic
+- **Communication Flow**:
+  ```
+  Shortcode → Service → Domain Manager → Core Logic
+  ProductGridShortcode → ProductService → ECommerceManager → CartContext/BalanceCalculator
+  ```
+- **Pure Functional Components**: Shortcodes are stateless components that receive data and render HTML
+- **No Direct Domain Access**: Shortcodes never directly access MyCred/WooCommerce APIs - always through services
+- **Testability**: Service layer enables easy mocking and unit testing of shortcode logic
 
 ## Key Features
 
@@ -136,6 +149,8 @@ JavaScript is organized into feature modules under `src/js/features/`:
 - **Use functional patterns over classes**: Classes only for stateful components (FileUpload singleton), functions for everything else
 - **Proper cleanup required**: All setup functions must return cleanup methods, all classes must implement destroy/cleanup
 - **Avoid View Transitions API**: Causes browser compatibility issues and animation conflicts - use CSS animations instead
+- **NO INLINE STYLING IN SHORTCODES**: Shortcodes are functional smart components - styling is handled separately in SCSS/CSS files
+- **Semantic CSS naming for shortcodes**: Wrapper elements include context classes (e.g., `filter-affordable`, `filter-unavailable`) for targeted styling
 
 ## Last Updated
 2025-01-15

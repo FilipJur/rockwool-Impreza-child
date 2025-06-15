@@ -27,6 +27,7 @@ class ComposerStaticInit861b9579c9e0292155dfb983f2c3e029
         'MistrFachman\\MyCred\\ECommerce\\Manager' => __DIR__ . '/../..' . '/src/App/MyCred/ECommerce/Manager.php',
         'MistrFachman\\MyCred\\ECommerce\\Purchasability' => __DIR__ . '/../..' . '/src/App/MyCred/ECommerce/Purchasability.php',
         'MistrFachman\\MyCred\\ECommerce\\UiModifier' => __DIR__ . '/../..' . '/src/App/MyCred/ECommerce/UiModifier.php',
+        'MistrFachman\\Services\\ProductService' => __DIR__ . '/../..' . '/src/App/Services/ProductService.php',
         'MistrFachman\\Shortcodes\\ProductGridShortcode' => __DIR__ . '/../..' . '/src/App/Shortcodes/ProductGridShortcode.php',
         'MistrFachman\\Shortcodes\\ShortcodeBase' => __DIR__ . '/../..' . '/src/App/Shortcodes/ShortcodeBase.php',
         'MistrFachman\\Shortcodes\\ShortcodeManager' => __DIR__ . '/../..' . '/src/App/Shortcodes/ShortcodeManager.php',

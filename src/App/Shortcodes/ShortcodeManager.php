@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Shortcodes;
 
 use MistrFachman\MyCred\ECommerce\Manager;
+use MistrFachman\Services\ProductService;
 
 /**
  * Shortcode Manager Class
@@ -23,11 +24,13 @@ if (!defined('ABSPATH')) {
 
 class ShortcodeManager {
 
-    private Manager $mycred_manager;
+    private Manager $ecommerce_manager;
+    private ProductService $product_service;
     private array $registered_shortcodes = [];
 
-    public function __construct(Manager $mycred_manager) {
-        $this->mycred_manager = $mycred_manager;
+    public function __construct(Manager $ecommerce_manager, ProductService $product_service) {
+        $this->ecommerce_manager = $ecommerce_manager;
+        $this->product_service = $product_service;
         $this->discover_and_register_shortcodes();
     }
 
@@ -35,7 +38,7 @@ class ShortcodeManager {
      * Auto-discover and register all shortcode classes
      */
     private function discover_and_register_shortcodes(): void {
-        $shortcode_directory = get_stylesheet_directory() . '/src/Shortcodes/';
+        $shortcode_directory = get_stylesheet_directory() . '/src/App/Shortcodes/';
         
         if (!is_dir($shortcode_directory)) {
             mycred_debug('Shortcode directory not found', $shortcode_directory, 'shortcode_manager', 'warning');
@@ -77,7 +80,7 @@ class ShortcodeManager {
                 
                 // Only register concrete classes that extend ShortcodeBase
                 if (!$reflection->isAbstract() && $reflection->isSubclassOf(ShortcodeBase::class)) {
-                    $shortcode_instance = new $class_name($this->mycred_manager);
+                    $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service);
                     $this->register_shortcode($shortcode_instance);
                 }
             }

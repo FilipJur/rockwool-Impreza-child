@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MistrFachman\Shortcodes;
 
+use MistrFachman\MyCred\ECommerce\Manager;
+use MistrFachman\Services\ProductService;
+
 /**
  * Product Grid Shortcode Component
  *
@@ -23,10 +26,15 @@ if (!defined('ABSPATH')) {
 
 class ProductGridShortcode extends ShortcodeBase
 {
+    private ProductService $product_service;
+
+    public function __construct(Manager $mycred_manager, ProductService $product_service) {
+        parent::__construct($mycred_manager);
+        $this->product_service = $product_service;
+    }
 
 	protected array $default_attributes = [
 		'balance_filter' => 'all',          // all, affordable, unavailable
-		'columns' => '3',                   // Number of columns in grid
 		'limit' => '12',                    // Number of products to show
 		'category' => '',                   // Product category slug
 		'order' => 'ASC',                   // ASC or DESC
@@ -56,71 +64,37 @@ class ProductGridShortcode extends ShortcodeBase
 			return $this->render_error('WooCommerce není aktivní');
 		}
 
-		// Get products based on attributes
-		$products = $this->get_products($attributes);
+		$query_args = [
+			'limit'    => (int) $attributes['limit'],
+			'category' => !empty($attributes['category']) ? [$attributes['category']] : [],
+			'orderby'  => $attributes['orderby'],
+			'order'    => $attributes['order'],
+		];
+
+		// Get pre-filtered data directly from the intelligent service
+		$products = $this->product_service->get_products_filtered_by_balance(
+			$attributes['balance_filter'],
+			$query_args
+		);
 
 		if (empty($products)) {
-			return $this->render_no_products($attributes);
-		}
-
-		// Filter products by balance if needed
-		$filtered_products = $this->filter_products_by_balance($products, $attributes['balance_filter']);
-
-		if (empty($filtered_products) && $attributes['balance_filter'] !== 'all') {
-			return $this->render_no_affordable_products($attributes);
+			return $attributes['balance_filter'] === 'all' ?
+				$this->render_no_products($attributes) :
+				$this->render_no_affordable_products($attributes);
 		}
 
 		// Prepare data for template
 		$template_data = [
-			'products' => $filtered_products,
+			'products' => $products,
 			'attributes' => $attributes,
 			'user_balance' => $this->mycred_manager->get_user_balance(),
 			'available_points' => $this->mycred_manager->get_available_points(),
 			'wrapper_classes' => $this->get_wrapper_classes($attributes)
 		];
 
-		// Try to render with template, fallback to built-in rendering
-		$template_output = $this->render_template('product-grid', $template_data);
-
-		if ($template_output && !str_contains($template_output, 'Template not found')) {
-			return $template_output;
-		}
-
 		return $this->render_builtin_grid($template_data);
 	}
 
-	/**
-	 * Get products based on shortcode attributes
-	 *
-	 * @param array $attributes Validated shortcode attributes
-	 * @return array Array of WC_Product objects
-	 */
-	private function get_products(array $attributes): array
-	{
-		$args = [
-			'status' => 'publish',
-			'limit' => (int) $attributes['limit'],
-			'orderby' => $attributes['orderby'],
-			'order' => $attributes['order'],
-			'return' => 'objects'
-		];
-
-		// Add category filter if specified
-		if (!empty($attributes['category'])) {
-			$args['category'] = [$attributes['category']];
-		}
-
-		try {
-			return wc_get_products($args);
-		} catch (\Exception $e) {
-			mycred_debug('Error fetching products for shortcode', [
-				'attributes' => $attributes,
-				'error' => $e->getMessage()
-			], 'product_grid_shortcode', 'error');
-
-			return [];
-		}
-	}
 
 	/**
 	 * Render built-in product grid (fallback when no template exists)
@@ -132,7 +106,6 @@ class ProductGridShortcode extends ShortcodeBase
 	{
 		$products = $data['products'];
 		$attributes = $data['attributes'];
-		$columns = (int) $attributes['columns'];
 
 		$html = sprintf('<div class="%s">', esc_attr($data['wrapper_classes']));
 
@@ -141,7 +114,14 @@ class ProductGridShortcode extends ShortcodeBase
 			$html .= $this->render_balance_info($data);
 		}
 
-		$html .= sprintf('<div class="mycred-products-grid columns-%d">', $columns);
+		// Build grid classes - only add columns class if explicitly set
+		$grid_classes = ['mycred-products-grid'];
+		if (!empty($attributes['columns'])) {
+			$columns = (int) $attributes['columns'];
+			$grid_classes[] = 'columns-' . $columns;
+		}
+
+		$html .= sprintf('<div class="%s">', esc_attr(implode(' ', $grid_classes)));
 
 		foreach ($products as $product) {
 			$html .= $this->render_product_item($product, $attributes);
@@ -280,72 +260,23 @@ class ProductGridShortcode extends ShortcodeBase
 	}
 
 	/**
-	 * Add CSS for product grid styling
+	 * Override wrapper classes to include balance filter context
+	 * 
+	 * @param array $attributes Shortcode attributes
+	 * @return string CSS classes
 	 */
-	public function add_default_styles(): void
-	{
-		$css = '
-        .mycred-product-grid {
-            margin: 20px 0;
-        }
+	protected function get_wrapper_classes(array $attributes): string {
+		$classes = [
+			'mycred-shortcode',
+			'mycred-' . str_replace('_', '-', $this->get_tag()),
+			'filter-' . $attributes['balance_filter']
+		];
 
-        .mycred-balance-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
+		if (!empty($attributes['class'])) {
+			$classes[] = sanitize_html_class($attributes['class']);
+		}
 
-        .mycred-products-grid {
-            display: grid;
-            gap: 20px;
-        }
-
-        .mycred-products-grid.columns-1 { grid-template-columns: 1fr; }
-        .mycred-products-grid.columns-2 { grid-template-columns: repeat(2, 1fr); }
-        .mycred-products-grid.columns-3 { grid-template-columns: repeat(3, 1fr); }
-        .mycred-products-grid.columns-4 { grid-template-columns: repeat(4, 1fr); }
-
-        .mycred-product-item {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            background: #fff;
-        }
-
-        .mycred-product-item.unavailable {
-            opacity: 0.6;
-        }
-
-        .mycred-product-item .product-image img {
-            width: 100%;
-            height: auto;
-        }
-
-        .mycred-product-item .placeholder-image {
-            background: #f0f0f0;
-            padding: 40px;
-            text-align: center;
-            color: #666;
-        }
-
-        .mycred-product-item .product-price.unavailable {
-            color: #999;
-        }
-
-        .mycred-product-item .affordability-message {
-            color: #d63384;
-            font-size: 0.9em;
-            margin-top: 5px;
-        }
-
-        @media (max-width: 768px) {
-            .mycred-products-grid {
-                grid-template-columns: 1fr !important;
-            }
-        }
-        ';
-
-		wp_add_inline_style('woocommerce-general', $css);
+		return implode(' ', $classes);
 	}
+
 }

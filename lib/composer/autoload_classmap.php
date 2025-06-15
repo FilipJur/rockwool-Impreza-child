@@ -12,6 +12,7 @@ return array(
     'MistrFachman\\MyCred\\ECommerce\\Manager' => $baseDir . '/src/App/MyCred/ECommerce/Manager.php',
     'MistrFachman\\MyCred\\ECommerce\\Purchasability' => $baseDir . '/src/App/MyCred/ECommerce/Purchasability.php',
     'MistrFachman\\MyCred\\ECommerce\\UiModifier' => $baseDir . '/src/App/MyCred/ECommerce/UiModifier.php',
+    'MistrFachman\\Services\\ProductService' => $baseDir . '/src/App/Services/ProductService.php',
     'MistrFachman\\Shortcodes\\ProductGridShortcode' => $baseDir . '/src/App/Shortcodes/ProductGridShortcode.php',
     'MistrFachman\\Shortcodes\\ShortcodeBase' => $baseDir . '/src/App/Shortcodes/ShortcodeBase.php',
     'MistrFachman\\Shortcodes\\ShortcodeManager' => $baseDir . '/src/App/Shortcodes/ShortcodeManager.php',

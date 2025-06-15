@@ -101,27 +101,35 @@ if (file_exists($autoloader_path)) {
     return;
 }
 
-// Initialize both independent systems using dependency injection
+// Initialize systems with service layer using dependency injection
 add_action('init', function () {
-    if (!class_exists('MistrFachman\\MyCred\\ECommerce\\Manager')) {
-        mycred_debug('Core E-Commerce Manager class not found - check autoloader', null, 'bootstrap', 'error');
+    // Namespace aliases for clarity
+    $ECommerceManager = \MistrFachman\MyCred\ECommerce\Manager::class;
+    $ShortcodeManager = \MistrFachman\Shortcodes\ShortcodeManager::class;
+    $ProductService = \MistrFachman\Services\ProductService::class;
+
+    if (!class_exists($ECommerceManager)) {
+        mycred_debug('Core E-Commerce Manager class not found.', null, 'bootstrap', 'error');
         return;
     }
 
     // 1. Initialize the E-Commerce System
-    $ecommerce_manager = \MistrFachman\MyCred\ECommerce\Manager::get_instance();
+    $ecommerce_manager = $ECommerceManager::get_instance();
 
-    // 2. Initialize the Shortcode System and inject the E-Commerce manager as a dependency
-    if (class_exists('MistrFachman\\Shortcodes\\ShortcodeManager')) {
-        new \MistrFachman\Shortcodes\ShortcodeManager($ecommerce_manager);
+    // 2. Initialize the Services Layer, injecting the dependencies they need
+    $product_service = new $ProductService($ecommerce_manager);
+    
+    // 3. Initialize the Shortcode System, injecting all necessary services
+    if (class_exists($ShortcodeManager)) {
+        new $ShortcodeManager($ecommerce_manager, $product_service);
     } else {
-        mycred_debug('Shortcode Manager class not found - check autoloader', null, 'bootstrap', 'error');
+        mycred_debug('Shortcode Manager class not found.', null, 'bootstrap', 'error');
     }
 
-    mycred_log_architecture_event('PSR-4 Application Initialized', [
+    mycred_log_architecture_event('PSR-4 Application Initialized with Service Layer', [
         'autoloader' => 'composer',
-        'domains' => ['ECommerce', 'Shortcodes'],
-        'pattern' => 'decoupled domain-driven'
+        'domains' => ['ECommerce', 'Shortcodes', 'Services'],
+        'pattern' => 'decoupled with service injection'
     ]);
 }, 20); // Later priority to ensure plugins are loaded
 

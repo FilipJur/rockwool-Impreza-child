@@ -188,51 +188,7 @@ abstract class ShortcodeBase {
         return '<div class="mycred-shortcode-error">Došlo k chybě při načítání obsahu.</div>';
     }
 
-    /**
-     * Get template file path for rendering
-     * 
-     * @param string $template_name Template name (without .php extension)
-     * @return string|null Template file path or null if not found
-     */
-    protected function get_template_path(string $template_name): ?string {
-        $template_file = $template_name . '.php';
-        
-        // Look in theme first
-        $theme_path = get_stylesheet_directory() . '/templates/mycred/shortcodes/' . $template_file;
-        if (file_exists($theme_path)) {
-            return $theme_path;
-        }
 
-        // Fallback to plugin templates (if we had a plugin structure)
-        return null;
-    }
-
-    /**
-     * Render template with variables
-     * 
-     * @param string $template_name Template name
-     * @param array $variables Variables to pass to template
-     * @return string Rendered template output
-     */
-    protected function render_template(string $template_name, array $variables = []): string {
-        $template_path = $this->get_template_path($template_name);
-        
-        if (!$template_path) {
-            return $this->render_error('Template not found: ' . $template_name);
-        }
-
-        // Extract variables for template
-        extract($variables, EXTR_SKIP);
-        
-        // Start output buffering
-        ob_start();
-        
-        // Include template
-        include $template_path;
-        
-        // Return buffered content
-        return ob_get_clean();
-    }
 
     /**
      * Get wrapper CSS classes for shortcode output
@@ -253,33 +209,4 @@ abstract class ShortcodeBase {
         return implode(' ', $classes);
     }
 
-    /**
-     * Filter products based on myCred balance
-     * 
-     * @param array $products WC_Product objects
-     * @param string $filter Filter type: 'all', 'affordable', 'unavailable'
-     * @return array Filtered products
-     */
-    protected function filter_products_by_balance(array $products, string $filter): array {
-        if ($filter === 'all') {
-            return $products;
-        }
-
-        $filtered = [];
-        foreach ($products as $product) {
-            if (!$product instanceof \WC_Product) {
-                continue;
-            }
-
-            $is_affordable = $this->mycred_manager->can_afford_product($product);
-            
-            if ($filter === 'affordable' && $is_affordable) {
-                $filtered[] = $product;
-            } elseif ($filter === 'unavailable' && !$is_affordable) {
-                $filtered[] = $product;
-            }
-        }
-
-        return $filtered;
-    }
 }
