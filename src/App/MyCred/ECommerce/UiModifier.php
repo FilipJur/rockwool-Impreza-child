@@ -98,6 +98,7 @@ class UiModifier {
         try {
             $user_id = get_current_user_id();
             $user_balance = $this->manager->get_user_balance($user_id);
+            $available_balance = $this->balance_calculator->get_available_points($user_id);
             $product_price = (float) $product->get_price();
             
             // Scenario 1: Product price alone exceeds total balance
@@ -106,7 +107,12 @@ class UiModifier {
             }
             
             // Scenario 2: Product is affordable alone, but not with current cart
-            return 'Nedostatek bodů (vč. košíku)';
+            if ($product_price <= $user_balance && $product_price > $available_balance) {
+                return 'Nedostatek bodů (vč. košíku)';
+            }
+            
+            // Fallback - shouldn't reach here if purchasability logic is correct
+            return 'Nedostatek bodů';
             
         } catch (\Exception $e) {
             mycred_debug('Error in affordability message calculation', [
