@@ -41,9 +41,9 @@ function impreza_child_enqueue_custom_assets()
 
 
 /**
- * myCred WooCommerce Integration
+ * Application Bootstrap
  *
- * Load the organized myCred functionality from separate files.
+ * Load the main application bootstrap file.
  */
-require_once get_stylesheet_directory() . '/src/includes/mycred-integration.php';
+require_once get_stylesheet_directory() . '/src/bootstrap.php';
 

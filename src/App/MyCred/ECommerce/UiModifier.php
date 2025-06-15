@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
+namespace MistrFachman\MyCred\ECommerce;
+
 /**
  * MyCred UI Modifier Class
  *
  * Handles modifications to WooCommerce UI elements based on
  * myCred point affordability.
  *
- * @package impreza-child
+ * @package mistr-fachman
  * @since 1.0.0
  */
 
@@ -17,11 +19,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class MyCred_Pricing_UIModifier {
+class UiModifier {
 
     public function __construct(
-        private readonly MyCred_Pricing_BalanceCalculator $balance_calculator,
-        private readonly MyCred_Pricing_Manager $manager
+        private BalanceCalculator $balance_calculator,
+        private Manager $manager
     ) {}
 
     /**
@@ -34,7 +36,7 @@ class MyCred_Pricing_UIModifier {
     /**
      * Modify "Add to Cart" button text and styling when not affordable
      */
-    public function modify_add_to_cart_button(string $html_link, WC_Product $product, array $args): string {
+    public function modify_add_to_cart_button(string $html_link, \WC_Product $product, array $args): string {
         if ($product->is_purchasable()) {
             return $html_link;
         }
@@ -68,7 +70,6 @@ class MyCred_Pricing_UIModifier {
         return $button_html;
     }
 
-
     /**
      * Add custom CSS for disabled buttons
      */
@@ -89,7 +90,7 @@ class MyCred_Pricing_UIModifier {
     /**
      * Get appropriate Czech message based on affordability scenario
      */
-    private function get_affordability_message(WC_Product $product): string {
+    private function get_affordability_message(\WC_Product $product): string {
         if (!is_user_logged_in() || !function_exists('mycred')) {
             return 'Nedostatek bodů';
         }
@@ -107,7 +108,7 @@ class MyCred_Pricing_UIModifier {
             // Scenario 2: Product is affordable alone, but not with current cart
             return 'Nedostatek bodů (vč. košíku)';
             
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             mycred_debug('Error in affordability message calculation', [
                 'product_id' => $product->get_id(),
                 'error' => $e->getMessage()
@@ -116,5 +117,4 @@ class MyCred_Pricing_UIModifier {
             return 'Nedostatek bodů';
         }
     }
-
 }

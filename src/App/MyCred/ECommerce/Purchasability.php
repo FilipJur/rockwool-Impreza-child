@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace MistrFachman\MyCred\ECommerce;
+
 /**
  * MyCred Purchasability Class
  *
@@ -11,7 +13,7 @@ declare(strict_types=1);
  * This class now uses the AvailableBalanceCalculator for simple,
  * consistent affordability checks across all contexts.
  *
- * @package impreza-child
+ * @package mistr-fachman
  * @since 1.0.0
  */
 
@@ -20,11 +22,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class MyCred_Pricing_Purchasability {
+class Purchasability {
 
     public function __construct(
-        private readonly MyCred_Pricing_BalanceCalculator $balance_calculator,
-        private readonly MyCred_Pricing_Manager $manager
+        private BalanceCalculator $balance_calculator,
+        private Manager $manager
     ) {}
 
     /**
@@ -53,10 +55,10 @@ class MyCred_Pricing_Purchasability {
      * The main validation happens at the add-to-cart level to provide better UX.
      *
      * @param bool $is_purchasable Current purchasability status
-     * @param WC_Product $product Product object
+     * @param \WC_Product $product Product object
      * @return bool Modified purchasability status
      */
-    public function check_product_affordability(bool $is_purchasable, WC_Product $product): bool {
+    public function check_product_affordability(bool $is_purchasable, \WC_Product $product): bool {
         mycred_debug('Purchasability filter called', [
             'product_id' => $product->get_id(),
             'incoming_purchasable' => $is_purchasable,
@@ -69,7 +71,7 @@ class MyCred_Pricing_Purchasability {
 
         try {
             // CONTEXT-AWARE LOGIC
-            if (is_cart() || is_checkout() || (function_exists('WC') && WC()->is_rest_api_request())) {
+            if (is_cart() || is_checkout() || (function_exists('WC') && \WC()->is_rest_api_request())) {
                 // In-Cart/Checkout Context: The key check is whether the *entire cart* is affordable.
                 // This prevents an item in the cart from making itself un-purchasable.
                 $user_balance = $this->manager->get_user_balance();
@@ -98,7 +100,7 @@ class MyCred_Pricing_Purchasability {
                 return $can_afford;
             }
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             mycred_debug('Error in purchasability check, defaulting to allow', [
                 'product_id' => $product->get_id(),
                 'error' => $e->getMessage()
@@ -111,10 +113,9 @@ class MyCred_Pricing_Purchasability {
     /**
      * Determine if we should check affordability for this product
      */
-    private function should_check_affordability(WC_Product $product): bool {
+    private function should_check_affordability(\WC_Product $product): bool {
         return is_user_logged_in() && function_exists('mycred');
     }
-
 
     /**
      * Validate product addition to cart (prevents actual cart addition)
@@ -160,7 +161,7 @@ class MyCred_Pricing_Purchasability {
 
             return true;
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             mycred_debug('Error in add to cart validation, allowing by default', [
                 'product_id' => $product_id,
                 'error' => $e->getMessage()
@@ -194,7 +195,7 @@ class MyCred_Pricing_Purchasability {
                 );
                 wc_add_notice($message, 'error');
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             mycred_debug('Error in checkout validation', ['error' => $e->getMessage()], 'purchasability', 'error');
         }
     }
@@ -217,8 +218,8 @@ class MyCred_Pricing_Purchasability {
      *
      * Public method for external use.
      */
-    public function is_product_affordable(WC_Product|int $product, ?int $user_id = null): bool {
-        if (!$product instanceof WC_Product) {
+    public function is_product_affordable(\WC_Product|int $product, ?int $user_id = null): bool {
+        if (!$product instanceof \WC_Product) {
             $product = wc_get_product($product);
         }
 
@@ -228,5 +229,4 @@ class MyCred_Pricing_Purchasability {
 
         return $this->balance_calculator->can_afford_product($product, $user_id);
     }
-
 }

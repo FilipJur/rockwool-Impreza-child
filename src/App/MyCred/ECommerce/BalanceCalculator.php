@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace MistrFachman\MyCred\ECommerce;
+
 /**
  * MyCred Available Balance Calculator Class
  *
@@ -12,7 +14,7 @@ declare(strict_types=1);
  * was checked independently against the full user balance, ignoring the fact
  * that points are a finite global resource affected by cart contents.
  *
- * @package impreza-child
+ * @package mistr-fachman
  * @since 1.0.0
  */
 
@@ -21,11 +23,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class MyCred_Pricing_BalanceCalculator {
+class BalanceCalculator {
 
-    private ?MyCred_Pricing_CartContext $cart_context = null;
-    public function __construct(?MyCred_Pricing_CartContext $cart_context = null) {
-        $this->cart_context = $cart_context ?? new MyCred_Pricing_CartContext();
+    private ?CartContext $cart_context = null;
+    
+    public function __construct(?CartContext $cart_context = null) {
+        $this->cart_context = $cart_context ?? new CartContext();
     }
 
     /**
@@ -48,7 +51,6 @@ class MyCred_Pricing_BalanceCalculator {
         if (!$user_id) {
             return 0.0;
         }
-
 
         try {
             $user_balance = $this->get_user_balance($user_id);
@@ -75,7 +77,7 @@ class MyCred_Pricing_BalanceCalculator {
 
             return $available;
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             mycred_debug('Error calculating available balance', [
                 'user_id' => $user_id,
                 'error' => $e->getMessage(),
@@ -100,12 +102,12 @@ class MyCred_Pricing_BalanceCalculator {
      * Simple comparison: product cost <= available points
      * This replaces the complex cart simulation logic in the old system.
      *
-     * @param WC_Product|int $product Product object or ID
+     * @param \WC_Product|int $product Product object or ID
      * @param int|null $user_id User ID (defaults to current user)
      * @return bool True if user can afford the product
      */
-    public function can_afford_product(WC_Product|int $product, ?int $user_id = null): bool {
-        if (!$product instanceof WC_Product) {
+    public function can_afford_product(\WC_Product|int $product, ?int $user_id = null): bool {
+        if (!$product instanceof \WC_Product) {
             $product = wc_get_product($product);
         }
 
@@ -148,7 +150,7 @@ class MyCred_Pricing_BalanceCalculator {
         $results = [];
 
         foreach ($products as $product) {
-            if (!$product instanceof WC_Product) {
+            if (!$product instanceof \WC_Product) {
                 $product = wc_get_product($product);
             }
 
@@ -184,9 +186,8 @@ class MyCred_Pricing_BalanceCalculator {
             return 0.0;
         }
 
-
         try {
-            $manager = MyCred_Pricing_Manager::get_instance();
+            $manager = Manager::get_instance();
             $point_type_key = $manager->get_woo_point_type();
 
             if (empty($point_type_key)) {
@@ -203,10 +204,9 @@ class MyCred_Pricing_BalanceCalculator {
 
             $balance = (float) $point_type_object->get_users_balance($user_id);
 
-
             return $balance;
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             mycred_debug('Error getting user balance', [
                 'user_id' => $user_id,
                 'error' => $e->getMessage()
@@ -219,10 +219,10 @@ class MyCred_Pricing_BalanceCalculator {
     /**
      * Get effective point cost for a product
      *
-     * @param WC_Product $product Product object
+     * @param \WC_Product $product Product object
      * @return float|null Product cost in points, null if invalid
      */
-    private function get_product_point_cost(WC_Product $product): ?float {
+    private function get_product_point_cost(\WC_Product $product): ?float {
         $price = $product->get_price();
         $cost = ($price !== '' && is_numeric($price)) ? (float)$price : null;
 

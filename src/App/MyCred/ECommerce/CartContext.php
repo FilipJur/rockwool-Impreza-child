@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace MistrFachman\MyCred\ECommerce;
+
 /**
  * MyCred Cart Context Class
  *
@@ -12,7 +14,7 @@ declare(strict_types=1);
  * This class uses native WooCommerce cart methods exclusively and provides
  * a consistent interface for cart-related operations across the system.
  *
- * @package impreza-child
+ * @package mistr-fachman
  * @since 1.0.0
  */
 
@@ -21,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class MyCred_Pricing_CartContext {
+class CartContext {
 
     public function __construct() {
     }
@@ -42,7 +44,7 @@ class MyCred_Pricing_CartContext {
 
         try {
             $cart_total_points = 0.0;
-            $cart_contents = WC()->cart->get_cart();
+            $cart_contents = \WC()->cart->get_cart();
 
             mycred_debug('Starting cart calculation', [
                 'cart_items_count' => count($cart_contents)
@@ -51,7 +53,7 @@ class MyCred_Pricing_CartContext {
             foreach ($cart_contents as $cart_item_key => $cart_item) {
                 $product = apply_filters('woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key);
 
-                if (!$product instanceof WC_Product) {
+                if (!$product instanceof \WC_Product) {
                     mycred_debug('Invalid product in cart item', [
                         'cart_item_key' => $cart_item_key,
                         'product_type' => gettype($cart_item['data'] ?? 'missing')
@@ -75,15 +77,14 @@ class MyCred_Pricing_CartContext {
                 }
             }
 
-
             mycred_debug('Cart total calculated', [
                 'total_points' => $cart_total_points,
-                'cart_item_count' => WC()->cart->get_cart_contents_count()
+                'cart_item_count' => \WC()->cart->get_cart_contents_count()
             ], 'cart_context', 'info');
 
             return $cart_total_points;
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             mycred_debug('Error calculating cart total', [
                 'error' => $e->getMessage()
             ], 'cart_context', 'error');
@@ -103,17 +104,15 @@ class MyCred_Pricing_CartContext {
             return false;
         }
 
-
         $is_in_cart = false;
 
-        foreach (WC()->cart->get_cart() as $cart_item) {
+        foreach (\WC()->cart->get_cart() as $cart_item) {
             $cart_product = $cart_item['data'];
-            if ($cart_product instanceof WC_Product && $cart_product->get_id() === $product_id) {
+            if ($cart_product instanceof \WC_Product && $cart_product->get_id() === $product_id) {
                 $is_in_cart = true;
                 break;
             }
         }
-
 
         return $is_in_cart;
     }
@@ -128,13 +127,12 @@ class MyCred_Pricing_CartContext {
             return [];
         }
 
-
         $point_items = [];
 
-        foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
+        foreach (\WC()->cart->get_cart() as $cart_item_key => $cart_item) {
             $product = apply_filters('woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key);
 
-            if (!$product instanceof WC_Product) {
+            if (!$product instanceof \WC_Product) {
                 continue;
             }
 
@@ -152,7 +150,6 @@ class MyCred_Pricing_CartContext {
                 ];
             }
         }
-
 
         mycred_debug('Cart point items retrieved', [
             'item_count' => count($point_items),
@@ -178,10 +175,10 @@ class MyCred_Pricing_CartContext {
 
         $cart_total_points = 0.0;
 
-        foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
+        foreach (\WC()->cart->get_cart() as $cart_item_key => $cart_item) {
             $product = apply_filters('woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key);
 
-            if (!$product instanceof WC_Product) {
+            if (!$product instanceof \WC_Product) {
                 continue;
             }
 
@@ -208,15 +205,15 @@ class MyCred_Pricing_CartContext {
      */
     private function is_cart_available(): bool {
         $wc_exists = function_exists('WC');
-        $cart_exists = $wc_exists && WC()->cart;
-        $cart_not_empty = $cart_exists && !WC()->cart->is_empty();
-        $cart_contents_count = $cart_exists ? WC()->cart->get_cart_contents_count() : 0;
+        $cart_exists = $wc_exists && \WC()->cart;
+        $cart_not_empty = $cart_exists && !\WC()->cart->is_empty();
+        $cart_contents_count = $cart_exists ? \WC()->cart->get_cart_contents_count() : 0;
 
         // Enhanced debugging for cart availability
         mycred_debug('Cart availability check', [
             'wc_function_exists' => $wc_exists,
             'cart_object_exists' => $cart_exists,
-            'cart_is_empty' => $cart_exists ? WC()->cart->is_empty() : 'N/A',
+            'cart_is_empty' => $cart_exists ? \WC()->cart->is_empty() : 'N/A',
             'cart_contents_count' => $cart_contents_count,
             'final_result' => $cart_not_empty
         ], 'cart_context', 'info');
@@ -227,10 +224,10 @@ class MyCred_Pricing_CartContext {
     /**
      * Get effective point cost for a product
      *
-     * @param WC_Product $product Product object
+     * @param \WC_Product $product Product object
      * @return float|null Product cost in points, null if invalid
      */
-    private function get_product_point_cost(WC_Product $product): ?float {
+    private function get_product_point_cost(\WC_Product $product): ?float {
         $price = $product->get_price();
         $regular_price = $product->get_regular_price();
         $sale_price = $product->get_sale_price();
@@ -272,16 +269,16 @@ class MyCred_Pricing_CartContext {
             'timestamp' => current_time('mysql'),
             'woocommerce_status' => [
                 'wc_function_exists' => function_exists('WC'),
-                'wc_object_exists' => function_exists('WC') && WC(),
-                'cart_object_exists' => function_exists('WC') && WC() && WC()->cart,
+                'wc_object_exists' => function_exists('WC') && \WC(),
+                'cart_object_exists' => function_exists('WC') && \WC() && \WC()->cart,
             ],
             'cart_status' => [],
             'cart_items' => [],
             'calculations' => []
         ];
 
-        if (function_exists('WC') && WC() && WC()->cart) {
-            $cart = WC()->cart;
+        if (function_exists('WC') && \WC() && \WC()->cart) {
+            $cart = \WC()->cart;
             $diagnostics['cart_status'] = [
                 'is_empty' => $cart->is_empty(),
                 'contents_count' => $cart->get_cart_contents_count(),
@@ -297,10 +294,10 @@ class MyCred_Pricing_CartContext {
                 $item_info = [
                     'cart_item_key' => $cart_item_key,
                     'quantity' => $cart_item['quantity'] ?? 0,
-                    'product_valid' => $product instanceof WC_Product
+                    'product_valid' => $product instanceof \WC_Product
                 ];
 
-                if ($product instanceof WC_Product) {
+                if ($product instanceof \WC_Product) {
                     $product_cost = $this->get_product_point_cost($product);
                     $item_info = array_merge($item_info, [
                         'product_id' => $product->get_id(),

@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
+namespace MistrFachman\MyCred\ECommerce;
+
+
 /**
  * MyCred Manager Class
  *
  * Main orchestrator for myCred WooCommerce integration.
  * Handles initialization and coordination between components.
  *
- * @package impreza-child
+ * @package mistr-fachman
  * @since 1.0.0
  */
 
@@ -17,16 +20,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class MyCred_Pricing_Manager {
+class Manager {
 
     private static ?self $instance = null;
     private static ?string $cached_point_type = null;
 
-    public readonly MyCred_Pricing_CartContext $cart_context;
-    public readonly MyCred_Pricing_BalanceCalculator $balance_calculator;
-    public readonly MyCred_Pricing_Purchasability $purchasability;
-    public readonly MyCred_Pricing_UIModifier $ui_modifier;
-
+    public CartContext $cart_context;
+    public BalanceCalculator $balance_calculator;
+    public Purchasability $purchasability;
+    public UiModifier $ui_modifier;
 
     /**
      * Get singleton instance
@@ -40,14 +42,14 @@ class MyCred_Pricing_Manager {
      */
     private function __construct() {
         // Initialize components in dependency order
-        $this->cart_context = new MyCred_Pricing_CartContext();
-        $this->balance_calculator = new MyCred_Pricing_BalanceCalculator($this->cart_context);
-        $this->purchasability = new MyCred_Pricing_Purchasability($this->balance_calculator, $this);
-        $this->ui_modifier = new MyCred_Pricing_UIModifier($this->balance_calculator, $this);
+        $this->cart_context = new CartContext();
+        $this->balance_calculator = new BalanceCalculator($this->cart_context);
+        $this->purchasability = new Purchasability($this->balance_calculator, $this);
+        $this->ui_modifier = new UiModifier($this->balance_calculator, $this);
 
         $this->setup_hooks();
 
-        mycred_debug('MyCred integration initialized with new architecture', [
+        mycred_debug('MyCred E-Commerce domain initialized', [
             'components' => [
                 'cart_context' => get_class($this->cart_context),
                 'balance_calculator' => get_class($this->balance_calculator),
@@ -78,11 +80,11 @@ class MyCred_Pricing_Manager {
     /**
      * Check if user can afford a product (convenience method)
      *
-     * @param WC_Product|int $product Product object or ID
+     * @param \WC_Product|int $product Product object or ID
      * @param int|null $user_id User ID (defaults to current user)
      * @return bool True if user can afford the product
      */
-    public function can_afford_product(WC_Product|int $product, ?int $user_id = null): bool {
+    public function can_afford_product(\WC_Product|int $product, ?int $user_id = null): bool {
         return $this->balance_calculator->can_afford_product($product, $user_id);
     }
 
@@ -95,8 +97,6 @@ class MyCred_Pricing_Manager {
     public function get_user_balance(?int $user_id = null): float {
         return $this->balance_calculator->get_user_balance($user_id);
     }
-
-
 
     /**
      * Get myCred point type for WooCommerce

@@ -1,9 +1,9 @@
-# CLAUDE.md
+****# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development for Impreza theme with custom features and integrations. Recently completed major myCred architecture refactor implementing cart-aware balance calculation to replace flawed individual product checking system.
+WordPress child theme development with enterprise-grade architecture. Completed revolutionary transformation to modern App-centric PSR-4 structure with perfect separation of concerns. Ready for advanced feature development on solid architectural foundation.
 
 ## Build & Development Commands
 
@@ -46,12 +46,20 @@ JavaScript is organized into feature modules under `src/js/features/`:
 
 ### WordPress Integration
 - Child theme of Impreza theme
-- **myCred integration**: Cart-aware balance system with dependency injection pattern
-- **Modular PHP architecture**: Clear separation of concerns in `src/includes/mycred/pricing/`
-  - `MyCred_Pricing_CartContext`: Centralized cart state management
-  - `MyCred_Pricing_BalanceCalculator`: Single source of truth for available points
-  - `MyCred_Pricing_Purchasability`: Context-aware product affordability logic
-  - `MyCred_Pricing_Manager`: Component orchestration and convenience methods
+- **Enterprise App-centric architecture**: All PHP logic organized in `src/App/` directory
+- **Perfect separation of concerns**: App logic vs frontend assets (js/scss)
+- **PSR-4 autoloaded**: Full Composer autoloading with `MistrFachman\` → `src/App/` mapping
+- **Single bootstrap**: `src/bootstrap.php` orchestrates entire application
+- **myCred E-Commerce domain**: `src/App/MyCred/ECommerce/`
+  - `Manager`: Component orchestration with dependency injection
+  - `CartContext`: Centralized cart state management
+  - `BalanceCalculator`: Single source of truth for available points
+  - `Purchasability`: Context-aware product affordability logic
+  - `UiModifier`: WooCommerce UI modifications
+- **Decoupled Shortcode system**: `src/App/Shortcodes/` independent presentation layer
+  - `ShortcodeBase`: Abstract base class with validation and templating
+  - `ShortcodeManager`: Auto-discovery registry with dependency injection
+  - `ProductGridShortcode`: Component with balance filtering and React-like data props
 
 ## Key Features
 
@@ -102,31 +110,32 @@ JavaScript is organized into feature modules under `src/js/features/`:
 - Component specifications ready for implementation
 
 ## Recent Changes
-- **2025-01-15**: Restructured myCred pricing files into organized directory structure (mycred/pricing/)
-- **2025-01-15**: Updated class names with Pricing namespace for better organization and future scalability
-- **2025-01-15**: Completed major myCred architecture refactor implementing cart-aware balance calculation
-- **2025-01-15**: Replaced flawed individual product checking (40+ calculations) with Single Source of Truth approach
-- **2025-01-15**: Implemented BalanceCalculator and CartContext classes with proper dependency injection
-- **2025-01-15**: Added context-aware purchasability logic to prevent double-counting in cart/checkout pages
-- **2025-01-15**: Enhanced context detection to include WooCommerce REST API requests for block-based checkout compatibility
-- **2025-01-15**: Fixed fundamental cart-awareness flaw where products showed as available despite insufficient points
-- **2025-01-15**: Removed caching infrastructure following "Make it work → Make it right → Make it fast" principle
-- **2025-01-14**: Simplified file upload animations by removing View Transitions API complexity
-- **2025-01-14**: Modernized JavaScript architecture from classes to functional patterns
-- **2025-01-14**: Refactored AresHandler, AnimationManager, PreviewManager to utility functions
-- **2025-01-14**: Implemented proper event listener cleanup across all modules
+- **2025-01-15**: REVOLUTIONARY ARCHITECTURE TRANSFORMATION - Completed App-centric enterprise structure
+- **2025-01-15**: Created `src/App/` directory housing all PHP application logic with perfect separation
+- **2025-01-15**: Achieved domain decoupling: independent ECommerce and Shortcodes domains
+- **2025-01-15**: Transformed bootstrap: eliminated vestigial `includes/` dir, renamed to `src/bootstrap.php`
+- **2025-01-15**: Implemented React-like shortcode components with dependency injection
+- **2025-01-15**: PSR-4 autoloading: `MistrFachman\` → `src/App/` with optimized class mapping
+- **2025-01-15**: Modern namespaces: `MistrFachman\MyCred\ECommerce\Manager`, `MistrFachman\Shortcodes\ShortcodeManager`
+- **2025-01-15**: Completed cart-aware balance calculation (Single Source of Truth architecture)
+- **2025-01-15**: Replaced 40+ individual product checks with unified calculation system
+- **2025-01-15**: Added context-aware purchasability preventing double-counting in cart/checkout
+- **2025-01-15**: Enhanced WooCommerce REST API detection for block-based checkout compatibility
+- **2025-01-14**: Simplified file upload animations removing View Transitions API complexity
+- **2025-01-14**: Modernized JavaScript from classes to functional patterns
 
 ## Active Decisions
+- **PSR-4 autoloading for entire codebase**: Composer autoloader replaces all manual require_once statements
+- **Domain-driven architecture**: Code organized by business domain (ECommerce, Shortcodes) not implementation features
+- **Component-based shortcodes**: React/Next.js-style reusable components with data injection and templating
+- **Auto-discovery pattern**: Shortcodes automatically registered by scanning directory structure
 - **Cart-aware balance calculation**: available = balance - cart_total replaces individual product checking (Single Source of Truth)
 - **Context-aware purchasability**: Shop pages check can_afford_product(), cart/checkout/API pages check cart_total <= user_balance
-- **Performance optimization deferred**: Following "Make it work → Make it right → Make it fast" - caching removed until Phase 3
-- **Organized myCred structure**: Pricing functionality separated into dedicated directory with clear class naming
-- **Modular myCred architecture**: CartContext → BalanceCalculator → Purchasability dependency chain
+- **Namespaced classes**: `MistrFachman\MyCred\ECommerce\Manager` replaces `MyCred_Pricing_Manager`
+- **Single bootstrap file**: One require_once for autoloader, eliminates dependency management complexity
 - **Use functional patterns over classes**: Classes only for stateful components (FileUpload singleton), functions for everything else
 - **Proper cleanup required**: All setup functions must return cleanup methods, all classes must implement destroy/cleanup
-- **No auto-generated commit messages**: Keep commit messages clean without Claude Code attribution
 - **Avoid View Transitions API**: Causes browser compatibility issues and animation conflicts - use CSS animations instead
-- **Keep arrival animations, avoid removal animations**: Staggered arrivals work well, but removal conflicts with plugin display:none behavior
 
 ## Last Updated
 2025-01-15

@@ -1,0 +1,17 @@
+{
+    "name": "mistrfachman/impreza-child-theme",
+    "description": "Custom functionality for the Mistr Fachman theme with modern PSR-4 architecture.",
+    "type": "wordpress-theme",
+    "license": "GPL-2.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "MistrFachman\\": "src/App/"
+        }
+    },
+    "config": {
+        "vendor-dir": "lib"
+    },
+    "require": {
+        "php": ">=8.0"
+    }
+}
