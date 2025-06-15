@@ -43,7 +43,7 @@ class MyCred_Pricing_Manager {
         $this->cart_context = new MyCred_Pricing_CartContext();
         $this->balance_calculator = new MyCred_Pricing_BalanceCalculator($this->cart_context);
         $this->purchasability = new MyCred_Pricing_Purchasability($this->balance_calculator, $this);
-        $this->ui_modifier = new MyCred_Pricing_UIModifier();
+        $this->ui_modifier = new MyCred_Pricing_UIModifier($this->balance_calculator, $this);
 
         $this->setup_hooks();
 

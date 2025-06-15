@@ -19,6 +19,11 @@ if (!defined('ABSPATH')) {
 
 class MyCred_Pricing_UIModifier {
 
+    public function __construct(
+        private readonly MyCred_Pricing_BalanceCalculator $balance_calculator,
+        private readonly MyCred_Pricing_Manager $manager
+    ) {}
+
     /**
      * Initialize WordPress hooks
      */
@@ -39,7 +44,7 @@ class MyCred_Pricing_UIModifier {
             return '';
         }
 
-        $message = __('Not enough points (inc. cart)', 'woocommerce');
+        $message = $this->get_affordability_message($product);
         $padding = $args['attributes']['style'] ?? '0.618em 1em';
 
         $button_html = sprintf(
@@ -79,6 +84,37 @@ class MyCred_Pricing_UIModifier {
         ';
 
         wp_add_inline_style('woocommerce-general', $css);
+    }
+
+    /**
+     * Get appropriate Czech message based on affordability scenario
+     */
+    private function get_affordability_message(WC_Product $product): string {
+        if (!is_user_logged_in() || !function_exists('mycred')) {
+            return 'Nedostatek bodů';
+        }
+
+        try {
+            $user_id = get_current_user_id();
+            $user_balance = $this->manager->get_user_balance($user_id);
+            $product_price = (float) $product->get_price();
+            
+            // Scenario 1: Product price alone exceeds total balance
+            if ($product_price > $user_balance) {
+                return 'Nedostatek bodů';
+            }
+            
+            // Scenario 2: Product is affordable alone, but not with current cart
+            return 'Nedostatek bodů (vč. košíku)';
+            
+        } catch (Exception $e) {
+            mycred_debug('Error in affordability message calculation', [
+                'product_id' => $product->get_id(),
+                'error' => $e->getMessage()
+            ], 'ui-modifier', 'error');
+            
+            return 'Nedostatek bodů';
+        }
     }
 
 }

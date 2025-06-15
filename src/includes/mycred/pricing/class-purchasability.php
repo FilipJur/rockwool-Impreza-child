@@ -75,14 +75,14 @@ class MyCred_Pricing_Purchasability {
                 $user_balance = $this->manager->get_user_balance();
                 $cart_total = $this->balance_calculator->get_cart_total();
                 $can_afford = $cart_total <= $user_balance;
-                
+
                 mycred_debug('myCred purchasability decision (In-Cart Context)', [
                     'product_id' => $product->get_id(),
                     'user_balance' => $user_balance,
                     'cart_total' => $cart_total,
                     'is_affordable' => $can_afford
                 ], 'purchasability', 'info');
-                
+
                 return $can_afford;
 
             } else {
@@ -149,7 +149,7 @@ class MyCred_Pricing_Purchasability {
 
             if ($product_cost > $current_available) {
                 $message = sprintf(
-                    __('Insufficient points to add "%s" to cart. Required: %s points, Available: %s points.', 'impreza-child'),
+                    'Nedostatek bodů pro přidání "%s" do košíku. Potřeba: %s bodů, Dostupné: %s bodů.',
                     $product->get_name(),
                     number_format($product_cost),
                     number_format(floor($current_available))
@@ -188,7 +188,7 @@ class MyCred_Pricing_Purchasability {
 
             if ($cart_total > $user_balance) {
                 $message = sprintf(
-                    __('Your cart total (%s points) exceeds your available balance (%s points). Please remove some items before proceeding.', 'impreza-child'),
+                    'Celková hodnota košíku (%s bodů) překračuje váš dostupný zůstatek (%s bodů). Před pokračováním prosím odeberte některé položky.',
                     number_format($cart_total),
                     number_format($user_balance)
                 );
