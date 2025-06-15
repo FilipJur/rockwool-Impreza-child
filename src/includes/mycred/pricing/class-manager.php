@@ -17,36 +17,46 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class MyCred_Manager {
-    
+class MyCred_Pricing_Manager {
+
     private static ?self $instance = null;
     private static ?string $cached_point_type = null;
-    
-    public readonly MyCred_Cart_Calculator $cart_calculator;
-    public readonly MyCred_Purchasability $purchasability;
-    public readonly MyCred_UI_Modifier $ui_modifier;
-    
-    
+
+    public readonly MyCred_Pricing_CartContext $cart_context;
+    public readonly MyCred_Pricing_BalanceCalculator $balance_calculator;
+    public readonly MyCred_Pricing_Purchasability $purchasability;
+    public readonly MyCred_Pricing_UIModifier $ui_modifier;
+
+
     /**
      * Get singleton instance
      */
     public static function get_instance(): self {
         return self::$instance ??= new self();
     }
-    
+
     /**
      * Private constructor to prevent direct instantiation
      */
     private function __construct() {
-        $this->cart_calculator = new MyCred_Cart_Calculator();
-        $this->purchasability = new MyCred_Purchasability($this->cart_calculator);
-        $this->ui_modifier = new MyCred_UI_Modifier();
-        
+        // Initialize components in dependency order
+        $this->cart_context = new MyCred_Pricing_CartContext();
+        $this->balance_calculator = new MyCred_Pricing_BalanceCalculator($this->cart_context);
+        $this->purchasability = new MyCred_Pricing_Purchasability($this->balance_calculator, $this);
+        $this->ui_modifier = new MyCred_Pricing_UIModifier();
+
         $this->setup_hooks();
-        
-        mycred_debug('MyCred integration initialized', null, 'manager', 'info');
+
+        mycred_debug('MyCred integration initialized with new architecture', [
+            'components' => [
+                'cart_context' => get_class($this->cart_context),
+                'balance_calculator' => get_class($this->balance_calculator),
+                'purchasability' => get_class($this->purchasability),
+                'ui_modifier' => get_class($this->ui_modifier)
+            ]
+        ], 'manager', 'info');
     }
-    
+
     /**
      * Setup WordPress hooks
      */
@@ -54,12 +64,43 @@ class MyCred_Manager {
         $this->purchasability->init_hooks();
         $this->ui_modifier->init_hooks();
     }
-    
-    
-    
+
+    /**
+     * Get available points for current user (convenience method)
+     *
+     * @param int|null $user_id User ID (defaults to current user)
+     * @return float Available points after cart is considered
+     */
+    public function get_available_points(?int $user_id = null): float {
+        return $this->balance_calculator->get_available_points($user_id);
+    }
+
+    /**
+     * Check if user can afford a product (convenience method)
+     *
+     * @param WC_Product|int $product Product object or ID
+     * @param int|null $user_id User ID (defaults to current user)
+     * @return bool True if user can afford the product
+     */
+    public function can_afford_product(WC_Product|int $product, ?int $user_id = null): bool {
+        return $this->balance_calculator->can_afford_product($product, $user_id);
+    }
+
+    /**
+     * Get user's total point balance (convenience method)
+     *
+     * @param int|null $user_id User ID (defaults to current user)
+     * @return float User's total point balance
+     */
+    public function get_user_balance(?int $user_id = null): float {
+        return $this->balance_calculator->get_user_balance($user_id);
+    }
+
+
+
     /**
      * Get myCred point type for WooCommerce
-     * 
+     *
      * Handles fallback logic for determining the correct point type.
      * Uses caching to avoid repeated detection and logging spam.
      */
@@ -68,7 +109,7 @@ class MyCred_Manager {
         if (self::$cached_point_type !== null) {
             return self::$cached_point_type;
         }
-        
+
         // Try preferred myCred function first
         if (function_exists('mycred_get_woo_point_type')) {
             $point_type = mycred_get_woo_point_type();
@@ -77,7 +118,7 @@ class MyCred_Manager {
                 return $point_type;
             }
         }
-        
+
         // Fallback to gateway settings
         $gateway_settings = get_option('woocommerce_mycred_settings', []);
         $point_type = match (true) {
@@ -85,18 +126,18 @@ class MyCred_Manager {
             defined('MYCRED_DEFAULT_TYPE_KEY') => MYCRED_DEFAULT_TYPE_KEY,
             default => 'mycred_default'
         };
-        
+
         // Cache the result
         self::$cached_point_type = $point_type;
-        
+
         // Log once that we're using fallback (only on first detection)
         if (!function_exists('mycred_get_woo_point_type')) {
             mycred_debug('Using fallback point type detection - myCred gateway function not available', $point_type, 'manager', 'warning');
         }
-        
+
         return $point_type;
     }
-    
+
     private function __clone() {}
     public function __wakeup(): void {
         throw new \Exception('Cannot unserialize singleton');

@@ -33,7 +33,6 @@ wp-config-local.php
 Thumbs.db
 
 # Documentation files
-CLAUDE.md
 
 # Cache and temporary files
 .cache/
@@ -80,3 +79,4 @@ repomix-output.txt
 .repomix/bundles.json
 .repomix/bundles.json
 repomix-output.txt
+docs/*

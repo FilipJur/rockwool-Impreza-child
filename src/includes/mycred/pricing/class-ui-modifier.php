@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class MyCred_UI_Modifier {
+class MyCred_Pricing_UIModifier {
 
     /**
      * Initialize WordPress hooks
@@ -81,25 +81,4 @@ class MyCred_UI_Modifier {
         wp_add_inline_style('woocommerce-general', $css);
     }
 
-    /**
-     * Get affordability message for a specific product
-     */
-    public function get_affordability_message(WC_Product $product): string {
-        $manager = MyCred_Manager::get_instance();
-        $calculator = $manager->cart_calculator;
-
-        $user_balance = $calculator->get_user_balance();
-        $product_cost = $calculator->get_product_point_cost($product);
-        $potential_total = $calculator->get_potential_total_cost($product);
-
-        if ($product_cost === null || $potential_total <= $user_balance) {
-            return '';
-        }
-
-        $needed = $potential_total - $user_balance;
-        return sprintf(
-            __('You need %d more points to purchase this item (including cart contents).', 'woocommerce'),
-            (int)ceil($needed)
-        );
-    }
 }
