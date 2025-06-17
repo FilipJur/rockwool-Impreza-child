@@ -27,102 +27,26 @@ WordPress child theme development with enterprise-grade architecture. Completed 
 - CSS is compiled to `style.css` in the theme root
 - Assets are automatically enqueued in `functions.php` with dependency management
 
-## Architecture Overview
+## Architecture & Features
 
-### Feature-Based JavaScript Structure
-JavaScript is organized into feature modules under `src/js/features/`:
-- `file-upload/` - Enhanced file upload functionality with drag-and-drop, previews, and animations
-- `ares/` - Czech company registry (ARES) integration for form auto-completion
-
-### Main Application
-- `src/js/main.js` - ThemeApp class manages module initialization and lifecycle
-- Modules are conditionally loaded based on DOM elements present
-- Supports dynamic content reloading and AJAX compatibility
-
-### SCSS Architecture
-- `src/scss/main.scss` - Main stylesheet entry point
-- Organized by: base, layout, components, utilities
-- Uses modern SCSS module system with `@use`
-
-### WordPress Integration
-- Child theme of Impreza theme
-- **Enterprise App-centric architecture**: All PHP logic organized in `src/App/` directory
-- **Perfect separation of concerns**: App logic vs frontend assets (js/scss)
-- **PSR-4 autoloaded**: Full Composer autoloading with `MistrFachman\` → `src/App/` mapping
-- **Single bootstrap**: `src/bootstrap.php` orchestrates entire application
-- **myCred E-Commerce domain**: `src/App/MyCred/ECommerce/`
-  - `Manager`: Component orchestration with dependency injection
-  - `CartContext`: Centralized cart state management
-  - `BalanceCalculator`: Single source of truth for available points
-  - `Purchasability`: Context-aware product affordability logic
-  - `UiModifier`: WooCommerce UI modifications
-- **Decoupled Shortcode system**: `src/App/Shortcodes/` independent presentation layer
-  - `ShortcodeBase`: Abstract base class with validation and templating
-  - `ShortcodeManager`: Auto-discovery registry with dependency injection
-  - `ProductGridShortcode`: Component with balance filtering and React-like data props
-
-### Service Pattern Architecture
-- **Dependency Injection**: Shortcodes receive services via constructor injection, never create dependencies
-- **Service Layer**: `src/App/Services/` provides business logic abstraction between shortcodes and core domains
-- **ProductService**: Encapsulates WooCommerce product fetching and myCred balance filtering logic
-- **Communication Flow**:
-  ```
-  Shortcode → Service → Domain Manager → Core Logic
-  ProductGridShortcode → ProductService → ECommerceManager → CartContext/BalanceCalculator
-  ```
-- **Pure Functional Components**: Shortcodes are stateless components that receive data and render HTML
-- **No Direct Domain Access**: Shortcodes never directly access MyCred/WooCommerce APIs - always through services
-- **Testability**: Service layer enables easy mocking and unit testing of shortcode logic
-
-## Key Features
-
-### File Upload Enhancement
-- Drag-and-drop interface with visual feedback
-- Image preview generation and thumbnail handling
-- Staggered arrival animations for file previews
-- Integration with WordPress file upload plugins
-- Simplified animation system without View Transitions API
-
-### myCred WooCommerce Integration
-- **Cart-aware balance calculation**: available = balance - cart_total (Single Source of Truth)
-- **Context-aware purchasability**: Different logic for shop vs cart/checkout/API pages to prevent double-counting
-- **WooCommerce compatibility**: Handles both traditional and block-based checkout via REST API detection
-- **Performance optimized**: Replaced 40+ individual product checks with single calculation
-- **Modular architecture**: CartContext → AvailableBalanceCalculator → Purchasability dependency chain
-- **Enhanced validation**: Multi-level validation at display, add-to-cart, and checkout stages
-
-### ARES Integration
-- Czech company registry lookup
-- Auto-completion of company information in forms
-- Error handling and validation
-
-## Development Notes
-
-### Modern JavaScript Architecture
-- **Functions over classes**: Use classes only for stateful components, functions for utilities
-- **ES6 modules**: Clean import/export patterns with object exports for utilities
-- **Functional approach**: Most features are implemented as setup functions returning control objects
-- **Minimal state management**: Only `FileUpload` uses class pattern (singleton + complex state)
-- **Proper cleanup**: Functions return cleanup methods, classes implement destroy/cleanup
-
-#### Current Patterns
-- **api** and **validation**: Object exports with utility functions
-- **setupAresForm()**: Functional setup returning control object with cleanup
-- **setupPreviewObserver()**: Functional DOM observer with proper cleanup
-- **Animation utilities**: Pure functions for staggered animations (no view transitions)
-- **FileUpload**: Class for complex state management (legitimate singleton pattern)
-
-### WordPress Hooks
-- Uses WordPress action hooks for proper initialization timing
-- Conditional loading based on plugin availability
-- Follows WordPress coding standards
-
-### Design System
-- Design tokens and content reference available in `docs/design/`
-- Color palette and typography defined in theme configuration
-- Component specifications ready for implementation
+**📋 For detailed technical information, see:**
+- **[Architecture Overview](docs/architecture.md)** - Enterprise structure, domains, and service patterns
+- **[Feature Specifications](docs/features.md)** - Detailed feature implementations and technical specs
+- **[Development Patterns](docs/development.md)** - Coding standards, patterns, and implementation guidelines
+- **[Design System](docs/design/)** - Design tokens, components, and visual specifications
 
 ## Recent Changes
+- **2025-06-17**: SHORTCODE ARCHITECTURE SIMPLIFICATION - Two major optimization commits
+- **2025-06-17**: Streamlined ProductGridShortcode to inline template rendering (74 insertions, 145 deletions)
+- **2025-06-17**: Replaced complex method-based rendering with direct template output using `ob_start()`/`ob_get_clean()`
+- **2025-06-17**: Eliminated unnecessary abstraction layers: removed `render_builtin_grid()`, `render_balance_info()`, `render_product_item()`
+- **2025-06-17**: Simplified shortcode system by removing admin documentation and complex permission checking (151 total deletions)
+- **2025-06-17**: Removed 76-line admin documentation system from ShortcodeManager
+- **2025-06-17**: Streamlined attribute sanitization in ShortcodeBase using inline validation
+- **2025-06-17**: Maintained React-like component benefits while reducing boilerplate complexity
+- **2025-06-17**: Created domain-based Repomix bundles for better code organization (10 logical bundles including app-comprehensive)
+- **2025-06-17**: Added comprehensive App directory bundle for complete enterprise architecture analysis
+- **2025-06-17**: Established mandatory bundle maintenance protocol for all new files
 - **2025-01-15**: REVOLUTIONARY ARCHITECTURE TRANSFORMATION - Completed App-centric enterprise structure
 - **2025-01-15**: Created `src/App/` directory housing all PHP application logic with perfect separation
 - **2025-01-15**: Achieved domain decoupling: independent ECommerce and Shortcodes domains
@@ -151,6 +75,21 @@ JavaScript is organized into feature modules under `src/js/features/`:
 - **Avoid View Transitions API**: Causes browser compatibility issues and animation conflicts - use CSS animations instead
 - **NO INLINE STYLING IN SHORTCODES**: Shortcodes are functional smart components - styling is handled separately in SCSS/CSS files
 - **Semantic CSS naming for shortcodes**: Wrapper elements include context classes (e.g., `filter-affordable`, `filter-unavailable`) for targeted styling
+- **Inline template rendering over method abstraction**: Use `ob_start()`/`ob_get_clean()` for direct template output instead of complex method chains
+- **Eliminate unnecessary abstraction layers**: Remove intermediate methods when they don't add value (e.g., `render_builtin_grid()`)
+- **Simplify administrative features**: Remove complex admin documentation systems and permission checking that add boilerplate without business value
+- **Domain-based code bundles**: Organize code analysis and documentation by business domains rather than technical file types
+- **Bundle maintenance required**: Every new file created must be added to appropriate Repomix bundle for code organization and analysis
+
+## Bundle Management Protocol
+
+### Repomix Bundle Maintenance
+- **MANDATORY**: When creating any new file, immediately add it to the appropriate bundle in `.repomix/bundles.json`
+- **Domain-based organization**: Group files by business domain (ECommerce, Shortcodes, etc.) not technical type
+- **Comprehensive coverage**: The `app-comprehensive` bundle contains the complete `src/App/` directory for full architecture analysis
+- **Bundle updates**: Update `lastUsed` timestamp when modifying files within a bundle
+- **New domains**: Create new bundles for new business domains or major features
+
 
 ## Last Updated
-2025-01-15
+2025-06-17
