@@ -12,9 +12,9 @@
     "require": {
         "php": ">=8.0",
         "composer/installers": "^2.1",
-        "wpackagist-plugin/wp-sms": "*",
         "wpackagist-plugin/user-role-editor": "*",
-        "wpackagist-plugin/members": "*"
+        "wpackagist-plugin/members": "*",
+        "wpackagist-plugin/login-with-phone-number": "^1.8"
     },
     "autoload": {
         "psr-4": {

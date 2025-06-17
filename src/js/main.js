@@ -5,6 +5,7 @@
 
 import { setupAresForm } from './features/ares/handler.js';
 import { FileUpload } from './features/file-upload/index.js';
+import { app as firebaseApp } from './firebase/config.js';
 
 /**
  * Theme Application Class
@@ -16,6 +17,7 @@ class ThemeApp {
       aresHandler: null,
       fileUpload: null
     };
+    this.firebase = firebaseApp;
     this.isInitialized = false;
 
     this.init();
@@ -38,6 +40,7 @@ class ThemeApp {
     this.isInitialized = true;
 
     console.log('Theme application initialized successfully');
+    console.log('Firebase app initialized:', this.firebase);
   }
 
   /**

@@ -11,6 +11,7 @@
     "watch": "npm run watch:css & npm run watch:js"
   },
   "dependencies": {
+    "firebase": "^11.9.1",
     "sass": "^1.89.1"
   },
   "devDependencies": {
