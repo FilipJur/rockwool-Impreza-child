@@ -83,147 +83,75 @@ class ProductGridShortcode extends ShortcodeBase
 				$this->render_no_affordable_products($attributes);
 		}
 
-		// Prepare data for template
-		$template_data = [
-			'products' => $products,
-			'attributes' => $attributes,
-			'user_balance' => $this->mycred_manager->get_user_balance(),
-			'available_points' => $this->mycred_manager->get_available_points(),
-			'wrapper_classes' => $this->get_wrapper_classes($attributes)
-		];
+		// Component data (like React props)
+		$user_balance = $this->mycred_manager->get_user_balance();
+		$available_points = $this->mycred_manager->get_available_points();
+		$wrapper_classes = $this->get_wrapper_classes($attributes);
+		$show_balance_info = $attributes['show_balance_info'] === 'true';
+		$columns = !empty($attributes['columns']) ? (int) $attributes['columns'] : null;
 
-		return $this->render_builtin_grid($template_data);
+		// JSX-like template rendering
+		ob_start(); ?>
+		<div class="<?= esc_attr($wrapper_classes) ?>">
+			<?php if ($show_balance_info): ?>
+				<div class="mycred-balance-info">
+					<?php switch ($attributes['balance_filter']):
+						case 'affordable': ?>
+							<p class="balance-message">
+								Zobrazeny produkty, které si můžete dovolit (dostupné body: <?= number_format($available_points) ?>)
+							</p>
+							<?php break;
+						case 'unavailable': ?>
+							<p class="balance-message">
+								Zobrazeny produkty mimo váš dosah (dostupné body: <?= number_format($available_points) ?>)
+							</p>
+							<?php break;
+						default: ?>
+							<p class="balance-message">
+								Váš zůstatek: <?= number_format($user_balance) ?> bodů | Dostupné: <?= number_format($available_points) ?> bodů
+							</p>
+							<?php break;
+					endswitch; ?>
+				</div>
+			<?php endif; ?>
+
+			<div class="mycred-products-grid<?= $columns ? ' columns-' . $columns : '' ?>">
+				<?php foreach ($products as $product):
+					$can_afford = $this->mycred_manager->can_afford_product($product);
+					$price = $product->get_price();
+					$price_display = $price ? number_format((float) $price) . ' bodů' : 'Zdarma';
+				?>
+					<div class="mycred-product-item <?= $can_afford ? 'affordable' : 'unavailable' ?>">
+						<div class="product-image">
+							<?php if ($product->get_image_id()): ?>
+								<?= wp_get_attachment_image($product->get_image_id(), 'woocommerce_thumbnail') ?>
+							<?php else: ?>
+								<div class="placeholder-image">Bez obrázku</div>
+							<?php endif; ?>
+						</div>
+						<div class="product-info">
+							<h3 class="product-title">
+								<a href="<?= esc_url($product->get_permalink()) ?>">
+									<?= esc_html($product->get_name()) ?>
+								</a>
+							</h3>
+							<div class="product-price <?= $can_afford ? 'affordable' : 'unavailable' ?>">
+								<?= esc_html($price_display) ?>
+							</div>
+							<?php if (!$can_afford): ?>
+								<div class="affordability-message">Nedostatek bodů</div>
+							<?php endif; ?>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</div>
+		<?php return ob_get_clean();
 	}
 
 
-	/**
-	 * Render built-in product grid (fallback when no template exists)
-	 *
-	 * @param array $data Template data
-	 * @return string Rendered HTML
-	 */
-	private function render_builtin_grid(array $data): string
-	{
-		$products = $data['products'];
-		$attributes = $data['attributes'];
 
-		$html = sprintf('<div class="%s">', esc_attr($data['wrapper_classes']));
 
-		// Add balance info if enabled
-		if ($attributes['show_balance_info'] === 'true') {
-			$html .= $this->render_balance_info($data);
-		}
-
-		// Build grid classes - only add columns class if explicitly set
-		$grid_classes = ['mycred-products-grid'];
-		if (!empty($attributes['columns'])) {
-			$columns = (int) $attributes['columns'];
-			$grid_classes[] = 'columns-' . $columns;
-		}
-
-		$html .= sprintf('<div class="%s">', esc_attr(implode(' ', $grid_classes)));
-
-		foreach ($products as $product) {
-			$html .= $this->render_product_item($product, $attributes);
-		}
-
-		$html .= '</div></div>';
-
-		return $html;
-	}
-
-	/**
-	 * Render balance information section
-	 *
-	 * @param array $data Template data
-	 * @return string Rendered HTML
-	 */
-	private function render_balance_info(array $data): string
-	{
-		$user_balance = $data['user_balance'];
-		$available_points = $data['available_points'];
-		$filter = $data['attributes']['balance_filter'];
-
-		$html = '<div class="mycred-balance-info">';
-
-		switch ($filter) {
-			case 'affordable':
-				$html .= sprintf(
-					'<p class="balance-message">Zobrazeny produkty, které si můžete dovolit (dostupné body: %s)</p>',
-					number_format($available_points)
-				);
-				break;
-
-			case 'unavailable':
-				$html .= sprintf(
-					'<p class="balance-message">Zobrazeny produkty mimo váš dosah (dostupné body: %s)</p>',
-					number_format($available_points)
-				);
-				break;
-
-			default:
-				$html .= sprintf(
-					'<p class="balance-message">Váš zůstatek: %s bodů | Dostupné: %s bodů</p>',
-					number_format($user_balance),
-					number_format($available_points)
-				);
-		}
-
-		$html .= '</div>';
-
-		return $html;
-	}
-
-	/**
-	 * Render individual product item
-	 *
-	 * @param \WC_Product $product Product object
-	 * @param array $attributes Shortcode attributes
-	 * @return string Rendered HTML
-	 */
-	private function render_product_item(\WC_Product $product, array $attributes): string
-	{
-		$can_afford = $this->mycred_manager->can_afford_product($product);
-		$price = $product->get_price();
-		$price_display = $price ? number_format((float) $price) . ' bodů' : 'Zdarma';
-
-		$item_classes = [
-			'mycred-product-item',
-			$can_afford ? 'affordable' : 'unavailable'
-		];
-
-		$html = sprintf('<div class="%s">', esc_attr(implode(' ', $item_classes)));
-		$html .= '<div class="product-image">';
-
-		// Product image
-		if ($product->get_image_id()) {
-			$html .= wp_get_attachment_image($product->get_image_id(), 'woocommerce_thumbnail');
-		} else {
-			$html .= '<div class="placeholder-image">Bez obrázku</div>';
-		}
-
-		$html .= '</div>';
-		$html .= '<div class="product-info">';
-		$html .= sprintf(
-			'<h3 class="product-title"><a href="%s">%s</a></h3>',
-			esc_url($product->get_permalink()),
-			esc_html($product->get_name())
-		);
-
-		$html .= sprintf(
-			'<div class="product-price %s">%s</div>',
-			$can_afford ? 'affordable' : 'unavailable',
-			esc_html($price_display)
-		);
-
-		if (!$can_afford) {
-			$html .= '<div class="affordability-message">Nedostatek bodů</div>';
-		}
-
-		$html .= '</div></div>';
-
-		return $html;
-	}
 
 	/**
 	 * Render no products message
@@ -235,10 +163,11 @@ class ProductGridShortcode extends ShortcodeBase
 	{
 		$wrapper_classes = $this->get_wrapper_classes($attributes);
 
-		return sprintf(
-			'<div class="%s"><p class="no-products">Žádné produkty nebyly nalezeny.</p></div>',
-			esc_attr($wrapper_classes)
-		);
+		ob_start(); ?>
+		<div class="<?= esc_attr($wrapper_classes) ?>">
+			<p class="no-products">Žádné produkty nebyly nalezeny.</p>
+		</div>
+		<?php return ob_get_clean();
 	}
 
 	/**
@@ -252,11 +181,11 @@ class ProductGridShortcode extends ShortcodeBase
 		$wrapper_classes = $this->get_wrapper_classes($attributes);
 		$filter_text = $attributes['balance_filter'] === 'affordable' ? 'dostupné' : 'nedostupné';
 
-		return sprintf(
-			'<div class="%s"><p class="no-products">Žádné %s produkty nebyly nalezeny.</p></div>',
-			esc_attr($wrapper_classes),
-			esc_html($filter_text)
-		);
+		ob_start(); ?>
+		<div class="<?= esc_attr($wrapper_classes) ?>">
+			<p class="no-products">Žádné <?= esc_html($filter_text) ?> produkty nebyly nalezeny.</p>
+		</div>
+		<?php return ob_get_clean();
 	}
 
 	/**
