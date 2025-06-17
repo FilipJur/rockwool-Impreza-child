@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 vendor/
+lib/
 
 # Build artifacts
 build/
@@ -13,6 +14,7 @@ debug.log
 error_log
 wp-config-local.php
 .htaccess
+
 
 # Development files
 .env

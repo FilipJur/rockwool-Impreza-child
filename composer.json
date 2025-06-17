@@ -3,15 +3,33 @@
     "description": "Custom functionality for the Mistr Fachman theme with modern PSR-4 architecture.",
     "type": "wordpress-theme",
     "license": "GPL-2.0-or-later",
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://wpackagist.org"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "composer/installers": "^2.1",
+        "wpackagist-plugin/wp-sms": "*",
+        "wpackagist-plugin/user-role-editor": "*",
+        "wpackagist-plugin/members": "*"
+    },
     "autoload": {
         "psr-4": {
             "MistrFachman\\": "src/App/"
         }
     },
     "config": {
-        "vendor-dir": "lib"
+        "vendor-dir": "lib",
+        "allow-plugins": {
+            "composer/installers": true
+        }
     },
-    "require": {
-        "php": ">=8.0"
+    "extra": {
+        "installer-paths": {
+            "../../plugins/{$name}/": ["type:wordpress-plugin"]
+        }
     }
 }
