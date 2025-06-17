@@ -261,7 +261,7 @@ class ProductGridShortcode extends ShortcodeBase
 
 	/**
 	 * Override wrapper classes to include balance filter context
-	 * 
+	 *
 	 * @param array $attributes Shortcode attributes
 	 * @return string CSS classes
 	 */

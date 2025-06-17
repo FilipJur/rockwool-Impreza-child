@@ -58,11 +58,6 @@ abstract class ShortcodeBase {
         try {
             // Validate and sanitize attributes
             $validated_attributes = $this->validate_attributes($attributes);
-            
-            // Check if user has permission to view this shortcode
-            if (!$this->check_permissions($validated_attributes)) {
-                return $this->render_permission_denied();
-            }
 
             // Render the shortcode
             return $this->render($validated_attributes, $content);
@@ -113,12 +108,10 @@ abstract class ShortcodeBase {
 
         foreach ($attributes as $key => $value) {
             $sanitized[$key] = match ($key) {
-                'balance_filter' => $this->sanitize_balance_filter($value),
-                'columns' => absint($value),
-                'limit' => absint($value),
-                'category' => sanitize_text_field($value),
-                'order' => $this->sanitize_order($value),
-                'orderby' => $this->sanitize_orderby($value),
+                'balance_filter' => in_array($value, ['all', 'affordable', 'unavailable'], true) ? $value : 'all',
+                'columns', 'limit' => absint($value),
+                'order' => in_array(strtoupper($value), ['ASC', 'DESC'], true) ? strtoupper($value) : 'ASC',
+                'orderby' => in_array($value, ['title', 'date', 'price', 'menu_order', 'rand'], true) ? $value : 'title',
                 default => sanitize_text_field($value)
             };
         }
@@ -126,49 +119,6 @@ abstract class ShortcodeBase {
         return $sanitized;
     }
 
-    /**
-     * Sanitize balance filter parameter
-     */
-    protected function sanitize_balance_filter(string $value): string {
-        $valid_filters = ['all', 'affordable', 'unavailable'];
-        return in_array($value, $valid_filters, true) ? $value : 'all';
-    }
-
-    /**
-     * Sanitize order parameter
-     */
-    protected function sanitize_order(string $value): string {
-        $valid_orders = ['ASC', 'DESC'];
-        return in_array(strtoupper($value), $valid_orders, true) ? strtoupper($value) : 'ASC';
-    }
-
-    /**
-     * Sanitize orderby parameter
-     */
-    protected function sanitize_orderby(string $value): string {
-        $valid_orderby = ['title', 'date', 'price', 'menu_order', 'rand'];
-        return in_array($value, $valid_orderby, true) ? $value : 'title';
-    }
-
-    /**
-     * Check if current user has permission to view this shortcode
-     * 
-     * @param array $attributes Validated attributes
-     * @return bool True if user has permission
-     */
-    protected function check_permissions(array $attributes): bool {
-        // Default: allow all logged-in users
-        return is_user_logged_in();
-    }
-
-    /**
-     * Render permission denied message
-     * 
-     * @return string HTML output for permission denied
-     */
-    protected function render_permission_denied(): string {
-        return '<div class="mycred-shortcode-error">Pro zobrazení tohoto obsahu se musíte přihlásit.</div>';
-    }
 
     /**
      * Render error message
