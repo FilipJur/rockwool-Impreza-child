@@ -27,13 +27,44 @@ WordPress child theme development with enterprise-grade architecture. **REGISTRA
 - CSS is compiled to `style.css` in the theme root
 - Assets are automatically enqueued in `functions.php` with dependency management
 
-## Architecture & Features
+## Living Memory System
 
-**📋 For detailed technical information, see:**
+**🧠 This CLAUDE.md serves as the central memory hub, intertwined with detailed documentation:**
 - **[Architecture Overview](docs/architecture.md)** - Enterprise structure, domains, and service patterns
 - **[Feature Specifications](docs/features.md)** - Detailed feature implementations and technical specs
 - **[Development Patterns](docs/development.md)** - Coding standards, patterns, and implementation guidelines
 - **[Design System](docs/design/)** - Design tokens, components, and visual specifications
+
+**Agent Instructions:** Always consult relevant documentation files based on context:
+
+### **File-Based Triggers**
+- **Working in `src/App/MyCred/`** → Read `docs/architecture.md` for e-commerce domain patterns
+- **Working in `src/App/Users/`** → Read `docs/features.md` for registration system specs + `docs/development.md` for user testing patterns
+- **Working in `src/App/Shortcodes/`** → Read `docs/architecture.md` for component patterns + `docs/development.md` for template rendering
+- **Working in `src/js/features/`** → Read `docs/development.md` for JavaScript patterns + `docs/architecture.md` for frontend structure
+- **Working with `.scss` files** → Read `docs/design/` for design tokens + `docs/development.md` for Tailwind integration
+
+### **Task-Based Triggers**
+- **User/authentication issues** → Read `docs/features.md` registration specs + `docs/development.md` debugging guide
+- **Performance optimization** → Read `docs/architecture.md` service patterns + `docs/development.md` optimization guidelines
+- **Cross-domain integration** → Read `docs/architecture.md` service layer communication patterns
+- **New feature development** → Read `docs/architecture.md` domain structure + `docs/development.md` patterns + `docs/features.md` integration points
+- **Bug fixing/debugging** → Read `docs/development.md` debugging section + relevant domain docs
+- **Refactoring work** → Read `docs/architecture.md` patterns + `docs/development.md` complexity management
+
+### **High-Level Context Triggers**
+- **"Registration not working"** → Read `docs/features.md` registration flow + `docs/development.md` user testing + check AJAX session handling
+- **"Balance calculation issues"** → Read `docs/architecture.md` e-commerce domain + Single Source of Truth pattern + context-aware logic
+- **"Shortcode rendering problems"** → Read `docs/architecture.md` component patterns + `docs/development.md` template rendering + semantic CSS
+- **"User permissions wrong"** → Read `docs/features.md` role system + `docs/development.md` user domain patterns + service layer usage
+- **"Frontend build issues"** → Read `docs/architecture.md` frontend structure + `docs/development.md` JavaScript patterns + build commands
+- **"Styling inconsistencies"** → Read `docs/design/` design system + `docs/development.md` Tailwind patterns + semantic naming
+
+### **Maintenance Triggers**
+- **File >200 lines** → Read `docs/development.md` complexity management + splitting guidelines
+- **Adding new domain** → Read `docs/architecture.md` domain organization + PSR-4 patterns + service layer design
+- **WordPress integration** → Read `docs/development.md` WordPress standards + `docs/architecture.md` integration patterns
+- **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
 - **2025-06-18**: 🚀 **PHASE 1 REFACTORING COMPLETE** - Extracted UserDetectionService, RegistrationStatus, and RegistrationConfig
@@ -59,25 +90,12 @@ WordPress child theme development with enterprise-grade architecture. **REGISTRA
 - **2025-06-17**: Created domain-based Repomix bundles for better code organization (10 logical bundles including app-comprehensive)
 - **2025-06-17**: Added comprehensive App directory bundle for complete enterprise architecture analysis
 - **2025-06-17**: Established mandatory bundle maintenance protocol for all new files
-- **2025-01-15**: REVOLUTIONARY ARCHITECTURE TRANSFORMATION - Completed App-centric enterprise structure
-- **2025-01-15**: Created `src/App/` directory housing all PHP application logic with perfect separation
-- **2025-01-15**: Achieved domain decoupling: independent ECommerce and Shortcodes domains
-- **2025-01-15**: Transformed bootstrap: eliminated vestigial `includes/` dir, renamed to `src/bootstrap.php`
-- **2025-01-15**: Implemented React-like shortcode components with dependency injection
-- **2025-01-15**: PSR-4 autoloading: `MistrFachman\` → `src/App/` with optimized class mapping
-- **2025-01-15**: Modern namespaces: `MistrFachman\MyCred\ECommerce\Manager`, `MistrFachman\Shortcodes\ShortcodeManager`
-- **2025-01-15**: Completed cart-aware balance calculation (Single Source of Truth architecture)
-- **2025-01-15**: Replaced 40+ individual product checks with unified calculation system
-- **2025-01-15**: Added context-aware purchasability preventing double-counting in cart/checkout
-- **2025-01-15**: Enhanced WooCommerce REST API detection for block-based checkout compatibility
-- **2025-01-14**: Simplified file upload animations removing View Transitions API complexity
-- **2025-01-14**: Modernized JavaScript from classes to functional patterns
 
 ## User Registration System
 
 ### **Complete Three-Stage Registration Flow** ✅
 1. **Stage 1: Guest → Prospect (Automated)**
-   - User registers via SMS OTP on `/registrace` page
+   - User registers via SMS OTP on `/prihlaseni` page
    - System assigns `pending_approval` role + `needs_form` meta status
    - User can browse products but cannot purchase
 
@@ -104,24 +122,39 @@ WordPress child theme development with enterprise-grade architecture. **REGISTRA
 - **Domain-driven architecture**: Code organized by business domain (ECommerce, Shortcodes) not implementation features
 - **Component-based shortcodes**: React/Next.js-style reusable components with data injection and templating
 - **Auto-discovery pattern**: Shortcodes automatically registered by scanning directory structure
-- **Cart-aware balance calculation**: available = balance - cart_total replaces individual product checking (Single Source of Truth)
-- **Context-aware purchasability**: Shop pages check can_afford_product(), cart/checkout/API pages check cart_total <= user_balance
-- **Namespaced classes**: `MistrFachman\MyCred\ECommerce\Manager` replaces `MyCred_Pricing_Manager`
+- **Single Source of Truth balance system**: available = balance - cart_total with context-aware purchasability (shop vs cart/checkout)
+- **Modern namespaced classes**: `MistrFachman\MyCred\ECommerce\Manager` replaces legacy underscore naming
 - **Single bootstrap file**: One require_once for autoloader, eliminates dependency management complexity
-- **Use functional patterns over classes**: Classes only for stateful components (FileUpload singleton), functions for everything else
-- **Proper cleanup required**: All setup functions must return cleanup methods, all classes must implement destroy/cleanup
-- **Avoid View Transitions API**: Causes browser compatibility issues and animation conflicts - use CSS animations instead
-- **NO INLINE STYLING IN SHORTCODES**: Shortcodes are functional smart components - styling is handled separately in SCSS/CSS files
-- **Semantic CSS naming for shortcodes**: Wrapper elements include context classes (e.g., `filter-affordable`, `filter-unavailable`) for targeted styling
-- **Inline template rendering over method abstraction**: Use `ob_start()`/`ob_get_clean()` for direct template output instead of complex method chains
-- **Eliminate unnecessary abstraction layers**: Remove intermediate methods when they don't add value (e.g., `render_builtin_grid()`)
-- **Simplify administrative features**: Remove complex admin documentation systems and permission checking that add boilerplate without business value
-- **Domain-based code bundles**: Organize code analysis and documentation by business domains rather than technical file types
-- **Bundle maintenance required**: Every new file created must be added to appropriate Repomix bundle for code organization and analysis
-- **Registration system production-ready**: Three-stage user approval workflow complete with SMS OTP, form submission, and admin approval
-- **AJAX session handling**: Cookie fallback ensures form submissions work across all browser contexts (including incognito)
-- **Modular refactoring complete**: Phase 1 improvements implemented - UserDetectionService, RegistrationStatus, RegistrationConfig extracted
-- **File size optimization**: RegistrationHooks reduced from 260 to 190 LOC through service extraction
+- **Functional over class patterns**: Classes only for stateful components, functions for everything else with proper cleanup
+- **Tailwind CSS for component styling**: Utility-first CSS framework for consistent, maintainable component styling
+- **NO INLINE STYLING IN SHORTCODES**: Shortcodes are functional smart components - styling handled via Tailwind classes
+- **Semantic CSS naming**: Wrapper elements include context classes for targeted styling (e.g., `filter-affordable`, `filter-unavailable`)
+- **Template simplification**: Direct `ob_start()`/`ob_get_clean()` output over complex method abstraction layers
+- **Administrative feature simplification**: Remove boilerplate admin documentation and permission checking systems
+- **Registration system architecture**: Three-stage user approval with modular services (UserDetectionService, RegistrationStatus, RegistrationConfig)
+- **AJAX session handling**: Cookie fallback ensures form submissions work across all browser contexts
+- **Living memory system architecture**: CLAUDE.md as central hub with context-aware documentation consultation
+- **Documentation integration protocol**: Agent must read relevant docs/ files based on task context (architecture, development, features, design)
+
+## Known Issues
+*No current known issues. System is production-ready.*
+
+## Archive
+
+### Archived Recent Changes (2025-01-15)
+- **REVOLUTIONARY ARCHITECTURE TRANSFORMATION** - Completed App-centric enterprise structure
+- **Created `src/App/` directory** - Housing all PHP application logic with perfect separation
+- **Achieved domain decoupling** - Independent ECommerce and Shortcodes domains
+- **Transformed bootstrap** - Eliminated vestigial `includes/` dir, renamed to `src/bootstrap.php`
+- **Implemented React-like shortcode components** - With dependency injection
+- **PSR-4 autoloading** - `MistrFachman\` → `src/App/` with optimized class mapping
+- **Modern namespaces** - `MistrFachman\MyCred\ECommerce\Manager`, `MistrFachman\Shortcodes\ShortcodeManager`
+- **Completed cart-aware balance calculation** - Single Source of Truth architecture
+- **Replaced 40+ individual product checks** - With unified calculation system
+- **Added context-aware purchasability** - Preventing double-counting in cart/checkout
+- **Enhanced WooCommerce REST API detection** - For block-based checkout compatibility
+- **Simplified file upload animations** - Removing View Transitions API complexity (2025-01-14)
+- **Modernized JavaScript** - From classes to functional patterns (2025-01-14)
 
 ## Bundle Management Protocol
 

@@ -1,6 +1,6 @@
 # Development Patterns & Guidelines
 
-This document outlines the development patterns, coding standards, and implementation guidelines for the project.
+This document outlines the development patterns, coding standards, and implementation guidelines for the project. Synchronized with .agent.md and CLAUDE.md for comprehensive living memory.
 
 ## Modern JavaScript Architecture
 
@@ -46,6 +46,32 @@ This document outlines the development patterns, coding standards, and implement
 - Graceful degradation when plugins unavailable
 - Clean error handling and fallbacks
 
+## User Registration Development Patterns
+
+### Working with Users Domain
+- **Always use Manager singleton**: `\MistrFachman\Users\Manager::get_instance()`
+- **Status checks via UserService**: `$user_service->get_user_registration_status($user_id)`
+- **Role checks via RoleManager**: `$role_manager->is_pending_user($user_id)`
+- **Never direct user meta access**: Use service layer for all user data operations
+
+### Adding User Features
+1. **Business logic**: Add to appropriate domain class (Manager, RoleManager, etc.)
+2. **Status/permission checks**: Update UserService methods
+3. **WordPress integration**: Add hooks in RegistrationHooks if needed
+4. **Test user states**: logged out, pending_approval, full_member, awaiting_review
+
+### Testing User Registration
+- **⚠️ Incognito Mode**: May cause session issues - test in regular browser tabs
+- **✅ Cookie Fallback**: System handles AJAX session loss automatically
+- **✅ Role Verification**: System blocks purchases for pending users
+- **Form Testing**: Use Contact Form 7 ID 292 for final registration
+
+### Debugging User Issues
+- **Check logs**: Look for `[USERS:*]` entries in debug logs
+- **Verify user meta**: Check `_mistr_fachman_registration_status` meta key
+- **Confirm roles**: Ensure proper `pending_approval` vs `full_member` assignment
+- **AJAX testing**: Test CF7 submissions in non-incognito browsers
+
 ## PHP Architecture Patterns
 
 ### PSR-4 Autoloading
@@ -86,8 +112,12 @@ This document outlines the development patterns, coding standards, and implement
 - **Easy mocking**: Service layer enables unit testing
 - **Clean interfaces**: Clear contracts between layers
 - **Isolated testing**: Components can be tested independently
+- **Cross-domain integration**: Users and E-Commerce domains communicate through services
+- **Session handling**: UserDetectionService provides robust user identification with fallbacks
 
 ### Error Handling
 - **Graceful degradation**: System continues working with reduced functionality
-- **User feedback**: Clear error messages in appropriate language
+- **User feedback**: Clear error messages in appropriate language (Czech for user-facing)
 - **Defensive programming**: Check for plugin/service availability
+- **Registration flow resilience**: Cookie fallback prevents user loss during AJAX submissions
+- **Role-based fallbacks**: Pending users get appropriate messaging instead of errors

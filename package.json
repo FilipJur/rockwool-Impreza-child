@@ -1,20 +1,26 @@
 {
   "scripts": {
-    "build:css": "sass src/scss/main.scss:style.css --style=expanded --source-map",
-    "watch:css": "sass src/scss/main.scss:style.css --style=expanded --source-map --watch",
-    "build:css:prod": "sass src/scss/main.scss:style.css --style=compressed --no-source-map",
+    "build:css": "sass src/scss/main.scss:build/css/style-temp.css --style=expanded --source-map && postcss build/css/style-temp.css -o style.css --map && postcss src/tailwind.css -o tailwind.css --map",
+    "watch:css": "sass src/scss/main.scss:build/css/style-temp.css --style=expanded --source-map --watch & postcss build/css/style-temp.css -o style.css --map --watch & postcss src/tailwind.css -o tailwind.css --map --watch",
+    "build:css:prod": "sass src/scss/main.scss:build/css/style-temp.css --style=compressed --no-source-map && postcss build/css/style-temp.css -o style.css --no-map --env production && postcss src/tailwind.css -o tailwind.css --no-map --env production",
     "build:js": "wp-scripts build src/js/main.js --output-path=build/js",
     "build:js:dev": "wp-scripts build src/js/main.js --output-path=build/js --mode=development",
     "watch:js": "wp-scripts start src/js/main.js --output-path=build/js",
     "build": "npm run build:css:prod && npm run build:js",
     "dev": "npm run build:css && npm run build:js:dev",
-    "watch": "npm run watch:css & npm run watch:js"
+    "watch": "npm run watch:css & npm run watch:js",
+    "clean": "rm -rf build/css/ tailwind.css.map"
   },
   "dependencies": {
     "firebase": "^11.9.1",
     "sass": "^1.89.1"
   },
   "devDependencies": {
-    "@wordpress/scripts": "^30.17.0"
+    "@tailwindcss/postcss": "^4.1.10",
+    "@wordpress/scripts": "^30.17.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "postcss-cli": "^11.0.1",
+    "tailwindcss": "^4.1.10"
   }
 }

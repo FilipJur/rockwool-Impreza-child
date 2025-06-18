@@ -93,7 +93,7 @@ class UserHeaderShortcode extends ShortcodeBase
 
             <?php elseif ($status === 'full_member' || $status === 'other'): ?>
                 <!-- Fully registered user (admin, full_member, customer, etc.) -->
-                <div class="user-header-widget__full-member display-flex">
+                <div class="user-header-widget__full-member flex">
                     <div class="user-header-widget__user-account">
                         <?php if ($show_icons): ?>
                             <a href="<?= esc_url($attributes['account_url']) ?>" class="user-header-widget__account-link">

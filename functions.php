@@ -14,11 +14,23 @@ include_once("includes/leadhub.php");
 add_action('wp_enqueue_scripts', 'impreza_parent_theme_enqueue_styles');
 function impreza_parent_theme_enqueue_styles()
 {
+	// Parent theme styles
 	wp_enqueue_style('impreza-style', get_template_directory_uri() . '/style.css');
+	
+	// Tailwind utilities (loaded first, lower priority)
+	wp_enqueue_style(
+		'tailwind-utilities',
+		get_stylesheet_directory_uri() . '/tailwind.css',
+		['impreza-style'],
+		'1.0.0'
+	);
+	
+	// Child theme custom styles (loaded last, higher priority)
 	wp_enqueue_style(
 		'impreza-child-style',
 		get_stylesheet_directory_uri() . '/style.css',
-		['impreza-style']
+		['impreza-style', 'tailwind-utilities'],
+		'1.0.0'
 	);
 }
 

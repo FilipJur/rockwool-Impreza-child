@@ -24,20 +24,40 @@ This document provides detailed technical architecture information for the WordP
 - **ShortcodeManager**: Auto-discovery registry with dependency injection
 - **ProductGridShortcode**: Component with balance filtering and React-like data props
 
+#### Users Domain (`src/App/Users/`)
+- **Manager**: Singleton orchestrator for complete user registration system
+- **RegistrationHooks**: SMS OTP and Contact Form 7 integration with session handling
+- **RoleManager**: Custom role management (`pending_approval`, `full_member`)
+- **AccessControl**: Permission checking and user state validation
+- **AdminInterface**: Admin approval workflow and user promotion
+- **RegistrationStatus**: Centralized status constants and validation
+- **RegistrationConfig**: Form configuration and system settings
+- **ThemeIntegration**: WordPress theme integration hooks
+
 #### Service Layer (`src/App/Services/`)
 - **ProductService**: Encapsulates WooCommerce product fetching and myCred balance filtering logic
+- **UserService**: User status checking, permission logic, and registration state management
+- **UserDetectionService**: Robust user detection with cookie fallback for AJAX scenarios
 
 ### Service Pattern Architecture
-- **Dependency Injection**: Shortcodes receive services via constructor injection, never create dependencies
-- **Service Layer**: Provides business logic abstraction between shortcodes and core domains
+- **Dependency Injection**: All components receive services via constructor injection, never create dependencies
+- **Service Layer**: Provides business logic abstraction between components and core domains
 - **Communication Flow**:
   ```
-  Shortcode → Service → Domain Manager → Core Logic
+  Component → Service → Domain Manager → Core Logic
   ProductGridShortcode → ProductService → ECommerceManager → CartContext/BalanceCalculator
+  UserHeaderShortcode → UserService → UsersManager → RegistrationStatus/RoleManager
   ```
 - **Pure Functional Components**: Shortcodes are stateless components that receive data and render HTML
-- **No Direct Domain Access**: Shortcodes never directly access MyCred/WooCommerce APIs - always through services
-- **Testability**: Service layer enables easy mocking and unit testing of shortcode logic
+- **Cross-Domain Integration**: Users domain integrates with E-Commerce for role-based purchasing
+- **No Direct Domain Access**: Components never directly access WordPress/plugin APIs - always through services
+- **Testability**: Service layer enables easy mocking and unit testing of all business logic
+
+### User Registration Architecture
+- **Three-Stage Flow**: Guest → SMS OTP → Prospect → Form Submission → Awaiting Review → Admin Approval → Full Member
+- **Session Management**: Cookie fallback handles Contact Form 7 AJAX session loss
+- **Role-Based Access**: `pending_approval` users blocked from purchases until promoted to `full_member`
+- **Single Source of Truth**: RegistrationStatus centralizes all status constants and validation logic
 
 ## Frontend Architecture
 
@@ -52,9 +72,11 @@ JavaScript is organized into feature modules under `src/js/features/`:
 - Supports dynamic content reloading and AJAX compatibility
 
 ### SCSS Architecture
-- `src/scss/main.scss` - Main stylesheet entry point
+- `src/scss/main.scss` - Main stylesheet entry point compiled to `build/css/style-temp.css`
+- **Two-step compilation**: SCSS → temp file → PostCSS → final `style.css`
 - Organized by: base, layout, components, utilities
 - Uses modern SCSS module system with `@use`
+- **PostCSS integration**: Autoprefixer and other PostCSS plugins process compiled SCSS
 
 ### WordPress Integration
 - Child theme of Impreza theme

@@ -7,7 +7,9 @@ lib/
 build/
 dist/
 *.css.map
-style.css
+# Keep style.css (WordPress theme requirement) but ignore Tailwind output
+tailwind.css
+tailwind.css.map
 
 # WordPress specific
 debug.log

@@ -1,6 +1,31 @@
 # Feature Specifications
 
-This document details the implemented features and their technical specifications.
+This document details the implemented features and their technical specifications. Works hand-in-hand with .agent.md and CLAUDE.md for living memory management.
+
+## User Registration System ✅ PRODUCTION READY
+
+### Three-Stage Registration Flow
+- **Stage 1**: Guest user enters phone number → SMS OTP verification → becomes `pending_approval` user
+- **Stage 2**: User fills Contact Form 7 (ID: 292) → status changes to `awaiting_review`
+- **Stage 3**: Admin manually approves → user promoted to `full_member` role
+
+### Technical Implementation
+- **SMS OTP Integration**: WordPress user registration with phone verification
+- **Contact Form 7 Integration**: Form ID 292 with AJAX session handling and cookie fallback
+- **Role Management**: Custom roles `pending_approval` and `full_member` with permission checking
+- **Admin Interface**: WordPress admin integration for user approval workflow
+- **Session Handling**: Cookie parsing fallback for AJAX submissions that lose session context
+
+### Critical Features
+- **AJAX Session Recovery**: Cookie fallback prevents user loss during CF7 AJAX submissions
+- **Role-Based E-Commerce**: `pending_approval` users blocked from purchases until approved
+- **Status Validation**: Centralized status checking prevents unauthorized access
+- **Admin Workflow**: Simple one-click user promotion with secure nonce validation
+
+### Integration Points
+- **E-Commerce Domain**: Role checking integrated with cart and checkout validation
+- **Shortcode System**: User status displayed in UserHeaderShortcode and UserDebugShortcode
+- **WordPress Core**: Seamless integration with WordPress user system and capabilities
 
 ## File Upload Enhancement
 
@@ -49,6 +74,7 @@ src/js/features/file-upload/
 - Context-aware messaging (cart vs balance scenarios)
 - Real-time balance updates
 - Clear affordability indicators
+- **Role-Based Access**: Pending users see registration prompts instead of purchase options
 
 ## ARES Integration
 

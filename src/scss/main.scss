@@ -12,6 +12,7 @@ Version:        0.1.0
 @use 'base/variables' as *;
 @use 'base/mixins' as *;
 @use 'base/reset';
+// Tailwind removed from main SCSS - will be separate file
 
 // Layout
 @use 'layout/grid';
