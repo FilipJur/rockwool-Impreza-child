@@ -8,10 +8,17 @@ use MistrFachman\Services\UserService;
 use MistrFachman\Services\UserDetectionService;
 
 /**
- * Users Domain Manager
+ * Users Domain Manager - Domain Orchestrator
  *
  * Main orchestrator for the Users domain, handling initialization
  * and coordination between user-related components.
+ *
+ * IMPORTANT: This class orchestrates components but does NOT implement
+ * admin UI functionality directly. All admin UI logic is delegated to
+ * the AdminInterface class to maintain clean separation of concerns.
+ *
+ * Role: Domain coordination and component lifecycle management
+ * Admin UI: Delegated to AdminInterface (single source of truth)
  *
  * @package mistr-fachman
  * @since 1.0.0
@@ -52,7 +59,7 @@ class Manager {
         $this->registration_hooks = new RegistrationHooks($this->role_manager, $this->user_detection_service);
         $this->theme_integration = new ThemeIntegration($this->user_service);
         $this->access_control = new AccessControl($this->user_service);
-        $this->admin_interface = new AdminInterface($this->role_manager);
+        $this->admin_interface = new AdminInterface($this->role_manager, $this->registration_hooks);
 
         $this->setup_hooks();
     }
@@ -74,16 +81,6 @@ class Manager {
         // Add admin notices handler
         add_action('admin_notices', [$this, 'display_admin_notices']);
 
-        // Add admin hooks for user management
-        if (is_admin()) {
-            add_action('show_user_profile', [$this, 'add_user_status_fields']);
-            add_action('edit_user_profile', [$this, 'add_user_status_fields']);
-            add_action('personal_options_update', [$this, 'save_user_status_fields']);
-            add_action('edit_user_profile_update', [$this, 'save_user_status_fields']);
-            
-            // Add secure admin action handler for user promotion
-            add_action('admin_post_mistr_fachman_promote_user', [$this, 'handle_promote_user_action']);
-        }
 
         mycred_debug('Users domain manager initialized', [
             'components' => [
@@ -139,105 +136,7 @@ class Manager {
         }
     }
 
-    /**
-     * Add user status fields to admin user profile
-     */
-    public function add_user_status_fields(\WP_User $user): void {
-        if (!current_user_can('edit_users')) {
-            return;
-        }
 
-        $status = $this->user_service->get_user_registration_status($user->ID);
-        $is_pending = $this->role_manager->is_pending_user($user->ID);
-        $is_full_member = $this->role_manager->is_full_member($user->ID);
-        $meta_status = $this->role_manager->get_user_status($user->ID);
-
-        ?>
-        <h2>Správa uživatele</h2>
-        <table class="form-table">
-            <tr>
-                <th><label>Aktuální stav</label></th>
-                <td>
-                    <strong style="color: <?php echo $is_full_member ? 'green' : ($is_pending ? 'orange' : 'red'); ?>">
-                        <?php echo esc_html($this->user_service->get_status_display_name($status)); ?>
-                    </strong>
-                    <p class="description">
-                        Systémový status: <code><?php echo esc_html($status); ?></code><br>
-                        <?php if ($meta_status): ?>
-                            Meta status: <code><?php echo esc_html($meta_status); ?></code><br>
-                        <?php endif; ?>
-                        Role: <code><?php echo esc_html(implode(', ', $user->roles)); ?></code>
-                    </p>
-                </td>
-            </tr>
-            
-            <?php if ($is_pending): ?>
-            <tr>
-                <th><label>Schválit uživatele</label></th>
-                <td>
-                    <a href="<?php echo esc_url(add_query_arg([
-                        'action' => 'mistr_fachman_promote_user',
-                        'user_id' => $user->ID,
-                        '_wpnonce' => wp_create_nonce('promote_user_' . $user->ID)
-                    ], admin_url('admin-post.php'))); ?>" 
-                       class="button button-primary"
-                       onclick="return confirm('Opravdu chcete povýšit tohoto uživatele na plného člena?')">
-                        Povýšit na Plného člena
-                    </a>
-                    <p class="description">
-                        Tímto krokem změníte roli uživatele na "Plný člen" a udělíte mu plný přístup k e-shopu.
-                        <strong>Tato akce je nevratná.</strong>
-                    </p>
-                </td>
-            </tr>
-            <?php elseif ($is_full_member): ?>
-            <tr>
-                <th><label>Stav člena</label></th>
-                <td>
-                    <span style="color: green; font-weight: bold;">✓ Plný člen</span>
-                    <p class="description">Uživatel má plný přístup k e-shopu a může nakupovat.</p>
-                </td>
-            </tr>
-            <?php endif; ?>
-        </table>
-        <?php
-    }
-
-    /**
-     * Handle secure admin action for promoting users
-     */
-    public function handle_promote_user_action(): void {
-        // 1. Security Check: Verify nonce and user capabilities
-        if (!isset($_GET['user_id']) || !isset($_GET['_wpnonce'])) {
-            wp_die('Missing required parameters.');
-        }
-        
-        if (!wp_verify_nonce($_GET['_wpnonce'], 'promote_user_' . $_GET['user_id'])) {
-            wp_die('Security check failed.');
-        }
-        
-        if (!current_user_can('edit_users')) {
-            wp_die('You do not have permission to perform this action.');
-        }
-
-        // 2. Sanitize input and perform the action
-        $user_id_to_promote = absint($_GET['user_id']);
-        $success = $this->registration_hooks->promote_to_full_member($user_id_to_promote);
-
-        // 3. Set admin notice and redirect back
-        $notice_type = $success ? 'success' : 'error';
-        $notice_message = $success ? 'User successfully promoted to Full Member.' : 'Failed to promote user.';
-        
-        // Store notice in transient for display after redirect
-        set_transient('mistr_fachman_admin_notice', [
-            'type' => $notice_type,
-            'message' => $notice_message
-        ], 30);
-
-        // Redirect back to the users list
-        wp_redirect(admin_url('users.php'));
-        exit;
-    }
 
     /**
      * Save user status fields (placeholder for future functionality)

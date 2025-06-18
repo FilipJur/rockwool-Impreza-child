@@ -5,11 +5,19 @@ declare(strict_types=1);
 namespace MistrFachman\Users;
 
 /**
- * Admin Interface Handler
+ * Admin Interface Handler - Single Source of Truth for Admin UI
  *
- * Handles all WordPress admin UI interactions for user management.
- * Separated from Users Manager to maintain clean separation of concerns
- * between business logic and presentation layer.
+ * Handles ALL WordPress admin UI interactions for user management.
+ * This class is the ONLY place where admin UI logic should be implemented.
+ * 
+ * IMPORTANT: This class is the single source of truth for:
+ * - User profile form rendering (add_user_status_fields)
+ * - User promotion handling (handle_promote_user_action) 
+ * - Admin notice display (display_admin_notices)
+ * - Admin hook registration (init_hooks)
+ *
+ * The Users\Manager class should NOT duplicate any admin UI functionality
+ * that exists in this class. All admin UI logic flows through this class.
  *
  * @package mistr-fachman
  * @since 1.0.0
@@ -23,7 +31,8 @@ if (!defined('ABSPATH')) {
 class AdminInterface {
 
     public function __construct(
-        private RoleManager $role_manager
+        private RoleManager $role_manager,
+        private RegistrationHooks $registration_hooks
     ) {}
 
     /**
@@ -37,7 +46,7 @@ class AdminInterface {
         add_action('edit_user_profile_update', [$this, 'save_user_status_fields']);
 
         // Admin action hooks
-        add_action('admin_post_promote_user_to_full_member', [$this, 'handle_promote_user_action']);
+        add_action('admin_post_mistr_fachman_promote_user', [$this, 'handle_promote_user_action']);
         add_action('admin_notices', [$this, 'display_admin_notices']);
     }
 
@@ -126,20 +135,18 @@ class AdminInterface {
      * @param int $user_id User ID
      */
     private function render_promote_user_button(int $user_id): void {
-        $nonce = wp_create_nonce('promote_user_' . $user_id);
-        $promote_url = admin_url('admin-post.php');
+        $promote_url = add_query_arg([
+            'action' => 'mistr_fachman_promote_user',
+            'user_id' => $user_id,
+            '_wpnonce' => wp_create_nonce('mistr_fachman_promote_user_' . $user_id)
+        ], admin_url('admin-post.php'));
         
         ?>
-        <form method="post" action="<?php echo esc_url($promote_url); ?>" style="display: inline;">
-            <input type="hidden" name="action" value="promote_user_to_full_member">
-            <input type="hidden" name="user_id" value="<?php echo esc_attr($user_id); ?>">
-            <input type="hidden" name="_wpnonce" value="<?php echo esc_attr($nonce); ?>">
-            
-            <button type="submit" class="promote-user-button" 
-                    onclick="return confirm('<?php esc_attr_e('Opravdu chcete povýšit tohoto uživatele na plného člena?', 'mistr-fachman'); ?>');">
-                <?php esc_html_e('Povýšit na plného člena', 'mistr-fachman'); ?>
-            </button>
-        </form>
+        <a href="<?php echo esc_url($promote_url); ?>" 
+           class="promote-user-button"
+           onclick="return confirm('<?php esc_attr_e('Opravdu chcete povýšit tohoto uživatele na plného člena?', 'mistr-fachman'); ?>');">
+            <?php esc_html_e('Povýšit na plného člena', 'mistr-fachman'); ?>
+        </a>
         
         <p class="description">
             <?php esc_html_e('Tato akce změní roli uživatele na "full_member" a odstraní registrační stav.', 'mistr-fachman'); ?>
@@ -156,15 +163,15 @@ class AdminInterface {
             wp_die(esc_html__('Nemáte oprávnění k této akci.', 'mistr-fachman'));
         }
 
-        // Get and validate user ID
-        $user_id = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
+        // Get and validate user ID from GET parameters
+        $user_id = filter_input(INPUT_GET, 'user_id', FILTER_VALIDATE_INT);
         if (!$user_id) {
             wp_die(esc_html__('Neplatné ID uživatele.', 'mistr-fachman'));
         }
 
-        // Verify nonce
-        $nonce = filter_input(INPUT_POST, '_wpnonce', FILTER_SANITIZE_STRING);
-        if (!wp_verify_nonce($nonce, 'promote_user_' . $user_id)) {
+        // Verify nonce with the correct action name
+        $nonce = filter_input(INPUT_GET, '_wpnonce', FILTER_SANITIZE_STRING);
+        if (!wp_verify_nonce($nonce, 'mistr_fachman_promote_user_' . $user_id)) {
             wp_die(esc_html__('Bezpečnostní kontrola selhala.', 'mistr-fachman'));
         }
 
@@ -175,7 +182,7 @@ class AdminInterface {
         }
 
         // Promote user
-        $success = $this->role_manager->promote_user_to_full_member($user_id);
+        $success = $this->registration_hooks->promote_to_full_member($user_id);
 
         if ($success) {
             // Set success message
