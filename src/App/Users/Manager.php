@@ -37,6 +37,7 @@ class Manager {
     public UserService $user_service;
     public UserDetectionService $user_detection_service;
     public RegistrationHooks $registration_hooks;
+    public BusinessDataManager $business_manager;
     public ThemeIntegration $theme_integration;
     public AccessControl $access_control;
     public AdminInterface $admin_interface;
@@ -56,10 +57,37 @@ class Manager {
         $this->role_manager = new RoleManager();
         $this->user_service = new UserService($this->role_manager);
         $this->user_detection_service = new UserDetectionService($this->role_manager);
-        $this->registration_hooks = new RegistrationHooks($this->role_manager, $this->user_detection_service);
+        
+        // Initialize business data components
+        $business_validator = new BusinessDataValidator();
+        $this->business_manager = new BusinessDataManager();
+        
+        $this->registration_hooks = new RegistrationHooks(
+            $this->role_manager, 
+            $this->user_detection_service,
+            $business_validator,
+            $this->business_manager
+        );
         $this->theme_integration = new ThemeIntegration($this->user_service);
         $this->access_control = new AccessControl($this->user_service);
-        $this->admin_interface = new AdminInterface($this->role_manager, $this->registration_hooks);
+        
+        // Initialize admin interface components
+        $style_manager = new AdminStyleManager();
+        $card_renderer = new AdminCardRenderer($this->role_manager, $this->registration_hooks, $this->business_manager);
+        $asset_manager = new AdminAssetManager();
+        $action_handler = new AdminActionHandler($this->role_manager, $this->registration_hooks);
+        $modal_renderer = new BusinessDataModalRenderer();
+        $business_modal = new BusinessDataModal($this->registration_hooks, $modal_renderer);
+        
+        $this->admin_interface = new AdminInterface(
+            $this->role_manager,
+            $this->registration_hooks,
+            $style_manager,
+            $card_renderer,
+            $asset_manager,
+            $action_handler,
+            $business_modal
+        );
 
         $this->setup_hooks();
     }

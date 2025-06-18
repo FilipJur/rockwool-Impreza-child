@@ -5,6 +5,7 @@
 
 import { setupAresForm } from './features/ares/handler.js';
 import { FileUpload } from './features/file-upload/index.js';
+import BusinessDataModal from './features/admin/business-data-modal.js';
 import { app as firebaseApp } from './firebase/config.js';
 
 /**
@@ -15,7 +16,8 @@ class ThemeApp {
   constructor() {
     this.modules = {
       aresHandler: null,
-      fileUpload: null
+      fileUpload: null,
+      businessModal: null
     };
     this.firebase = firebaseApp;
     this.isInitialized = false;
@@ -82,6 +84,15 @@ class ThemeApp {
       }, 2000);
     }
 
+    // Initialize business data modal (admin pages only)
+    if (window.location.pathname.includes('/wp-admin/')) {
+      try {
+        this.modules.businessModal = new BusinessDataModal();
+        console.log('Business data modal initialized for admin');
+      } catch (error) {
+        console.error('Failed to initialize business data modal:', error);
+      }
+    }
   }
 
   /**

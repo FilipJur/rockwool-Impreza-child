@@ -120,3 +120,56 @@ export const api = {
     ]);
   }
 };
+
+/**
+ * WordPress-specific AJAX helper with nonce support
+ * @param {string} url - Request URL 
+ * @param {Object} options - Fetch options
+ * @param {string} action - WordPress action for nonce
+ * @returns {Promise} JSON response
+ */
+export async function fetchWithNonce(url, options = {}, action = '') {
+  // Get nonce from WordPress localized data or generate it
+  const nonce = window.wpApiSettings?.nonce || 
+                window.mistrFachmanAjax?.nonce || 
+                await generateNonce(action);
+  
+  // Add nonce to FormData if it exists
+  if (options.body instanceof FormData) {
+    options.body.append('nonce', nonce);
+  } else if (options.body && typeof options.body === 'object') {
+    options.body.nonce = nonce;
+  }
+
+  const response = await fetch(url, {
+    credentials: 'same-origin',
+    headers: {
+      'X-WP-Nonce': nonce,
+      ...options.headers
+    },
+    ...options
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
+/**
+ * Generate WordPress nonce for given action
+ * @param {string} action - Action name
+ * @returns {Promise<string>} Nonce value
+ */
+async function generateNonce(action) {
+  // For admin pages, we can use a meta tag approach
+  const nonceMeta = document.querySelector(`meta[name="wp-nonce-${action}"]`);
+  if (nonceMeta) {
+    return nonceMeta.getAttribute('content');
+  }
+  
+  // Fallback - this would need to be provided by PHP
+  console.warn('No nonce found for action:', action);
+  return '';
+}

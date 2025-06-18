@@ -1,0 +1,296 @@
+/**
+ * Business Data Modal - Modal Styling
+ *
+ * Modal styling for business data review functionality.
+ * Uses design tokens from _variables.scss and follows ROCKWOOL brand guidelines.
+ * All selectors prefixed with .mistr- to avoid WordPress admin conflicts.
+ */
+
+@use '../base/variables' as *;
+
+/* Modal backdrop and container */
+.mistr-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100000;
+  display: none;
+
+  &.is-open {
+    display: block;
+  }
+}
+
+.mistr-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.mistr-modal-content {
+  position: relative;
+  max-width: 900px;
+  margin: $space-md auto;
+  background: $color-white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: calc(100vh - #{$space-xl});
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $color-gray-border;
+}
+
+/* Modal header */
+.mistr-modal-header {
+  padding: $space-2xl;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+  color: $color-white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    margin: 0;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    font-family: $font-primary;
+    color: $color-white;
+  }
+}
+
+.mistr-modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  font-size: $font-size-xl;
+  cursor: pointer;
+  color: $color-white;
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: $transition-fast;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Modal body */
+.mistr-modal-body {
+  padding: $space-2xl;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  background: $color-gray-bg;
+}
+
+.mistr-modal-footer {
+  padding: $space-md $space-2xl;
+  background: $color-white;
+  border-top: 1px solid $color-gray-border;
+  text-align: right;
+}
+
+/* Business data review styles - all prefixed with .mistr- */
+.mistr-business-data-review {
+  display: grid;
+  gap: $space-2xl;
+
+  section {
+    background: $color-white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid $color-gray-border;
+  }
+
+  h3 {
+    margin: 0;
+    padding: $space-lg $space-md;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    font-family: $font-primary;
+    color: $color-black;
+    background: $color-gray-bg;
+    border-bottom: 1px solid $color-gray-border;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mistr-data-grid {
+    padding: $space-md;
+  }
+}
+
+.mistr-data-grid .mistr-data-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid $color-gray-border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  label {
+    font-weight: $font-weight-medium;
+    min-width: 140px;
+    margin-right: $space-lg;
+    color: $color-gray-medium;
+    font-size: $font-size-sm;
+    font-family: $font-primary;
+  }
+
+  span {
+    flex: 1;
+    color: $color-black;
+    font-size: $font-size-sm;
+    font-family: $font-primary;
+  }
+}
+
+/* ARES status badges */
+.mistr-ares-status {
+  margin-left: 12px;
+  padding: 4px $space-sm;
+  border-radius: 9999px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  font-family: $font-primary;
+
+  &.verified {
+    background-color: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.unverified {
+    background-color: rgba($color-danger, 0.1);
+    color: $color-danger;
+  }
+}
+
+/* Criteria list */
+.mistr-criteria-list {
+  padding: $space-md;
+}
+
+.mistr-criteria-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid $color-gray-border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .mistr-status {
+    font-weight: $font-weight-semibold;
+    margin-right: 12px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-sm;
+    flex-shrink: 0;
+    font-family: $font-primary;
+
+    &.accepted {
+      background: rgba($color-success, 0.1);
+      color: $color-success;
+    }
+
+    &.rejected {
+      background: rgba($color-danger, 0.1);
+      color: $color-danger;
+    }
+  }
+
+  span:not(.mistr-status) {
+    color: $color-black;
+    font-size: $font-size-sm;
+    line-height: 1.5;
+    font-family: $font-primary;
+  }
+}
+
+/* Promo code styling */
+.mistr-promo-code-value {
+  background: $color-gray-bg;
+  color: $color-black;
+  padding: 6px $space-sm;
+  border-radius: 6px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  font-family: $font-secondary;
+}
+
+/* Loading and error states */
+.mistr-modal-loading {
+  text-align: center;
+  padding: $space-3xl $space-md;
+  color: $color-gray-medium;
+  font-family: $font-primary;
+
+  &::before {
+    content: '⏳';
+    font-size: 32px;
+    display: block;
+    margin-bottom: 12px;
+  }
+}
+
+.mistr-error {
+  color: $color-danger;
+  background: rgba($color-danger, 0.1);
+  padding: $space-lg;
+  border: 1px solid rgba($color-danger, 0.2);
+  border-radius: 8px;
+  font-size: $font-size-sm;
+  line-height: 1.5;
+  font-family: $font-primary;
+
+  &::before {
+    content: '⚠️ ';
+    margin-right: 8px;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .mistr-modal-content {
+    margin: $space-lg;
+    max-height: calc(100vh - #{$space-md});
+  }
+
+  .mistr-modal-header,
+  .mistr-modal-body,
+  .mistr-modal-footer {
+    padding-left: $space-md;
+    padding-right: $space-md;
+  }
+
+  .mistr-data-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+
+    label {
+      min-width: auto;
+      margin-right: 0;
+    }
+  }
+}

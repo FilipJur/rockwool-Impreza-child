@@ -48,7 +48,42 @@ function impreza_child_enqueue_custom_assets()
 		$js_asset['version'],
 		true
 	);
+}
 
+// Admin-specific asset enqueuing 
+add_action('admin_enqueue_scripts', 'impreza_child_enqueue_admin_assets');
+function impreza_child_enqueue_admin_assets()
+{
+	// Register parent theme styles for admin
+	wp_enqueue_style('impreza-style', get_template_directory_uri() . '/style.css');
+	
+	// Register Tailwind utilities for admin
+	wp_enqueue_style(
+		'tailwind-utilities',
+		get_stylesheet_directory_uri() . '/tailwind.css',
+		['impreza-style'],
+		'1.0.0'
+	);
+	
+	// Register child theme custom styles for admin
+	wp_enqueue_style(
+		'impreza-child-style',
+		get_stylesheet_directory_uri() . '/style.css',
+		['impreza-style', 'tailwind-utilities'],
+		'1.0.0'
+	);
+
+	// Register built JavaScript bundle for admin
+	$js_asset_file = get_stylesheet_directory() . '/build/js/main.asset.php';
+	$js_asset = file_exists($js_asset_file) ? include $js_asset_file : array('dependencies' => array(), 'version' => '1.0.0');
+
+	wp_enqueue_script(
+		'theme-main-js',
+		get_stylesheet_directory_uri() . '/build/js/main.js',
+		$js_asset['dependencies'],
+		$js_asset['version'],
+		true
+	);
 }
 
 

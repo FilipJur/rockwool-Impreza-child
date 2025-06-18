@@ -1,36 +1,77 @@
-// Colors
-$color-primary: #DB0626;
+// Brand Colors (from design-tokens.md)
+$color-primary: #DB0626;        // ROCKWOOL Red - CTAs, accents
+$color-primary-dark: #D20014;   // Icons, secondary accents
 $color-danger: #D32F2F;
 $color-success: #28a745;
 $color-info: #007bff;
 
-// Grays
+// Neutrals (from design-tokens.md)
+$color-black: #000000;          // Main text
+$color-white: #FFFFFF;          // Backgrounds, button text
+$color-gray-dark: #2B2B2B;      // Footer background
+$color-gray-medium: #666666;    // Placeholders, labels
+$color-gray-light: #999999;     // Footer text, disabled
+$color-gray-border: #CCCCCC;    // Borders, dividers
+$color-gray-bg: #F2F2F2;        // Card backgrounds
+
+// Accent
+$color-accent: #33A7CC;         // Upload text, links
+
+// Legacy grays (keep for backward compatibility)
 $gray-300: #e0e0e0;
 $gray-500: #888888;
 
 // Backgrounds
-$bg-white: #FFFFFF;
+$bg-white: $color-white;
 $bg-light: #f8f9fa;
 
 // Borders
-$border-color: #CCCCCC;
+$border-color: $color-gray-border;
 $border-radius: 4px;
 $border-radius-lg: 6px;
 
-// Spacing
-$spacing-xs: 2px;
-$spacing-sm: 5px;
-$spacing-md: 10px;
-$spacing-lg: 15px;
-$spacing-xl: 20px;
-$spacing-xxl: 30px;
+// Spacing Scale (from design-tokens.md)
+$space-xs: 5px;
+$space-sm: 10px;
+$space-md: 20px;
+$space-lg: 30px;
+$space-xl: 40px;
+$space-2xl: 60px;
+$space-3xl: 80px;
 
-// Typography
+// Legacy spacing (keep for backward compatibility)
+$spacing-xs: 2px;
+$spacing-sm: $space-xs;
+$spacing-md: $space-sm;
+$spacing-lg: 15px;
+$spacing-xl: $space-md;
+$spacing-xxl: $space-lg;
+
+// Component Spacing (from design-tokens.md)
+$gap-form: 30px;           // Between form sections
+$gap-form-field: 20px;     // Between form fields
+$gap-benefits: 20px;       // Between benefit cards
+$gap-hero: 40px;           // Hero content vertical
+$gap-content: 80px;        // Between major sections
+
+// Typography (from design-tokens.md)
+$font-primary: 'Avenir Next', sans-serif;
+$font-secondary: 'General Sans', sans-serif;
+
+// Font sizes and weights
 $font-size-xs: 12px;
 $font-size-sm: 14px;
 $font-size-base: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 24px;
+$font-size-3xl: 30px;
+$font-size-hero: 48px;
+
 $font-weight-normal: 400;
 $font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
 
 // Transitions
 $transition-base: 0.3s ease;

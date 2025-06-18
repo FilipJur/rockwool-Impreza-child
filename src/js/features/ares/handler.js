@@ -103,16 +103,20 @@ export function setupAresForm(formSelector = '.registration-form') {
    */
   function handleAresSuccess(data, ico) {
     if (data && data.obchodniJmeno) {
+      // Populate fields with ARES data
       fields.companyName.value = data.obchodniJmeno;
 
       if (data.sidlo && data.sidlo.textovaAdresa) {
         fields.address.value = data.sidlo.textovaAdresa;
       }
 
-      showStatus('Údaje načteny', 'success');
+      // Lock fields after successful ARES validation
+      lockAresFields();
+      showStatus('Údaje načteny z ARES a ověřeny - tyto údaje budou použity při registraci', 'success');
       lastFetchedIco = ico;
     } else {
       showError('Společnost nenalezena nebo odpověď neobsahuje název');
+      unlockAresFields();
     }
   }
 
@@ -132,7 +136,10 @@ export function setupAresForm(formSelector = '.registration-form') {
     };
 
     const errorMessage = api.handleError(error, errorMessages);
-    showError(errorMessage);
+    showError(errorMessage + ' - Můžete vyplnit údaje ručně');
+    
+    // Unlock fields when ARES fails, allowing manual input
+    unlockAresFields();
 
     console.error('ARES API Error:', error);
   }
@@ -146,10 +153,13 @@ export function setupAresForm(formSelector = '.registration-form') {
 
     if (lastFetchedIco && currentIco !== lastFetchedIco && hasCompanyData) {
       showStatus('IČO bylo změněno. Klikněte na "Načíst údaje" pro aktualizaci', 'warning');
+      // Unlock fields when IČO changes after successful fetch
+      unlockAresFields();
     } else if (!lastFetchedIco && hasCompanyData && currentIco !== '') {
       showStatus('Zadejte IČO a klikněte na "Načíst údaje"', 'info');
     } else if (currentIco === '' && lastFetchedIco) {
       clearStatus();
+      unlockAresFields();
       lastFetchedIco = null;
     }
   }
@@ -194,7 +204,36 @@ export function setupAresForm(formSelector = '.registration-form') {
   function clearFields() {
     fields.companyName.value = '';
     fields.address.value = '';
+    // Also unlock fields when clearing
+    unlockAresFields();
   }
+
+  /**
+   * Lock ARES-fetched fields to prevent editing
+   */
+  function lockAresFields() {
+    const fieldsToLock = [fields.companyName, fields.address];
+    
+    fieldsToLock.forEach(field => {
+      field.readOnly = true;
+      field.classList.add('ares-verified');
+      field.setAttribute('title', 'Údaj ověřen přes ARES - bude použit přesně při registraci. Pro úpravu změňte IČO.');
+    });
+  }
+
+  /**
+   * Unlock ARES fields for manual editing
+   */
+  function unlockAresFields() {
+    const fieldsToUnlock = [fields.companyName, fields.address];
+    
+    fieldsToUnlock.forEach(field => {
+      field.readOnly = false;
+      field.classList.remove('ares-verified');
+      field.removeAttribute('title');
+    });
+  }
+
 
   /**
    * Cleanup function to remove event listeners
@@ -218,6 +257,8 @@ export function setupAresForm(formSelector = '.registration-form') {
     clearFields,
     showStatus,
     showError,
-    clearStatus
+    clearStatus,
+    lockAresFields,
+    unlockAresFields
   };
 }

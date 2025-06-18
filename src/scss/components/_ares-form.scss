@@ -1,0 +1,12 @@
+/**
+ * ARES Form Integration - Minimal Styling
+ *
+ * Basic styling for ARES verified fields - only background color change.
+ */
+
+@use '../base/variables' as *;
+
+/* ARES verified field styling - minimal green background only */
+.ares-verified {
+  background-color: rgba($color-success, 0.05) !important;
+}

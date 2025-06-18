@@ -1,0 +1,258 @@
+/**
+ * Admin Interface Components - ROCKWOOL Design System
+ *
+ * Styling for WordPress admin user management interface.
+ * Uses existing theme variables and modern component architecture.
+ */
+
+@use '../base/variables' as *;
+
+/* Main section styles */
+.mistr-user-management-section {
+  margin: $spacing-xl 0;
+  padding: $spacing-xxl;
+  background: $bg-light;
+  border-radius: $border-radius-lg;
+  border: 1px solid $border-color;
+  font-family: inherit;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin: 0 0 $spacing-xxl 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #000;
+}
+
+.title-icon {
+  font-size: 24px;
+}
+
+/* Grid layout */
+.management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $spacing-xl;
+}
+
+/* Card styles */
+.management-card {
+  background: $bg-white;
+  border-radius: $border-radius-lg;
+  border: 1px solid $border-color;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  transition: $transition-fast;
+
+  &:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.card-header {
+  padding: 16px $spacing-xl;
+  background: $bg-light;
+  border-bottom: 1px solid $border-color;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin: 0;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  color: #000;
+}
+
+.card-icon {
+  font-size: 18px;
+}
+
+.card-content {
+  padding: $spacing-xl;
+}
+
+/* Status styles */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: $font-size-sm;
+  font-weight: 600;
+
+  &.bg-yellow-100 {
+    background-color: #FFF3CD;
+    color: $color-danger;
+  }
+
+  &.bg-green-100 {
+    background-color: #D4EDDA;
+    color: $color-success;
+  }
+}
+
+.status-description {
+  margin: 12px 0 0 0;
+  color: $gray-500;
+  font-size: $font-size-sm;
+}
+
+/* Timeline styles */
+.status-timeline {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid $border-color;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  color: $gray-500;
+  font-size: $font-size-sm;
+
+  &.active {
+    color: $color-primary;
+    font-weight: 600;
+
+    .timeline-marker {
+      background: $color-primary;
+    }
+  }
+
+  &.completed {
+    color: $color-info;
+
+    .timeline-marker {
+      background: $color-info;
+    }
+  }
+}
+
+.timeline-marker {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: $border-color;
+  flex-shrink: 0;
+}
+
+/* Business summary styles */
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: 8px 0;
+  border-bottom: 1px solid $border-color;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.summary-label {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $gray-500;
+  min-width: 80px;
+}
+
+.summary-value {
+  color: #000;
+  font-size: $font-size-sm;
+  flex: 1;
+}
+
+.verification-badge {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: $font-size-xs;
+  font-weight: 600;
+  background-color: #D4EDDA;
+  color: $color-success;
+}
+
+/* Action buttons using theme classes */
+.card-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid $border-color;
+}
+
+/* Override for theme button icon alignment */
+.w-btn .button-icon {
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: $spacing-xl;
+}
+
+.empty-icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: $spacing-md;
+}
+
+.empty-text {
+  color: $gray-500;
+  font-size: $font-size-sm;
+  margin: 0;
+}
+
+/* Feature list */
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+
+  &.coming-soon {
+    opacity: 0.6;
+  }
+}
+
+.feature-icon {
+  font-size: 16px;
+  width: 20px;
+}
+
+.feature-text {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: #000;
+}
+
+.coming-soon-badge {
+  background: $bg-light;
+  color: $gray-500;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: $font-size-xs;
+  font-weight: 600;
+}
+
+.feature-description {
+  margin: 12px 0 0 0;
+  color: $gray-500;
+  font-size: $font-size-sm;
+}
+
+.action-description {
+  margin-bottom: 16px;
+
+  p {
+    color: $gray-500;
+    font-size: $font-size-sm;
+    margin: 0;
+  }
+}

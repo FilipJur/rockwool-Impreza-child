@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. **REGISTRATION SYSTEM COMPLETE** - Three-stage user registration flow fully functional with SMS OTP, Contact Form 7 integration, and admin approval workflow. System ready for production deployment and advanced feature development.
+WordPress child theme development with enterprise-grade architecture. **USER ACCOUNT INTEGRATION & REALIZACE-READY ARCHITECTURE COMPLETE** - Full bidirectional sync between business data and WordPress user profiles, design-system-compliant admin interface with ROCKWOOL brand tokens, and extensible data architecture prepared for future realizace project management with myCred integration hooks.
 
 ## Build & Development Commands
 
@@ -67,6 +67,22 @@ WordPress child theme development with enterprise-grade architecture. **REGISTRA
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
+- **2025-06-18**: 🔐 **STRICT ARES ENFORCEMENT COMPLETE** - Server-side forced use of exact ARES data when IČO validates, with discrepancy logging and comprehensive user profile sync
+- **2025-06-18**: 👤 **ENHANCED USER PROFILE SYNC** - Added WordPress nickname and complete WooCommerce billing fields population from registration data
+- **2025-06-18**: 🔒 **ARES FIELD LOCKING COMPLETE** - ARES-validated fields (company name, address) become read-only after successful fetch, unlock for manual editing on ARES failure
+- **2025-06-18**: ✅ **DEPENDENCY INJECTION FIX** - Fixed BusinessDataManager injection in Users Manager for proper AdminCardRenderer functionality
+- **2025-06-18**: 🎯 **USER ACCOUNT INTEGRATION COMPLETE** - Bidirectional sync between business data and WordPress user profile fields (first_name, last_name, email, display_name)
+- **2025-06-18**: 🎨 **DESIGN SYSTEM COMPLIANCE** - Updated SCSS with proper ROCKWOOL design tokens, .mistr- prefixed CSS classes to avoid WordPress admin conflicts
+- **2025-06-18**: 🚀 **REALIZACE-READY ARCHITECTURE** - Data type abstraction in BusinessDataManager, myCred integration hooks (mistr_fachman_realizace_approved), future-ready admin cards
+- **2025-06-18**: ✅ **ADMIN UI ISOLATION** - All admin styles properly scoped with .mistr- prefixes using only _variables.scss design tokens
+- **2025-06-18**: 🎨 **ADMIN INTERFACE ENHANCED** - Card-based management system with design tokens, bidirectional promotion/revocation, persistent business data access
+- **2025-06-18**: ✅ **USER MANAGEMENT FLEXIBILITY** - Added revoke functionality to return full members back to pending status for admin control
+- **2025-06-18**: 🎯 **DESIGN TOKEN INTEGRATION** - Implemented proper ROCKWOOL brand colors, typography, and spacing throughout admin interface
+- **2025-06-18**: 🚀 **FUTURE-READY ARCHITECTURE** - Prepared admin cards for realizace management and project workflows
+- **2025-06-18**: 🎉 **BUSINESS REGISTRATION SYSTEM COMPLETE** - Enhanced registration with comprehensive ARES validation, structured business data storage, and modal-based admin review
+- **2025-06-18**: ✅ **SERVER-SIDE ARES VALIDATION** - IČO validation with ARES API integration, business criteria checking, and robust error handling
+- **2025-06-18**: ✅ **STRUCTURED BUSINESS DATA STORAGE** - Complete user meta schema for company info, representative details, and validation status
+- **2025-06-18**: ✅ **MODAL-BASED ADMIN INTERFACE** - Professional business data review modal with AJAX loading and comprehensive data display
 - **2025-06-18**: 🚀 **PHASE 1 REFACTORING COMPLETE** - Extracted UserDetectionService, RegistrationStatus, and RegistrationConfig
 - **2025-06-18**: ✅ **IMPROVED MODULARITY** - RegistrationHooks reduced from 260 to 190 LOC with better separation of concerns
 - **2025-06-18**: ✅ **SINGLE SOURCE OF TRUTH** - Status constants and form configuration centralized in dedicated classes
