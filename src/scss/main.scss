@@ -19,6 +19,7 @@ Version:        0.1.0
 // Components
 @use 'components/file-upload';
 @use 'components/woocommerce';
+@use 'components/user-debug';
 
 // Utilities
 @use 'utilities/helpers';

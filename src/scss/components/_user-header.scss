@@ -1,0 +1,181 @@
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
+
+/* User Header Widget Styles */
+.user-header-widget {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  &__icon {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    vertical-align: middle;
+    filter: brightness(0) saturate(100%); // Makes SVG inherit text color
+    transition: filter 0.2s ease;
+  }
+
+  // Anonymous user state
+  &__anonymous {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .user-header-widget__login-link {
+      color: inherit;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: var(--color-primary, #007cba);
+        text-decoration: underline;
+      }
+    }
+
+    &:hover .user-header-widget__icon {
+      filter: brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%);
+    }
+  }
+
+  // Needs form completion state
+  &__needs-form {
+    .w-btn {
+      // Inherits theme button styles
+      // us-btn-style_1 should be defined in theme
+    }
+  }
+
+  // Awaiting review state
+  &__awaiting-review {
+    .user-header-widget__status-text {
+      color: #856404;
+      background: #fff3cd;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid #ffeaa7;
+    }
+  }
+
+  // Full member state
+  &__full-member {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    .user-header-widget__account-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        
+        .user-header-widget__icon {
+          filter: brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%);
+        }
+      }
+    }
+
+    .user-header-widget__actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .w-btn {
+        // Inherits theme button styles
+        // us-btn-style_1 and us-btn-style_2 should be defined in theme
+        font-size: 14px;
+        padding: 8px 16px;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    gap: 10px;
+
+    &__full-member {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+
+      .user-header-widget__actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+
+        .w-btn {
+          width: 100%;
+          text-align: center;
+        }
+      }
+    }
+
+    &__awaiting-review {
+      .user-header-widget__status-text {
+        font-size: 13px;
+        padding: 6px 10px;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    &__full-member {
+      .user-header-widget__actions {
+        .w-btn {
+          font-size: 13px;
+          padding: 6px 12px;
+        }
+      }
+    }
+  }
+}
+
+// Theme integration helpers
+.user-header-widget {
+  // Ensure proper integration with theme header styles
+  .w-btn {
+    &.us-btn-style_1 {
+      // Primary button style - should match theme
+      // Fallback if theme styles not available
+      background-color: var(--color-primary, #007cba);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      text-decoration: none;
+      display: inline-block;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: var(--color-primary-dark, #005a87);
+        color: white;
+        text-decoration: none;
+      }
+    }
+
+    &.us-btn-style_2 {
+      // Secondary button style - should match theme
+      // Fallback if theme styles not available
+      background-color: transparent;
+      color: var(--color-primary, #007cba);
+      border: 2px solid var(--color-primary, #007cba);
+      border-radius: 4px;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: var(--color-primary, #007cba);
+        color: white;
+        text-decoration: none;
+      }
+    }
+  }
+}

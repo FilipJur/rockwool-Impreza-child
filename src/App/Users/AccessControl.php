@@ -25,8 +25,9 @@ class AccessControl {
 
     private array $allowed_pages_for_logged_out = [
         'homepage',
-        'lp-result', 
-        'registrace'
+        'lp-result',
+        'registrace',
+        'prihlaseni'
     ];
 
     public function __construct(
@@ -51,7 +52,7 @@ class AccessControl {
         }
 
         $user_status = $this->user_service->get_user_registration_status();
-        
+
         // Handle logged-out users
         if ($user_status === 'logged_out') {
             $this->handle_logged_out_access();
@@ -67,7 +68,7 @@ class AccessControl {
      */
     private function handle_logged_out_access(): void {
         $current_page = $this->get_current_page_identifier();
-        
+
         // Allow access to specific pages
         if (in_array($current_page, $this->allowed_pages_for_logged_out, true)) {
             return;
@@ -79,8 +80,8 @@ class AccessControl {
         }
 
         // Redirect to registration page
-        $registration_url = home_url('/registrace');
-        
+        $registration_url = home_url('/prihlaseni');
+
         mycred_debug('Redirecting logged-out user from restricted page', [
             'current_page' => $current_page,
             'redirect_to' => $registration_url,
@@ -97,7 +98,7 @@ class AccessControl {
     private function handle_logged_in_access(string $user_status): void {
         // For now, logged-in users can access all pages
         // This can be extended later for status-specific restrictions
-        
+
         mycred_debug('Logged-in user accessing page', [
             'user_status' => $user_status,
             'page' => $this->get_current_page_identifier(),
@@ -150,9 +151,9 @@ class AccessControl {
      */
     public function is_current_page_allowed_for_logged_out(): bool {
         $current_page = $this->get_current_page_identifier();
-        
-        return is_front_page() || 
-               is_home() || 
+
+        return is_front_page() ||
+               is_home() ||
                in_array($current_page, $this->allowed_pages_for_logged_out, true);
     }
 
@@ -169,7 +170,7 @@ class AccessControl {
     public function add_allowed_page_for_logged_out(string $page_slug): void {
         if (!in_array($page_slug, $this->allowed_pages_for_logged_out, true)) {
             $this->allowed_pages_for_logged_out[] = $page_slug;
-            
+
             mycred_debug('Added allowed page for logged-out users', [
                 'page_slug' => $page_slug,
                 'allowed_pages' => $this->allowed_pages_for_logged_out
@@ -182,11 +183,11 @@ class AccessControl {
      */
     public function remove_allowed_page_for_logged_out(string $page_slug): void {
         $key = array_search($page_slug, $this->allowed_pages_for_logged_out, true);
-        
+
         if ($key !== false) {
             unset($this->allowed_pages_for_logged_out[$key]);
             $this->allowed_pages_for_logged_out = array_values($this->allowed_pages_for_logged_out);
-            
+
             mycred_debug('Removed allowed page for logged-out users', [
                 'page_slug' => $page_slug,
                 'allowed_pages' => $this->allowed_pages_for_logged_out
@@ -199,8 +200,8 @@ class AccessControl {
      */
     private function should_skip_access_check(): bool {
         // Skip admin pages, AJAX, cron, and API requests
-        if (is_admin() || 
-            wp_doing_ajax() || 
+        if (is_admin() ||
+            wp_doing_ajax() ||
             wp_doing_cron() ||
             (defined('REST_REQUEST') && REST_REQUEST) ||
             (defined('XMLRPC_REQUEST') && XMLRPC_REQUEST)) {
@@ -232,7 +233,7 @@ class AccessControl {
         // Check if we're in a REST API request
         $rest_prefix = rest_get_url_prefix();
         $request_uri = $_SERVER['REQUEST_URI'] ?? '';
-        
+
         return strpos($request_uri, "/$rest_prefix/") !== false;
     }
 
@@ -242,27 +243,27 @@ class AccessControl {
     private function is_internal_operation(): bool {
         $request_uri = $_SERVER['REQUEST_URI'] ?? '';
         $request_method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        
+
         // Allow all POST requests to wp-json endpoints
         if ($request_method === 'POST' && strpos($request_uri, '/wp-json/') !== false) {
             return true;
         }
-        
+
         // Allow Contact Form 7 endpoints
         if (strpos($request_uri, '/wp-json/contact-form-7/') !== false) {
             return true;
         }
-        
+
         // Allow WooCommerce endpoints
         if (strpos($request_uri, '/wp-json/wc/') !== false) {
             return true;
         }
-        
+
         // Allow any form submissions (POST requests)
         if ($request_method === 'POST') {
             return true;
         }
-        
+
         return false;
     }
 }
