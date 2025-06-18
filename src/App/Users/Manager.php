@@ -32,6 +32,7 @@ class Manager {
     public RegistrationHooks $registration_hooks;
     public ThemeIntegration $theme_integration;
     public AccessControl $access_control;
+    public AdminInterface $admin_interface;
 
     /**
      * Get singleton instance
@@ -51,6 +52,7 @@ class Manager {
         $this->registration_hooks = new RegistrationHooks($this->role_manager, $this->user_detection_service);
         $this->theme_integration = new ThemeIntegration($this->user_service);
         $this->access_control = new AccessControl($this->user_service);
+        $this->admin_interface = new AdminInterface($this->role_manager);
 
         $this->setup_hooks();
     }
@@ -64,6 +66,7 @@ class Manager {
         $this->registration_hooks->init_hooks();
         $this->theme_integration->init_hooks();
         $this->access_control->init_hooks();
+        $this->admin_interface->init_hooks();
 
         // Add filter for registration form ID configuration (legacy support)
         add_filter('mistr_fachman_registration_form_id', fn() => RegistrationConfig::getFormId());
@@ -89,7 +92,8 @@ class Manager {
                 'user_detection_service' => true,
                 'registration_hooks' => true,
                 'theme_integration' => true,
-                'access_control' => true
+                'access_control' => true,
+                'admin_interface' => true
             ]
         ], 'users', 'info');
     }
