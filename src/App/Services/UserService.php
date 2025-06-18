@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Services;
 
 use MistrFachman\Users\RoleManager;
+use MistrFachman\Users\RegistrationStatus;
 
 /**
  * User Service Class
@@ -71,7 +72,7 @@ class UserService {
 
             // Check if user is pending approval
             if ($is_pending) {
-                return $meta_status === 'awaiting_review' ? 'awaiting_review' : 'needs_form';
+                return $meta_status === RegistrationStatus::AWAITING_REVIEW ? 'awaiting_review' : 'needs_form';
             }
 
             return 'other';
@@ -109,8 +110,8 @@ class UserService {
         return match ($status) {
             'logged_out' => 'Nepřihlášen',
             'full_member' => 'Člen',
-            'awaiting_review' => 'Čeká na schválení',
-            'needs_form' => 'Vyplnit formulář',
+            'awaiting_review' => RegistrationStatus::getDisplayName(RegistrationStatus::AWAITING_REVIEW),
+            'needs_form' => RegistrationStatus::getDisplayName(RegistrationStatus::NEEDS_FORM),
             'other' => 'Ostatní',
             default => 'Neznámý'
         };

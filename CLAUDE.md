@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. Completed revolutionary transformation to modern App-centric PSR-4 structure with perfect separation of concerns. Ready for advanced feature development on solid architectural foundation.
+WordPress child theme development with enterprise-grade architecture. **REGISTRATION SYSTEM COMPLETE** - Three-stage user registration flow fully functional with SMS OTP, Contact Form 7 integration, and admin approval workflow. System ready for production deployment and advanced feature development.
 
 ## Build & Development Commands
 
@@ -36,6 +36,18 @@ WordPress child theme development with enterprise-grade architecture. Completed 
 - **[Design System](docs/design/)** - Design tokens, components, and visual specifications
 
 ## Recent Changes
+- **2025-06-18**: 🚀 **PHASE 1 REFACTORING COMPLETE** - Extracted UserDetectionService, RegistrationStatus, and RegistrationConfig
+- **2025-06-18**: ✅ **IMPROVED MODULARITY** - RegistrationHooks reduced from 260 to 190 LOC with better separation of concerns
+- **2025-06-18**: ✅ **SINGLE SOURCE OF TRUTH** - Status constants and form configuration centralized in dedicated classes
+- **2025-06-18**: ✅ **ENHANCED MAINTAINABILITY** - User detection logic extracted to reusable service with comprehensive fallback methods
+- **2025-06-18**: 🎉 **REGISTRATION SYSTEM COMPLETE** - Three-stage user flow fully functional and production-ready
+- **2025-06-18**: ✅ **AJAX SESSION ISSUE RESOLVED** - Cookie fallback successfully handles incognito/session edge cases
+- **2025-06-18**: ✅ **USER FLOW VERIFIED** - SMS OTP → Form Submission → Admin Approval workflow working perfectly
+- **2025-06-18**: Fixed all namespace mismatches: Services and Shortcodes now use correct `MistrFachman\` prefix
+- **2025-06-18**: Enhanced user detection with cookie parsing for Contact Form 7 AJAX submissions
+- **2025-06-18**: Simplified final registration form to "fire and forget" - automatic status updates
+- **2025-06-18**: Fixed ShortcodeManager auto-discovery to use correct namespaces
+- **2025-06-18**: Resolved bootstrap dependency injection to use proper service instances
 - **2025-06-17**: SHORTCODE ARCHITECTURE SIMPLIFICATION - Two major optimization commits
 - **2025-06-17**: Streamlined ProductGridShortcode to inline template rendering (74 insertions, 145 deletions)
 - **2025-06-17**: Replaced complex method-based rendering with direct template output using `ob_start()`/`ob_get_clean()`
@@ -61,6 +73,32 @@ WordPress child theme development with enterprise-grade architecture. Completed 
 - **2025-01-14**: Simplified file upload animations removing View Transitions API complexity
 - **2025-01-14**: Modernized JavaScript from classes to functional patterns
 
+## User Registration System
+
+### **Complete Three-Stage Registration Flow** ✅
+1. **Stage 1: Guest → Prospect (Automated)**
+   - User registers via SMS OTP on `/registrace` page
+   - System assigns `pending_approval` role + `needs_form` meta status
+   - User can browse products but cannot purchase
+
+2. **Stage 2: Form Submission (Automated)**
+   - Logged-in pending user submits Contact Form 7 (ID 292)
+   - System auto-updates meta status to `awaiting_review`
+   - Role remains `pending_approval` - no manual validation required
+
+3. **Stage 3: Admin Approval (Manual)**
+   - Admin reviews form submission via email notification
+   - Admin promotes user via WordPress dashboard button
+   - User role changes to `full_member` with full e-commerce access
+
+### **Technical Implementation**
+- **AJAX Session Handling**: Cookie fallback for Contact Form 7 submissions via UserDetectionService
+- **Role-Based Access Control**: Pending users blocked from purchasing
+- **Cart-Aware Balance System**: Prevents overcommitment during approval process
+- **Admin Interface**: One-click promotion with security nonces
+- **Modular Architecture**: Extracted services for user detection, status management, and configuration
+- **Single Source of Truth**: Centralized constants and configuration classes
+
 ## Active Decisions
 - **PSR-4 autoloading for entire codebase**: Composer autoloader replaces all manual require_once statements
 - **Domain-driven architecture**: Code organized by business domain (ECommerce, Shortcodes) not implementation features
@@ -80,6 +118,10 @@ WordPress child theme development with enterprise-grade architecture. Completed 
 - **Simplify administrative features**: Remove complex admin documentation systems and permission checking that add boilerplate without business value
 - **Domain-based code bundles**: Organize code analysis and documentation by business domains rather than technical file types
 - **Bundle maintenance required**: Every new file created must be added to appropriate Repomix bundle for code organization and analysis
+- **Registration system production-ready**: Three-stage user approval workflow complete with SMS OTP, form submission, and admin approval
+- **AJAX session handling**: Cookie fallback ensures form submissions work across all browser contexts (including incognito)
+- **Modular refactoring complete**: Phase 1 improvements implemented - UserDetectionService, RegistrationStatus, RegistrationConfig extracted
+- **File size optimization**: RegistrationHooks reduced from 260 to 190 LOC through service extraction
 
 ## Bundle Management Protocol
 
@@ -92,4 +134,4 @@ WordPress child theme development with enterprise-grade architecture. Completed 
 
 
 ## Last Updated
-2025-06-17
+2025-06-18

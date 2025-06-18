@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Users;
 
+use MistrFachman\Services\UserDetectionService;
+
 /**
  * Registration Hooks Class
  *
@@ -22,7 +24,8 @@ if (!defined('ABSPATH')) {
 class RegistrationHooks {
 
     public function __construct(
-        private RoleManager $role_manager
+        private RoleManager $role_manager,
+        private UserDetectionService $user_detection_service
     ) {}
 
     /**
@@ -56,16 +59,13 @@ class RegistrationHooks {
             'current_roles' => $user->roles
         ], 'users', 'info');
 
-        // Check if this is a phone number registration (numeric login or phone with suffix)
-        $is_phone_registration = is_numeric($user->user_login) || 
-                                preg_match('/^\d+(-\d+)?$/', $user->user_login);
-        
-        if ($is_phone_registration) {
+        // Check if this is a phone number registration
+        if (RegistrationConfig::isPhoneRegistration($user->user_login)) {
             // Set the pending approval role
             $user->set_role(RoleManager::PENDING_APPROVAL);
             
             // Set the initial status indicating the user needs to fill the form
-            $status_updated = $this->role_manager->update_user_status($user_id, 'needs_form');
+            $status_updated = $this->role_manager->update_user_status($user_id, RegistrationStatus::NEEDS_FORM);
             
             // Refresh user data to verify role was set
             $updated_user = get_userdata($user_id);
@@ -89,63 +89,60 @@ class RegistrationHooks {
     /**
      * Handle Contact Form 7 final registration form submission
      *
-     * This method will be called when any CF7 form is submitted.
-     * TODO: Configure the correct form ID in the Users Manager
-     *
      * @param \WPCF7_ContactForm $contact_form The submitted contact form
      */
     public function handle_final_registration_submission(\WPCF7_ContactForm $contact_form): void {
-        // Get the configured form ID from the manager or use a default
-        $registration_form_id = apply_filters('mistr_fachman_registration_form_id', 0);
-        
         mycred_debug('CF7 form submission detected', [
             'submitted_form_id' => $contact_form->id(),
-            'configured_form_id' => $registration_form_id,
             'form_title' => $contact_form->title(),
-            'user_id' => get_current_user_id()
+            'detection_context' => $this->user_detection_service->getDetectionContext()
         ], 'users', 'info');
         
-        if ($registration_form_id === 0) {
-            mycred_debug('Registration form ID not configured', [
-                'submitted_form_id' => $contact_form->id()
-            ], 'users', 'warning');
-            return;
-        }
-
-        // Ensure this is the correct form
-        if ($contact_form->id() !== $registration_form_id) {
+        // Check if this is the registration form
+        if (!RegistrationConfig::isRegistrationForm($contact_form)) {
             mycred_debug('Form ID mismatch - ignoring submission', [
                 'submitted_form_id' => $contact_form->id(),
-                'expected_form_id' => $registration_form_id
+                'expected_form_id' => RegistrationConfig::getFormId()
             ], 'users', 'info');
             return;
         }
 
-        $user_id = get_current_user_id();
+        // Get form data for user detection fallback
+        $submission = \WPCF7_Submission::get_instance();
+        $posted_data = $submission ? $submission->get_posted_data() : [];
+
+        // Detect user using multiple methods
+        $user_id = $this->user_detection_service->detectUser($posted_data);
         
         if (!$user_id) {
-            mycred_debug('Final registration form submitted by non-logged user', [
-                'form_id' => $contact_form->id()
+            mycred_debug('Final registration form submitted by non-logged user - skipping processing', [
+                'form_id' => $contact_form->id(),
+                'form_title' => $contact_form->title(),
+                'note' => 'User must be logged in to submit final registration form',
+                'detection_context' => $this->user_detection_service->getDetectionContext()
             ], 'users', 'warning');
             return;
         }
 
-        // Verify user has pending approval role
+        // Simple check: only process if user has pending approval role
         if (!$this->role_manager->is_pending_user($user_id)) {
-            mycred_debug('Final registration form submitted by non-pending user', [
+            mycred_debug('Final registration form submitted by non-pending user - skipping', [
                 'user_id' => $user_id,
-                'form_id' => $contact_form->id()
-            ], 'users', 'warning');
+                'form_id' => $contact_form->id(),
+                'note' => 'Only pending users can submit final registration form'
+            ], 'users', 'info');
             return;
         }
 
-        // Update the user's status to show they've submitted the form
-        $this->role_manager->update_user_status($user_id, 'awaiting_review');
+        // Automatically update status to awaiting_review on form submission
+        // No validation of current meta status - just set it directly
+        $this->role_manager->update_user_status($user_id, RegistrationStatus::AWAITING_REVIEW);
         
-        mycred_debug('User submitted final registration form', [
+        mycred_debug('User submitted final registration form - status updated automatically', [
             'user_id' => $user_id,
             'form_id' => $contact_form->id(),
-            'new_status' => 'awaiting_review'
+            'new_status' => RegistrationStatus::AWAITING_REVIEW,
+            'note' => 'Status updated automatically without validation'
         ], 'users', 'info');
 
         // Optional: Send notification to administrators
@@ -190,4 +187,5 @@ class RegistrationHooks {
 
         return true;
     }
+
 }

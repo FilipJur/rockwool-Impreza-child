@@ -30,10 +30,20 @@ class ShortcodeManager {
     private UserService $user_service;
     private array $registered_shortcodes = [];
 
-    public function __construct(Manager $ecommerce_manager, ProductService $product_service, ?UserService $user_service = null) {
+    public function __construct(
+        Manager $ecommerce_manager, 
+        ProductService $product_service, 
+        UserService $user_service
+    ) {
         $this->ecommerce_manager = $ecommerce_manager;
         $this->product_service = $product_service;
-        $this->user_service = $user_service ?? new UserService(new \MistrFachman\Users\RoleManager());
+        $this->user_service = $user_service;
+    }
+
+    /**
+     * Initialize shortcodes (called explicitly from bootstrap)
+     */
+    public function init_shortcodes(): void {
         $this->discover_and_register_shortcodes();
     }
 

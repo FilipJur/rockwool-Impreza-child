@@ -118,8 +118,8 @@ add_action('init', function () {
     if (class_exists($UsersManager)) {
         $users_manager = $UsersManager::get_instance();
         
-        // Configure Contact Form 7 ID for final registration
-        $users_manager->set_registration_form_id(292); // Final registrace form
+        // Form configuration is now handled by RegistrationConfig class
+        // No need to manually configure form ID - it's centralized in RegistrationConfig::FINAL_REGISTRATION_FORM_ID
     } else {
         mycred_debug('Users Manager class not found.', null, 'bootstrap', 'error');
     }
@@ -133,7 +133,8 @@ add_action('init', function () {
     
     // 4. Initialize the Shortcode System, injecting all necessary services
     if (class_exists($ShortcodeManager) && $user_service) {
-        new $ShortcodeManager($ecommerce_manager, $product_service, $user_service);
+        $shortcode_manager = new $ShortcodeManager($ecommerce_manager, $product_service, $user_service);
+        $shortcode_manager->init_shortcodes(); // Explicitly initialize
     } else {
         mycred_debug('Shortcode Manager class not found or UserService unavailable.', null, 'bootstrap', 'error');
     }
