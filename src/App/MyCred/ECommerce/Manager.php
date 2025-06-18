@@ -42,7 +42,8 @@ class Manager {
      */
     private function __construct() {
         // Initialize components in dependency order
-        $this->cart_context = new CartContext();
+        $cart_calculator = new CartCalculator();
+        $this->cart_context = new CartContext($cart_calculator);
         $this->balance_calculator = new BalanceCalculator($this->cart_context);
         $this->purchasability = new Purchasability($this->balance_calculator, $this);
         $this->ui_modifier = new UiModifier($this->balance_calculator, $this);

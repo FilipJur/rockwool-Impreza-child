@@ -25,72 +25,28 @@ if (!defined('ABSPATH')) {
 
 class CartContext {
 
-    public function __construct() {
+    public function __construct(
+        private ?CartCalculator $cart_calculator = null
+    ) {
+        // Fallback for backward compatibility
+        if ($this->cart_calculator === null) {
+            $this->cart_calculator = new CartCalculator();
+        }
     }
 
     /**
      * Get total point value of current cart
      *
-     * Uses native WooCommerce cart methods and provides caching
-     * to avoid repeated calculations within the same request.
+     * Uses CartCalculator service for calculation logic.
      *
      * @return float Total points value of cart contents
      */
     public function get_current_cart_total(): float {
-
         if (!$this->is_cart_available()) {
             return 0.0;
         }
 
-        try {
-            $cart_total_points = 0.0;
-            $cart_contents = \WC()->cart->get_cart();
-
-            mycred_debug('Starting cart calculation', [
-                'cart_items_count' => count($cart_contents)
-            ], 'cart_context', 'info');
-
-            foreach ($cart_contents as $cart_item_key => $cart_item) {
-                $product = apply_filters('woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key);
-
-                if (!$product instanceof \WC_Product) {
-                    mycred_debug('Invalid product in cart item', [
-                        'cart_item_key' => $cart_item_key,
-                        'product_type' => gettype($cart_item['data'] ?? 'missing')
-                    ], 'cart_context', 'warning');
-                    continue;
-                }
-
-                $product_cost_points = $this->get_product_point_cost($product);
-                $quantity = (int) ($cart_item['quantity'] ?? 0);
-
-                mycred_debug('Processing cart item', [
-                    'product_id' => $product->get_id(),
-                    'product_name' => $product->get_name(),
-                    'quantity' => $quantity,
-                    'unit_cost_points' => $product_cost_points,
-                    'line_total_points' => $product_cost_points !== null ? ($product_cost_points * $quantity) : null
-                ], 'cart_context', 'info');
-
-                if ($product_cost_points !== null && $quantity > 0) {
-                    $cart_total_points += ($product_cost_points * $quantity);
-                }
-            }
-
-            mycred_debug('Cart total calculated', [
-                'total_points' => $cart_total_points,
-                'cart_item_count' => \WC()->cart->get_cart_contents_count()
-            ], 'cart_context', 'info');
-
-            return $cart_total_points;
-
-        } catch (\Exception $e) {
-            mycred_debug('Error calculating cart total', [
-                'error' => $e->getMessage()
-            ], 'cart_context', 'error');
-
-            return 0.0;
-        }
+        return $this->cart_calculator->calculateCartTotal();
     }
 
     /**
@@ -223,37 +179,14 @@ class CartContext {
 
     /**
      * Get effective point cost for a product
-     *
+     * 
+     * @deprecated Use CartCalculator::analyzeProductPrice() instead
      * @param \WC_Product $product Product object
      * @return float|null Product cost in points, null if invalid
      */
     private function get_product_point_cost(\WC_Product $product): ?float {
-        $price = $product->get_price();
-        $regular_price = $product->get_regular_price();
-        $sale_price = $product->get_sale_price();
-        $cost = ($price !== '' && is_numeric($price)) ? (float)$price : null;
-
-        // Enhanced debugging for product pricing
-        mycred_debug('Product price analysis', [
-            'product_id' => $product->get_id(),
-            'product_name' => $product->get_name(),
-            'price' => $price,
-            'regular_price' => $regular_price,
-            'sale_price' => $sale_price,
-            'price_type' => gettype($price),
-            'is_numeric' => is_numeric($price),
-            'final_cost' => $cost
-        ], 'cart_context', 'info');
-
-        if ($cost === null && $price !== '') {
-            mycred_debug('Invalid product price detected', [
-                'product_id' => $product->get_id(),
-                'price' => $price,
-                'price_type' => gettype($price)
-            ], 'cart_context', 'warning');
-        }
-
-        return $cost;
+        $analysis = $this->cart_calculator->analyzeProductPrice($product);
+        return $analysis['final_cost'] > 0 ? $analysis['final_cost'] : null;
     }
 
     /**
