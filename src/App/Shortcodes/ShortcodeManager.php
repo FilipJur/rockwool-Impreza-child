@@ -6,6 +6,7 @@ namespace MistrFachman\Shortcodes;
 
 use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
+use MistrFachman\Services\UserService;
 
 /**
  * Shortcode Manager Class
@@ -26,11 +27,13 @@ class ShortcodeManager {
 
     private Manager $ecommerce_manager;
     private ProductService $product_service;
+    private UserService $user_service;
     private array $registered_shortcodes = [];
 
-    public function __construct(Manager $ecommerce_manager, ProductService $product_service) {
+    public function __construct(Manager $ecommerce_manager, ProductService $product_service, ?UserService $user_service = null) {
         $this->ecommerce_manager = $ecommerce_manager;
         $this->product_service = $product_service;
+        $this->user_service = $user_service ?? new UserService(new \MistrFachman\Users\RoleManager());
         $this->discover_and_register_shortcodes();
     }
 
@@ -80,7 +83,7 @@ class ShortcodeManager {
                 
                 // Only register concrete classes that extend ShortcodeBase
                 if (!$reflection->isAbstract() && $reflection->isSubclassOf(ShortcodeBase::class)) {
-                    $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service);
+                    $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service);
                     $this->register_shortcode($shortcode_instance);
                 }
             }

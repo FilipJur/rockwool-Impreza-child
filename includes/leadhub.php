@@ -17,6 +17,12 @@ function odeslat_do_leadhubu_bez_oauth($contact_form) {
         return;
     }
 
+    // Check if LEADHUB_TOKEN is defined
+    if (!defined('LEADHUB_TOKEN') || empty(LEADHUB_TOKEN)) {
+        error_log('LEADHUB_TOKEN not defined - skipping LeadHub integration');
+        return;
+    }
+
     // Odeslání kontaktu přímo pomocí API tokenu
     $response = wp_remote_post('https://api.leadhub.co/interest-lists/predregistrace/subscriptions', [
         'headers' => [

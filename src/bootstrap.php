@@ -107,28 +107,40 @@ add_action('init', function () {
     $ECommerceManager = \MistrFachman\MyCred\ECommerce\Manager::class;
     $ShortcodeManager = \MistrFachman\Shortcodes\ShortcodeManager::class;
     $ProductService = \MistrFachman\Services\ProductService::class;
+    $UsersManager = \MistrFachman\Users\Manager::class;
 
     if (!class_exists($ECommerceManager)) {
         mycred_debug('Core E-Commerce Manager class not found.', null, 'bootstrap', 'error');
         return;
     }
 
-    // 1. Initialize the E-Commerce System
+    // 1. Initialize the Users System (first, as other domains may depend on it)
+    if (class_exists($UsersManager)) {
+        $users_manager = $UsersManager::get_instance();
+        
+        // Configure Contact Form 7 ID for final registration
+        $users_manager->set_registration_form_id(292); // Final registrace form
+    } else {
+        mycred_debug('Users Manager class not found.', null, 'bootstrap', 'error');
+    }
+
+    // 2. Initialize the E-Commerce System
     $ecommerce_manager = $ECommerceManager::get_instance();
 
-    // 2. Initialize the Services Layer, injecting the dependencies they need
+    // 3. Initialize the Services Layer, injecting the dependencies they need
     $product_service = new $ProductService($ecommerce_manager);
+    $user_service = isset($users_manager) ? $users_manager->get_user_service() : null;
     
-    // 3. Initialize the Shortcode System, injecting all necessary services
-    if (class_exists($ShortcodeManager)) {
-        new $ShortcodeManager($ecommerce_manager, $product_service);
+    // 4. Initialize the Shortcode System, injecting all necessary services
+    if (class_exists($ShortcodeManager) && $user_service) {
+        new $ShortcodeManager($ecommerce_manager, $product_service, $user_service);
     } else {
-        mycred_debug('Shortcode Manager class not found.', null, 'bootstrap', 'error');
+        mycred_debug('Shortcode Manager class not found or UserService unavailable.', null, 'bootstrap', 'error');
     }
 
     mycred_log_architecture_event('PSR-4 Application Initialized with Service Layer', [
         'autoloader' => 'composer',
-        'domains' => ['ECommerce', 'Shortcodes', 'Services'],
+        'domains' => ['Users', 'ECommerce', 'Shortcodes', 'Services'],
         'pattern' => 'decoupled with service injection'
     ]);
 }, 20); // Later priority to ensure plugins are loaded

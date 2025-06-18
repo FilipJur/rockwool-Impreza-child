@@ -6,6 +6,7 @@ namespace MistrFachman\Shortcodes;
 
 use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
+use MistrFachman\Services\UserService;
 
 /**
  * Product Grid Shortcode Component
@@ -26,11 +27,8 @@ if (!defined('ABSPATH')) {
 
 class ProductGridShortcode extends ShortcodeBase
 {
-    private ProductService $product_service;
-
-    public function __construct(Manager $mycred_manager, ProductService $product_service) {
-        parent::__construct($mycred_manager);
-        $this->product_service = $product_service;
+    public function __construct(Manager $ecommerce_manager, ProductService $product_service, UserService $user_service) {
+        parent::__construct($ecommerce_manager, $product_service, $user_service);
     }
 
 	protected array $default_attributes = [
@@ -84,8 +82,8 @@ class ProductGridShortcode extends ShortcodeBase
 		}
 
 		// Component data (like React props)
-		$user_balance = $this->mycred_manager->get_user_balance();
-		$available_points = $this->mycred_manager->get_available_points();
+		$user_balance = $this->ecommerce_manager->get_user_balance();
+		$available_points = $this->ecommerce_manager->get_available_points();
 		$wrapper_classes = $this->get_wrapper_classes($attributes);
 		$show_balance_info = $attributes['show_balance_info'] === 'true';
 		$columns = !empty($attributes['columns']) ? (int) $attributes['columns'] : null;
@@ -117,7 +115,7 @@ class ProductGridShortcode extends ShortcodeBase
 
 			<div class="mycred-products-grid<?= $columns ? ' columns-' . $columns : '' ?>">
 				<?php foreach ($products as $product):
-					$can_afford = $this->mycred_manager->can_afford_product($product);
+					$can_afford = $this->ecommerce_manager->can_afford_product($product);
 					$price = $product->get_price();
 					$price_display = $price ? number_format((float) $price) . ' bodů' : 'Zdarma';
 				?>

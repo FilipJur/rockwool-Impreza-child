@@ -114,7 +114,24 @@ class Purchasability {
      * Determine if we should check affordability for this product
      */
     private function should_check_affordability(\WC_Product $product): bool {
-        return is_user_logged_in() && function_exists('mycred');
+        if (!is_user_logged_in() || !function_exists('mycred')) {
+            return false;
+        }
+
+        // NEW RULE: Pending users can VIEW but NEVER BUY
+        // Check if user has pending approval role - they cannot make purchases
+        if (class_exists('\MistrFachman\Users\RoleManager')) {
+            if (current_user_can(\MistrFachman\Users\RoleManager::PENDING_APPROVAL)) {
+                mycred_debug('Blocking purchase for pending user', [
+                    'user_id' => get_current_user_id(),
+                    'product_id' => $product->get_id(),
+                    'role' => \MistrFachman\Users\RoleManager::PENDING_APPROVAL
+                ], 'purchasability', 'info');
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

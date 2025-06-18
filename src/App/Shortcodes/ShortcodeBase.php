@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MistrFachman\Shortcodes;
 
 use MistrFachman\MyCred\ECommerce\Manager;
+use MistrFachman\Services\ProductService;
+use MistrFachman\Services\UserService;
 
 /**
  * Abstract Base Class for Shortcode Components
@@ -23,12 +25,16 @@ if (!defined('ABSPATH')) {
 
 abstract class ShortcodeBase {
 
-    protected Manager $mycred_manager;
+    protected Manager $ecommerce_manager;
+    protected ProductService $product_service;
+    protected UserService $user_service;
     protected array $default_attributes = [];
     protected array $required_attributes = [];
 
-    public function __construct(Manager $mycred_manager) {
-        $this->mycred_manager = $mycred_manager;
+    public function __construct(Manager $ecommerce_manager, ProductService $product_service, UserService $user_service) {
+        $this->ecommerce_manager = $ecommerce_manager;
+        $this->product_service = $product_service;
+        $this->user_service = $user_service;
     }
 
     /**
