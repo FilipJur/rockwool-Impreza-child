@@ -69,6 +69,18 @@ class Purchasability {
             return $is_purchasable;
         }
 
+        // PRIORITY CHECK: Block all purchases for pending users
+        // This takes precedence over affordability checks
+        $user_id = get_current_user_id();
+        if ($this->is_pending_user($user_id)) {
+            mycred_debug('Blocking purchase for pending user', [
+                'user_id' => $user_id,
+                'product_id' => $product->get_id(),
+                'role' => 'pending_approval'
+            ], 'purchasability', 'info');
+            return false;
+        }
+
         try {
             // CONTEXT-AWARE LOGIC
             if (is_cart() || is_checkout() || (function_exists('WC') && \WC()->is_rest_api_request())) {
@@ -118,20 +130,19 @@ class Purchasability {
             return false;
         }
 
-        // NEW RULE: Pending users can VIEW but NEVER BUY
-        // Check if user has pending approval role - they cannot make purchases
-        if (class_exists('\MistrFachman\Users\RoleManager')) {
-            if (current_user_can(\MistrFachman\Users\RoleManager::PENDING_APPROVAL)) {
-                mycred_debug('Blocking purchase for pending user', [
-                    'user_id' => get_current_user_id(),
-                    'product_id' => $product->get_id(),
-                    'role' => \MistrFachman\Users\RoleManager::PENDING_APPROVAL
-                ], 'purchasability', 'info');
-                return false;
-            }
+        return true;
+    }
+
+    /**
+     * Check if user has pending approval role
+     */
+    private function is_pending_user(int $user_id): bool {
+        $user = get_user_by('ID', $user_id);
+        if (!$user) {
+            return false;
         }
 
-        return true;
+        return in_array('pending_approval', $user->roles, true);
     }
 
     /**
@@ -160,8 +171,36 @@ class Purchasability {
             return $passed;
         }
 
+        // PRIORITY CHECK: Block pending users from adding to cart
+        $user_id = get_current_user_id();
+        if ($this->is_pending_user($user_id)) {
+            // Get user's registration status for specific message
+            $message = 'Registrace probíhá. Dokončete registraci pro možnost nákupu.';
+            
+            if (class_exists('\MistrFachman\Users\Manager')) {
+                $users_manager = \MistrFachman\Users\Manager::get_instance();
+                $user_service = $users_manager->get_user_service();
+                $status = $user_service->get_user_registration_status($user_id);
+                
+                $message = match ($status) {
+                    'needs_form' => 'Dokončete registraci pro možnost nákupu.',
+                    'awaiting_review' => 'Vaše registrace čeká na schválení administrátorem.',
+                    default => 'Registrace probíhá. Dokončete registraci pro možnost nákupu.'
+                };
+            }
+            
+            wc_add_notice($message, 'error');
+            
+            mycred_debug('Blocking add to cart for pending user', [
+                'user_id' => $user_id,
+                'product_id' => $product_id,
+                'role' => 'pending_approval'
+            ], 'purchasability', 'info');
+            
+            return false;
+        }
+
         try {
-            $user_id = get_current_user_id();
             $product_cost = (float) $product->get_price() * $quantity;
             $current_available = $this->balance_calculator->get_available_points($user_id, true);
 
