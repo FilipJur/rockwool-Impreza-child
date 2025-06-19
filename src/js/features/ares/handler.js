@@ -3,7 +3,6 @@
  * Handles Czech company registration data lookup and form population
  */
 
-import { api } from '../../utils/api.js';
 import { validation } from '../../utils/validation.js';
 
 /**
@@ -13,7 +12,7 @@ import { validation } from '../../utils/validation.js';
  */
 export function setupAresForm(formSelector = '.registration-form') {
   const form = document.querySelector(formSelector);
-  
+
   if (!form) {
     console.warn(`ARES Handler: Form container "${formSelector}" not found.`);
     return null;
@@ -85,12 +84,25 @@ export function setupAresForm(formSelector = '.registration-form') {
     lastFetchedIco = null;
 
     try {
-      const data = await api.withTimeout(
-        api.get(`https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/${ico}`),
-        15000 // 15 second timeout
-      );
+      // Use WordPress AJAX endpoint instead of direct ARES API call
+      const formData = new FormData();
+      formData.append('action', 'mistr_fachman_validate_ico');
+      formData.append('nonce', window.mistrFachmanAjax?.ico_validation_nonce || '');
+      formData.append('ico', ico);
 
-      handleAresSuccess(data, ico);
+      const response = await fetch('/wp-admin/admin-ajax.php', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+      });
+
+      const responseData = await response.json();
+
+      if (!responseData.success) {
+        throw new Error(responseData.data?.message || 'Neznámá chyba serveru');
+      }
+
+      handleAresSuccess(responseData.data, ico);
     } catch (error) {
       handleAresError(error);
     }
@@ -98,50 +110,35 @@ export function setupAresForm(formSelector = '.registration-form') {
 
   /**
    * Handle successful ARES API response
-   * @param {Object} data - ARES API response data
+   * @param {Object} data - WordPress AJAX response data
    * @param {string} ico - The IČO that was looked up
    */
   function handleAresSuccess(data, ico) {
-    if (data && data.obchodniJmeno) {
-      // Populate fields with ARES data
-      fields.companyName.value = data.obchodniJmeno;
-
-      if (data.sidlo && data.sidlo.textovaAdresa) {
-        fields.address.value = data.sidlo.textovaAdresa;
-      }
+    if (data && data.company_name) {
+      // Populate fields with ARES data from WordPress endpoint
+      fields.companyName.value = data.company_name;
+      fields.address.value = data.address;
 
       // Lock fields after successful ARES validation
       lockAresFields();
-      showStatus('Údaje načteny z ARES a ověřeny - tyto údaje budou použity při registraci', 'success');
+      showStatus('Údaje načteny z ARES a ověřeny.', 'success');
       lastFetchedIco = ico;
     } else {
-      showError('Společnost nenalezena nebo odpověď neobsahuje název');
+      showError('Odpověď ze serveru byla neplatná.');
       unlockAresFields();
     }
   }
 
   /**
-   * Handle ARES API errors
+   * Handle ARES validation errors
    * @param {Error} error - Error object
    */
   function handleAresError(error) {
-    const errorMessages = {
-      404: 'IČO nebylo nalezeno v ARES',
-      400: 'Chybný formát IČO pro ARES (zkontrolujte)',
-      500: 'Služba ARES je dočasně nedostupná. Zkuste později',
-      503: 'Služba ARES je dočasně nedostupná. Zkuste později',
-      timeout: 'Požadavek na ARES vypršel. Zkuste později',
-      network: 'Chyba připojení k ARES API',
-      default: 'Chyba při komunikaci s ARES API'
-    };
-
-    const errorMessage = api.handleError(error, errorMessages);
-    showError(errorMessage + ' - Můžete vyplnit údaje ručně');
-    
-    // Unlock fields when ARES fails, allowing manual input
+    // The error message is already user-friendly from the WordPress endpoint
+    const errorMessage = error?.message || 'Došlo k neznámé chybě.';
+    showError(errorMessage);
     unlockAresFields();
-
-    console.error('ARES API Error:', error);
+    console.error('IČO Validation Error:', error);
   }
 
   /**
@@ -213,7 +210,7 @@ export function setupAresForm(formSelector = '.registration-form') {
    */
   function lockAresFields() {
     const fieldsToLock = [fields.companyName, fields.address];
-    
+
     fieldsToLock.forEach(field => {
       field.readOnly = true;
       field.classList.add('ares-verified');
@@ -226,7 +223,7 @@ export function setupAresForm(formSelector = '.registration-form') {
    */
   function unlockAresFields() {
     const fieldsToUnlock = [fields.companyName, fields.address];
-    
+
     fieldsToUnlock.forEach(field => {
       field.readOnly = false;
       field.classList.remove('ares-verified');

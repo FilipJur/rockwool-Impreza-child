@@ -28,7 +28,9 @@ class AdminInterface {
         private AdminCardRenderer $card_renderer,
         private AdminAssetManager $asset_manager,
         private AdminActionHandler $action_handler,
-        private BusinessDataModal $business_modal
+        private BusinessDataModal $business_modal,
+        private BusinessDataValidator $business_validator,
+        private BusinessDataManager $business_manager
     ) {}
 
     /**
@@ -36,7 +38,7 @@ class AdminInterface {
      */
     public function init_hooks(): void {
         error_log('AdminInterface::init_hooks called');
-        
+
         // User profile hooks
         add_action('show_user_profile', [$this, 'add_user_status_fields']);
         add_action('edit_user_profile', [$this, 'add_user_status_fields']);
@@ -47,13 +49,18 @@ class AdminInterface {
         add_action('admin_post_mistr_fachman_promote_user', [$this->action_handler, 'handle_promote_user_action']);
         add_action('admin_post_mistr_fachman_revoke_user', [$this->action_handler, 'handle_revoke_user_action']);
         add_action('admin_notices', [$this->action_handler, 'display_admin_notices']);
-        
+
         // AJAX hooks for business data modal
         add_action('wp_ajax_mistr_fachman_get_business_data', [$this->business_modal, 'handle_get_business_data_ajax']);
-        
+
         // AJAX hook for fresh nonce generation
         add_action('wp_ajax_mistr_fachman_get_fresh_nonce', [$this, 'handle_get_fresh_nonce_ajax']);
-        
+
+        // AJAX hook for IČO validation
+        add_action('wp_ajax_mistr_fachman_validate_ico', [$this, 'handle_ico_validation_ajax']);
+        // This makes the endpoint accessible to users with custom roles who may not be considered 'admin' users by WordPress
+        add_action('wp_ajax_nopriv_mistr_fachman_validate_ico', [$this, 'handle_ico_validation_ajax']);
+
         // Enqueue admin scripts and styles
         add_action('admin_enqueue_scripts', [$this->asset_manager, 'enqueue_admin_assets']);
         error_log('AdminInterface: admin_enqueue_scripts hook registered');
@@ -68,7 +75,7 @@ class AdminInterface {
         // Show for all business users (pending or full members who came through registration)
         $is_pending = $this->role_manager->is_pending_user($user->ID);
         $has_business_data = $this->registration_hooks->has_business_data($user->ID);
-        
+
         // Show section if user is pending OR has business data (promoted users)
         if (!$is_pending && !$has_business_data) {
             return;
@@ -80,7 +87,7 @@ class AdminInterface {
                 <span class="title-icon">🏢</span>
                 <?php esc_html_e('Správa obchodního účtu', 'mistr-fachman'); ?>
             </h3>
-            
+
             <div class="management-grid">
                 <?php $this->card_renderer->render_user_status_card($user, $is_pending); ?>
                 <?php $this->card_renderer->render_business_data_card($user); ?>
@@ -90,7 +97,7 @@ class AdminInterface {
         </div>
 
         <?php $this->style_manager->render_admin_styles(); ?>
-        
+
         <?php
         // Always render business data modal for users with business data
         if ($has_business_data) {
@@ -127,15 +134,110 @@ class AdminInterface {
 
         // Get action parameter
         $action = $_POST['action_name'] ?? 'mistr_fachman_business_data';
-        
+
         // Generate fresh nonce
         $fresh_nonce = wp_create_nonce($action);
-        
+
         error_log('Fresh nonce generated: ' . $fresh_nonce . ' for action: ' . $action);
-        
+
         wp_send_json_success([
             'nonce' => $fresh_nonce,
             'action' => $action
         ]);
+    }
+
+    /**
+     * Handle AJAX request for IČO validation.
+     * Performs format check, uniqueness check, and ARES API call.
+     */
+    public function handle_ico_validation_ajax(): void {
+        try {
+            // Security Check 1: User must be logged in.
+            if (!is_user_logged_in()) {
+                throw new \Exception('Přístup odepřen.', 403);
+            }
+
+            // Security Check 2: Verify the nonce. Use a specific nonce for this action.
+            check_ajax_referer('mistr_fachman_ico_validation_nonce', 'nonce');
+
+            $user_id = get_current_user_id();
+            $ico = sanitize_text_field($_POST['ico'] ?? '');
+
+            if (empty($ico)) {
+                throw new \Exception('IČO nebylo zadáno.', 400); // 400 Bad Request
+            }
+
+            // Step 1: Validate Format (fast)
+            if (!$this->business_validator->validate_ico_format($ico)) {
+                throw new \Exception('Neplatný formát IČO.', 422); // 422 Unprocessable Entity
+            }
+
+            // Step 2: Validate Uniqueness (fast DB query)
+            if ($this->business_manager->is_ico_already_registered($ico, $user_id)) {
+                throw new \Exception('Toto IČO je již registrováno na jiný účet.', 409); // 409 Conflict
+            }
+
+            // Step 3: Validate with ARES API (slow external call)
+            $ares_result = $this->business_validator->validate_ico_with_ares($ico);
+            if (!$ares_result['valid']) {
+                // Pass ARES-specific error message to the frontend
+                throw new \Exception($ares_result['error'], 422);
+            }
+
+            // All checks passed. Return success with ARES data.
+            wp_send_json_success([
+                'company_name' => $ares_result['data']['obchodniJmeno'],
+                'address'      => $this->extract_ares_address_from_result($ares_result['data']),
+            ]);
+
+        } catch (\Exception $e) {
+            // Centralized error handling
+            $code = is_int($e->getCode()) && $e->getCode() >= 400 ? $e->getCode() : 400;
+            wp_send_json_error(['message' => $e->getMessage()], $code);
+        }
+    }
+
+    /**
+     * Extract formatted address from ARES data
+     * @param array $ares_data ARES API response data
+     * @return string Formatted address
+     */
+    private function extract_ares_address_from_result(array $ares_data): string {
+        if (!isset($ares_data['sidlo'])) {
+            return '';
+        }
+
+        $sidlo = $ares_data['sidlo'];
+
+        // Check if textovaAdresa exists (preferred format)
+        if (isset($sidlo['textovaAdresa']) && !empty($sidlo['textovaAdresa'])) {
+            return $sidlo['textovaAdresa'];
+        }
+
+        // Build address from components
+        $address_parts = [];
+
+        // Street and number
+        if (isset($sidlo['nazevUlice'])) {
+            $street = $sidlo['nazevUlice'];
+            if (isset($sidlo['cisloDomovni'])) {
+                $street .= ' ' . $sidlo['cisloDomovni'];
+                if (isset($sidlo['cisloOrientacni'])) {
+                    $street .= '/' . $sidlo['cisloOrientacni'];
+                }
+            }
+            $address_parts[] = $street;
+        }
+
+        // City and postal code
+        if (isset($sidlo['nazevObce'])) {
+            $city_line = $sidlo['nazevObce'];
+            if (isset($sidlo['psc'])) {
+                $city_line = $sidlo['psc'] . ' ' . $city_line;
+            }
+            $address_parts[] = $city_line;
+        }
+
+        return implode(', ', $address_parts);
     }
 }

@@ -63,14 +63,18 @@ class AdminAssetManager {
 
         // Localize script for AJAX
         if ($admin_js_registered) {
-            $nonce = wp_create_nonce('mistr_fachman_business_data');
+            $business_data_nonce = wp_create_nonce('mistr_fachman_business_data');
+            $ico_validation_nonce = wp_create_nonce('mistr_fachman_ico_validation_nonce');
             wp_localize_script('theme-admin-js', 'mistrFachmanAjax', [
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce' => $nonce,
+                'business_data_nonce' => $business_data_nonce,
+                'ico_validation_nonce' => $ico_validation_nonce,
+                'nonce' => $business_data_nonce, // Keep backward compatibility
                 'nonce_action' => 'mistr_fachman_business_data'
             ]);
             error_log('AdminAssetManager: Localized script with AJAX data');
-            error_log('AdminAssetManager: Generated nonce: ' . $nonce . ' for action: mistr_fachman_business_data');
+            error_log('AdminAssetManager: Generated business_data_nonce: ' . $business_data_nonce);
+            error_log('AdminAssetManager: Generated ico_validation_nonce: ' . $ico_validation_nonce);
         }
 
         // Debug what's actually enqueued

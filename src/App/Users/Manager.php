@@ -38,6 +38,7 @@ class Manager {
     public UserDetectionService $user_detection_service;
     public RegistrationHooks $registration_hooks;
     public BusinessDataManager $business_manager;
+    public BusinessDataValidator $business_validator;
     public ThemeIntegration $theme_integration;
     public AccessControl $access_control;
     public AdminInterface $admin_interface;
@@ -60,12 +61,12 @@ class Manager {
         
         // Initialize business data components
         $this->business_manager = new BusinessDataManager();
-        $business_validator = new BusinessDataValidator($this->business_manager);
+        $this->business_validator = new BusinessDataValidator($this->business_manager);
         
         $this->registration_hooks = new RegistrationHooks(
             $this->role_manager, 
             $this->user_detection_service,
-            $business_validator,
+            $this->business_validator,
             $this->business_manager
         );
         $this->theme_integration = new ThemeIntegration($this->user_service);
@@ -86,7 +87,9 @@ class Manager {
             $card_renderer,
             $asset_manager,
             $action_handler,
-            $business_modal
+            $business_modal,
+            $this->business_validator,
+            $this->business_manager
         );
 
         $this->setup_hooks();
