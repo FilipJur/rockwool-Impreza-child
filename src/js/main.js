@@ -4,8 +4,9 @@
  */
 
 import { setupAresForm } from './features/ares/handler.js';
-import { FileUpload } from './features/file-upload/index.js';
-import BusinessDataModal from './features/admin/business-data-modal.js';
+import { setupFileUpload } from './features/file-upload/index.js';
+import { setupBusinessModal } from './features/admin/business-data-modal.js';
+import { setupAccessControl } from './features/access-control/index.js';
 import { app as firebaseApp } from './firebase/config.js';
 
 /**
@@ -17,7 +18,8 @@ class ThemeApp {
     this.modules = {
       aresHandler: null,
       fileUpload: null,
-      businessModal: null
+      businessModal: null,
+      accessControl: null
     };
     this.firebase = firebaseApp;
     this.isInitialized = false;
@@ -49,6 +51,14 @@ class ThemeApp {
    * Initialize all modules
    */
   initializeModules() {
+    // Initialize access control first (highest priority for security)
+    try {
+      this.modules.accessControl = setupAccessControl();
+      console.log('Access control initialized');
+    } catch (error) {
+      console.error('Failed to initialize access control:', error);
+    }
+
     // Initialize ARES handler for company data lookup
     if (document.querySelector('.registration-form')) {
       try {
@@ -60,9 +70,20 @@ class ThemeApp {
     }
 
     // Initialize enhanced file upload for plugin (try multiple selectors)
-    if (document.querySelector('#realizace-upload, input[data-name="mfile-747"], .wpcf7-drag-n-drop-file, .codedropz-upload-wrapper')) {
+    const fileUploadSelectors = [
+      '#realizace-upload', 
+      'input[data-name="mfile-747"]', 
+      '.wpcf7-drag-n-drop-file', 
+      '.codedropz-upload-wrapper'
+    ];
+    
+    const fileUploadElement = fileUploadSelectors
+      .map(sel => document.querySelector(sel))
+      .find(el => el !== null);
+
+    if (fileUploadElement) {
       try {
-        this.modules.fileUpload = new FileUpload();
+        this.modules.fileUpload = setupFileUpload(fileUploadElement);
         console.log('File upload handler initialized for plugin');
       } catch (error) {
         console.error('Failed to initialize file upload handler:', error);
@@ -71,9 +92,13 @@ class ThemeApp {
       console.log('No file upload plugin elements found on page - will retry in 2 seconds');
       // Try again after a delay in case plugin loads dynamically
       setTimeout(() => {
-        if (document.querySelector('#realizace-upload, input[data-name="mfile-747"], .wpcf7-drag-n-drop-file, .codedropz-upload-wrapper')) {
+        const delayedElement = fileUploadSelectors
+          .map(sel => document.querySelector(sel))
+          .find(el => el !== null);
+          
+        if (delayedElement) {
           try {
-            this.modules.fileUpload = new FileUpload();
+            this.modules.fileUpload = setupFileUpload(delayedElement);
             console.log('File upload handler initialized for plugin (delayed)');
           } catch (error) {
             console.error('Failed to initialize file upload handler (delayed):', error);
@@ -87,7 +112,7 @@ class ThemeApp {
     // Initialize business data modal (admin pages only)
     if (window.location.pathname.includes('/wp-admin/')) {
       try {
-        this.modules.businessModal = new BusinessDataModal();
+        this.modules.businessModal = setupBusinessModal();
         console.log('Business data modal initialized for admin');
       } catch (error) {
         console.error('Failed to initialize business data modal:', error);
@@ -136,8 +161,35 @@ class ThemeApp {
       this.modules.fileUpload.onFormSuccess();
     }
 
+    // Handle specific redirect for final registration form (ID 292)
+    this.handleRegistrationFormRedirect(event);
+
     // You can add more success handling here
     // e.g., analytics tracking, user notifications, etc.
+  }
+
+  /**
+   * Handle redirect for final registration form
+   * @param {Event} event - WPCF7 event
+   */
+  handleRegistrationFormRedirect(event) {
+    // Check if this is the final registration form (ID 292)
+    const formElement = event.target;
+    const formId = formElement ? formElement.querySelector('input[name="_wpcf7"]')?.value : null;
+    
+    // Get form ID from server-side configuration
+    const finalRegistrationFormId = window.mistrFachman?.finalRegistrationFormId || '292';
+    
+    if (formId === finalRegistrationFormId) {
+      console.log('Final registration form submitted successfully - redirecting to eshop');
+      
+      // Get eshop URL from server data or use fallback
+      const eshopUrl = window.mistrFachman?.eshopUrl || '/obchod';
+      
+      setTimeout(() => {
+        window.location.href = eshopUrl;
+      }, 3000); // Wait for 3 seconds to allow user to see success message
+    }
   }
 
   /**
@@ -221,8 +273,7 @@ class ThemeApp {
       this.modules[key] = null;
     });
 
-    // Clear singleton instances
-    FileUpload.clearInstance();
+    // No longer need to clear singleton instances with functional modules
   }
 
   /**

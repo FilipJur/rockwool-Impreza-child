@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. **USER ACCOUNT INTEGRATION & REALIZACE-READY ARCHITECTURE COMPLETE** - Full bidirectional sync between business data and WordPress user profiles, design-system-compliant admin interface with ROCKWOOL brand tokens, and extensible data architecture prepared for future realizace project management with myCred integration hooks.
+WordPress child theme development with enterprise-grade architecture. **FUNCTIONAL JAVASCRIPT MODERNIZATION COMPLETE** - Converted class-based modules to modern functional patterns for better reusability and maintainability. All feature modules (FileUpload, BusinessModal, AccessControl) now follow setupAresForm pattern with isolated state and proper cleanup.
 
 ## Build & Development Commands
 
@@ -67,6 +67,14 @@ WordPress child theme development with enterprise-grade architecture. **USER ACC
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
+- **2025-06-19**: 🚀 **FUNCTIONAL JAVASCRIPT MODERNIZATION COMPLETE** - Converted all feature modules from classes to functional patterns following setupAresForm approach for better reusability
+- **2025-06-19**: ✅ **MODULAR REUSABILITY ACHIEVED** - FileUpload, BusinessModal, and AccessControl now support multiple instances per page with isolated state and proper cleanup
+- **2025-06-19**: 🎯 **IMPROVED MAINTAINABILITY** - Each functional module returns control object with cleanup methods, following proven functional patterns from ARES handler
+- **2025-06-19**: 📦 **BETTER TESTING ISOLATION** - Functional modules are easier to test independently without complex class hierarchies and singleton patterns
+- **2025-06-19**: 🛡️ **BULLETPROOF ACCESS CONTROL IMPLEMENTED** - Defense-in-depth access control with server-side redirects and client-side validation for registration pages
+- **2025-06-19**: ✅ **IČO UNIQUENESS VALIDATION** - Prevents duplicate registrations with same IČO, clear error messages for users
+- **2025-06-19**: 🎯 **ROLE-BASED PAGE ACCESS** - Full members blocked from registration pages, pending users guided through proper flow
+- **2025-06-19**: 🚀 **FRONTEND ACCESS CONTROL** - JavaScript module provides immediate redirects with server-side data injection
 - **2025-06-18**: 🔐 **STRICT ARES ENFORCEMENT COMPLETE** - Server-side forced use of exact ARES data when IČO validates, with discrepancy logging and comprehensive user profile sync
 - **2025-06-18**: 👤 **ENHANCED USER PROFILE SYNC** - Added WordPress nickname and complete WooCommerce billing fields population from registration data
 - **2025-06-18**: 🔒 **ARES FIELD LOCKING COMPLETE** - ARES-validated fields (company name, address) become read-only after successful fetch, unlock for manual editing on ARES failure
@@ -141,7 +149,8 @@ WordPress child theme development with enterprise-grade architecture. **USER ACC
 - **Single Source of Truth balance system**: available = balance - cart_total with context-aware purchasability (shop vs cart/checkout)
 - **Modern namespaced classes**: `MistrFachman\MyCred\ECommerce\Manager` replaces legacy underscore naming
 - **Single bootstrap file**: One require_once for autoloader, eliminates dependency management complexity
-- **Functional over class patterns**: Classes only for stateful components, functions for everything else with proper cleanup
+- **Functional module pattern for features**: All feature modules (FileUpload, BusinessModal, AccessControl) use setupFunction() pattern for reusability and isolation
+- **Classes for application coordinators only**: ThemeApp and AdminApp remain classes for single-instance lifecycle management and module coordination
 - **Tailwind CSS for component styling**: Utility-first CSS framework for consistent, maintainable component styling
 - **NO INLINE STYLING IN SHORTCODES**: Shortcodes are functional smart components - styling handled via Tailwind classes
 - **Semantic CSS naming**: Wrapper elements include context classes for targeted styling (e.g., `filter-affordable`, `filter-unavailable`)
@@ -183,4 +192,4 @@ WordPress child theme development with enterprise-grade architecture. **USER ACC
 
 
 ## Last Updated
-2025-06-18
+2025-06-19
