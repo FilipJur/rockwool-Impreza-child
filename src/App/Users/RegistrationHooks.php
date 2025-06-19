@@ -28,7 +28,11 @@ class RegistrationHooks
 		private RoleManager $role_manager,
 		private UserDetectionService $user_detection_service,
 		private BusinessDataValidator $business_validator,
-		private BusinessDataManager $business_manager
+		private BusinessDataManager $business_manager,
+		private UserProfileSync $profile_sync,
+		private RegistrationValidator $registration_validator,
+		private RegistrationEligibility $eligibility_checker,
+		private BusinessDataProcessor $data_processor
 	) {
 	}
 
@@ -44,7 +48,7 @@ class RegistrationHooks
 		add_action('wpcf7_mail_sent', [$this, 'handle_final_registration_submission'], 10, 1);
 
 		// Add validation hook as security gate
-		add_filter('wpcf7_validate', [$this, 'validate_registration_form_submission'], 20, 2);
+		add_filter('wpcf7_validate', [$this->registration_validator, 'validate_registration_form_submission'], 20, 2);
 
 		// Add hook for frontend registration form assets
 		add_action('wp_enqueue_scripts', [$this, 'enqueue_registration_form_scripts']);
@@ -137,7 +141,7 @@ class RegistrationHooks
 		}
 
 		// Check eligibility - this is our main validation now
-		$eligibility_check = $this->check_user_registration_eligibility($user_id);
+		$eligibility_check = $this->eligibility_checker->check_user_registration_eligibility($user_id);
 		if (!$eligibility_check['eligible']) {
 			mycred_debug('Cannot process registration - user not eligible', [
 				'user_id' => $user_id,
@@ -167,7 +171,7 @@ class RegistrationHooks
 			], 'users', 'info');
 
 			// 1. Shape the data. This will correctly handle the optional `position` field.
-			$business_data = $this->business_validator->shape_business_data($posted_data, $user_id);
+			$business_data = $this->data_processor->shape_business_data($posted_data, $user_id);
 
 			mycred_debug('REGISTRATION FLOW: Business data shaped', [
 				'user_id' => $user_id,
@@ -202,7 +206,7 @@ class RegistrationHooks
 			], 'users', 'info');
 
 			// 3. THIS WILL NOW SUCCEED: Sync data to user profile.
-			$sync_result = $this->sync_business_data_to_user_profile($user_id, $business_data);
+			$sync_result = $this->profile_sync->sync_business_data_to_user_profile($user_id, $business_data);
 
 			mycred_debug('REGISTRATION FLOW: Profile sync attempted', [
 				'user_id' => $user_id,
@@ -363,198 +367,7 @@ class RegistrationHooks
 		return $this->business_manager->delete_business_data($user_id);
 	}
 
-	/**
-	 * Check if user is eligible for registration submission
-	 *
-	 * Comprehensive security check to prevent various edge cases and attacks.
-	 *
-	 * @param int $user_id User ID to check
-	 * @return array{eligible: bool, reason: string, message: string} Eligibility result
-	 */
-	private function check_user_registration_eligibility(int $user_id): array
-	{
-		$user = get_userdata($user_id);
 
-		if (!$user) {
-			return [
-				'eligible' => false,
-				'reason' => 'user_not_found',
-				'message' => 'Uživatelský účet nebyl nalezen.'
-			];
-		}
-
-		// Check if user has pending approval role
-		if (!$this->role_manager->is_pending_user($user_id)) {
-			// Determine specific message based on current role
-			if ($this->role_manager->is_full_member($user_id)) {
-				return [
-					'eligible' => false,
-					'reason' => 'already_approved',
-					'message' => 'Váš účet je již schválen. Nemusíte vyplňovat registrační formulář znovu.'
-				];
-			}
-
-			return [
-				'eligible' => false,
-				'reason' => 'invalid_role',
-				'message' => 'Váš účet nemá správné oprávnění pro registraci. Kontaktujte administrátora.'
-			];
-		}
-
-		// Check current registration status
-		$current_status = $this->role_manager->get_user_status($user_id);
-
-		if ($current_status === RegistrationStatus::AWAITING_REVIEW) {
-			return [
-				'eligible' => false,
-				'reason' => 'already_submitted',
-				'message' => 'Registrační formulář byl již odeslán a čeká na schválení. Nemusíte jej vyplňovat znovu.'
-			];
-		}
-
-		if ($current_status === RegistrationStatus::APPROVED) {
-			return [
-				'eligible' => false,
-				'reason' => 'already_approved_status',
-				'message' => 'Vaše registrace je již schválena.'
-			];
-		}
-
-		// Check if user already has business data (potential duplicate submission)
-		if ($this->business_manager->has_business_data($user_id)) {
-			return [
-				'eligible' => false,
-				'reason' => 'duplicate_business_data',
-				'message' => 'Firemní údaje již byly odeslány. Nemusíte formulář vyplňovat znovu.'
-			];
-		}
-
-		// All checks passed
-		return [
-			'eligible' => true,
-			'reason' => 'eligible',
-			'message' => 'Uživatel může pokračovat s registrací.'
-		];
-	}
-
-	/**
-	 * Sync business data to WordPress user profile fields
-	 *
-	 * @param int $user_id User ID
-	 * @param array $business_data Business data array
-	 * @return bool Success status
-	 */
-	private function sync_business_data_to_user_profile(int $user_id, array $business_data): bool
-	{
-		mycred_debug('SYNC FUNCTION: Starting user profile sync', [
-			'user_id' => $user_id,
-			'business_data_keys' => array_keys($business_data),
-			'representative_data' => $business_data['representative'] ?? 'MISSING'
-		], 'users', 'info');
-
-		$full_name_with_company = sprintf(
-			'%s %s (%s)',
-			$business_data['representative']['first_name'],
-			$business_data['representative']['last_name'],
-			$business_data['company_name']
-		);
-
-		mycred_debug('SYNC FUNCTION: Full name with company created', [
-			'user_id' => $user_id,
-			'full_name_with_company' => $full_name_with_company,
-			'first_name' => $business_data['representative']['first_name'],
-			'last_name' => $business_data['representative']['last_name'],
-			'company_name' => $business_data['company_name']
-		], 'users', 'info');
-
-		// Update WordPress user core fields
-		$user_updates = [
-			'ID' => $user_id,
-			'first_name' => $business_data['representative']['first_name'],
-			'last_name' => $business_data['representative']['last_name'],
-			'user_email' => $business_data['representative']['email'],
-			'display_name' => $full_name_with_company,
-			'nickname' => $full_name_with_company
-		];
-
-		mycred_debug('SYNC FUNCTION: About to call wp_update_user', [
-			'user_id' => $user_id,
-			'user_updates' => $user_updates
-		], 'users', 'info');
-
-		$result = wp_update_user($user_updates);
-
-		mycred_debug('SYNC FUNCTION: wp_update_user result', [
-			'user_id' => $user_id,
-			'result' => $result,
-			'is_wp_error' => is_wp_error($result),
-			'error_message' => is_wp_error($result) ? $result->get_error_message() : 'N/A'
-		], 'users', 'info');
-
-		if (is_wp_error($result)) {
-			// Check if this is an email conflict that should have been caught by validation
-			if (strpos($result->get_error_message(), 'e-mailov') !== false) {
-				mycred_debug('CRITICAL: Email conflict during profile sync - validation should have caught this', [
-					'user_id' => $user_id,
-					'attempted_email' => $business_data['representative']['email'],
-					'error' => $result->get_error_message(),
-					'updates' => $user_updates
-				], 'users', 'error');
-			} else {
-				mycred_debug('Failed to sync business data to user profile', [
-					'user_id' => $user_id,
-					'error' => $result->get_error_message(),
-					'updates' => $user_updates
-				], 'users', 'error');
-			}
-			return false;
-		}
-
-		// Update WooCommerce billing fields
-		$billing_updates = [
-			'billing_first_name' => $business_data['representative']['first_name'],
-			'billing_last_name' => $business_data['representative']['last_name'],
-			'billing_company' => $business_data['company_name'],
-			'billing_email' => $business_data['representative']['email'],
-			'billing_address_1' => $business_data['address'],
-			'billing_country' => 'CZ', // Czech Republic
-		];
-
-		// Add phone if available in business data
-		if (isset($business_data['representative']['phone'])) {
-			$billing_updates['billing_phone'] = $business_data['representative']['phone'];
-		}
-
-		mycred_debug('SYNC FUNCTION: About to update billing meta fields', [
-			'user_id' => $user_id,
-			'billing_updates' => $billing_updates
-		], 'users', 'info');
-
-		// Update billing meta fields
-		foreach ($billing_updates as $meta_key => $meta_value) {
-			$meta_result = update_user_meta($user_id, $meta_key, $meta_value);
-			
-			mycred_debug('SYNC FUNCTION: Updated meta field', [
-				'user_id' => $user_id,
-				'meta_key' => $meta_key,
-				'meta_value' => $meta_value,
-				'update_result' => $meta_result
-			], 'users', 'info');
-		}
-
-		mycred_debug('Business data synced to user profile and billing', [
-			'user_id' => $user_id,
-			'first_name' => $business_data['representative']['first_name'],
-			'last_name' => $business_data['representative']['last_name'],
-			'email' => $business_data['representative']['email'],
-			'display_name' => $full_name_with_company,
-			'nickname' => $full_name_with_company,
-			'billing_company' => $business_data['company_name'],
-			'billing_address' => $business_data['address']
-		], 'users', 'info');
-
-		return true;
-	}
 
 	/**
 	 * Process realizace approval (for future implementation)
@@ -624,62 +437,6 @@ class RegistrationHooks
 		return true;
 	}
 
-	/**
-	 * Performs a final, fast, server-side validation check upon form submission.
-	 * This prevents tampering and acts as a security gate. It adheres to the
-	 * Contact Form 7 filter pattern by returning the validation object.
-	 *
-	 * @param \WPCF7_Validation $result The validation object to modify.
-	 * @param array $tags The form tags.
-	 * @return \WPCF7_Validation The modified validation object.
-	 */
-	public function validate_registration_form_submission(\WPCF7_Validation $result, array $tags): \WPCF7_Validation
-	{
-		$contact_form = wpcf7_get_current_contact_form();
-		if (!$contact_form || !RegistrationConfig::isRegistrationForm($contact_form)) {
-			return $result; // Not our form, return original result immediately.
-		}
-
-		// This is the gatekeeper. If this try...catch block passes, the form is valid.
-		try {
-			$submission = \WPCF7_Submission::get_instance();
-			$posted_data = $submission ? $submission->get_posted_data() : [];
-			$user_id = $this->user_detection_service->detectUser();
-
-			// Perform dynamic validation FIRST. This will now correctly ignore the optional 'position' field.
-			$this->business_validator->validate_form_data($posted_data, $contact_form);
-
-			// Email uniqueness validation - validate specific field
-			$contact_email = sanitize_email($posted_data['contact-email'] ?? '');
-			if (!empty($contact_email)) {
-				$existing_user_id = email_exists($contact_email);
-				if ($existing_user_id && $existing_user_id !== $user_id) {
-					$result->invalidate('contact-email', 'Tato e-mailová adresa je již registrována na jiný účet.');
-					return $result; // Return immediately to show specific field error
-				}
-			}
-
-			// Other business logic checks can follow...
-			$eligibility = $this->check_user_registration_eligibility($user_id);
-			if (!$eligibility['eligible']) {
-				$result->invalidate('', $eligibility['message']); // General form error
-				return $result;
-			}
-
-			// Final IČO uniqueness check - validate specific field
-			$ico = sanitize_text_field($posted_data['ico'] ?? '');
-			if ($this->business_manager->is_ico_already_registered($ico, $user_id)) {
-				$result->invalidate('ico', 'Toto IČO je již registrováno na jiný účet.');
-				return $result; // Return immediately to show specific field error
-			}
-
-		} catch (\Exception $e) {
-			$result->invalidate('', $e->getMessage()); // Invalidate the entire form with the error message.
-		}
-
-		// IMPORTANT: If all checks pass, return the original (valid) result.
-		return $result;
-	}
 
 	/**
 	 * Enqueue scripts and styles specifically for the frontend registration form.

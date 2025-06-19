@@ -170,7 +170,7 @@ export function setupAresForm(formSelector = '.registration-form') {
     const colors = {
       loading: '#ff9500',
       success: '#4CAF50',
-      error: '#D32F2F',
+      error: 'var(--color-primary)',
       warning: '#ff9500',
       info: '#2196F3'
     };

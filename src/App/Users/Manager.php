@@ -61,13 +61,29 @@ class Manager {
         
         // Initialize business data components
         $this->business_manager = new BusinessDataManager();
-        $this->business_validator = new BusinessDataValidator($this->business_manager);
+        
+        // Initialize extracted service classes
+        $ares_api_client = new AresApiClient();
+        $this->business_validator = new BusinessDataValidator($this->business_manager, $ares_api_client);
+        $business_data_processor = new BusinessDataProcessor($ares_api_client, $this->business_manager);
+        $profile_sync = new UserProfileSync();
+        $eligibility_checker = new RegistrationEligibility($this->role_manager, $this->business_manager);
+        $registration_validator = new RegistrationValidator(
+            $this->business_validator,
+            $eligibility_checker,
+            $this->business_manager,
+            $this->user_detection_service
+        );
         
         $this->registration_hooks = new RegistrationHooks(
             $this->role_manager, 
             $this->user_detection_service,
             $this->business_validator,
-            $this->business_manager
+            $this->business_manager,
+            $profile_sync,
+            $registration_validator,
+            $eligibility_checker,
+            $business_data_processor
         );
         $this->theme_integration = new ThemeIntegration($this->user_service);
         $this->access_control = new AccessControl($this->user_service);
