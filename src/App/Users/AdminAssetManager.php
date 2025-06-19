@@ -38,20 +38,20 @@ class AdminAssetManager {
 
         error_log('AdminAssetManager: Loading admin assets for: ' . $hook_suffix);
 
-        // Check if scripts are registered
+        // Check if admin scripts are registered
         global $wp_scripts, $wp_styles;
         
-        $main_js_registered = wp_script_is('theme-main-js', 'registered');
+        $admin_js_registered = wp_script_is('theme-admin-js', 'registered');
         $main_css_registered = wp_style_is('impreza-child-style', 'registered');
         
-        error_log('AdminAssetManager: theme-main-js registered: ' . ($main_js_registered ? 'YES' : 'NO'));
+        error_log('AdminAssetManager: theme-admin-js registered: ' . ($admin_js_registered ? 'YES' : 'NO'));
         error_log('AdminAssetManager: impreza-child-style registered: ' . ($main_css_registered ? 'YES' : 'NO'));
 
-        if ($main_js_registered) {
-            wp_enqueue_script('theme-main-js');
-            error_log('AdminAssetManager: Enqueued theme-main-js');
+        if ($admin_js_registered) {
+            wp_enqueue_script('theme-admin-js');
+            error_log('AdminAssetManager: Enqueued theme-admin-js');
         } else {
-            error_log('AdminAssetManager: ERROR - theme-main-js not registered!');
+            error_log('AdminAssetManager: ERROR - theme-admin-js not registered!');
         }
 
         if ($main_css_registered) {
@@ -62,9 +62,9 @@ class AdminAssetManager {
         }
 
         // Localize script for AJAX
-        if ($main_js_registered) {
+        if ($admin_js_registered) {
             $nonce = wp_create_nonce('mistr_fachman_business_data');
-            wp_localize_script('theme-main-js', 'mistrFachmanAjax', [
+            wp_localize_script('theme-admin-js', 'mistrFachmanAjax', [
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => $nonce,
                 'nonce_action' => 'mistr_fachman_business_data'

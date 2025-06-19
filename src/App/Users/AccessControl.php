@@ -26,8 +26,12 @@ class AccessControl {
     private array $allowed_pages_for_logged_out = [
         'homepage',
         'lp-result',
-        'registrace',
         'prihlaseni'
+    ];
+
+    private array $registration_pages = [
+        'prihlaseni',
+        'registrace'
     ];
 
     public function __construct(
@@ -93,17 +97,38 @@ class AccessControl {
     }
 
     /**
-     * Handle access control for logged-in users
+     * Handle access control for logged-in users based on their registration status
      */
     private function handle_logged_in_access(string $user_status): void {
-        // For now, logged-in users can access all pages
-        // This can be extended later for status-specific restrictions
+        $current_page = $this->get_current_page_identifier();
+        $user_id = get_current_user_id();
 
         mycred_debug('Logged-in user accessing page', [
             'user_status' => $user_status,
-            'page' => $this->get_current_page_identifier(),
-            'user_id' => get_current_user_id()
-        ], 'access_control', 'verbose');
+            'page' => $current_page,
+            'user_id' => $user_id
+        ], 'access_control', 'info');
+
+        // Check if this is a registration-related page
+        if (!$this->is_registration_page($current_page)) {
+            // Allow access to non-registration pages
+            return;
+        }
+
+        // Handle registration page access based on user status
+        $redirect_url = $this->get_appropriate_redirect_for_user($user_status, $current_page);
+        
+        if ($redirect_url) {
+            mycred_debug('Redirecting logged-in user from registration page', [
+                'user_status' => $user_status,
+                'current_page' => $current_page,
+                'redirect_to' => $redirect_url,
+                'user_id' => $user_id
+            ], 'access_control', 'info');
+
+            wp_redirect($redirect_url);
+            exit;
+        }
     }
 
     /**
@@ -265,5 +290,94 @@ class AccessControl {
         }
 
         return false;
+    }
+
+    /**
+     * Check if current page is a registration-related page
+     */
+    private function is_registration_page(string $page_identifier): bool {
+        return in_array($page_identifier, $this->registration_pages, true);
+    }
+
+    /**
+     * Get appropriate redirect URL for user based on status and current page
+     */
+    private function get_appropriate_redirect_for_user(string $user_status, string $current_page): ?string {
+        switch ($user_status) {
+            case 'full_member':
+                // Full members should be redirected to My Account from any registration page
+                return $this->get_my_account_url();
+
+            case 'awaiting_review':
+                // Users awaiting review should be redirected from any registration page
+                return $this->get_my_account_url();
+
+            case 'needs_form':
+                // Users who need to fill the form should be redirected from login page to registration
+                if ($current_page === 'prihlaseni') {
+                    return $this->get_registration_form_url();
+                }
+                // Allow access to registrace page
+                return null;
+
+            case 'other':
+                // Users with invalid/unknown status - redirect to homepage for safety
+                mycred_debug('User with unknown status accessing registration page', [
+                    'user_status' => $user_status,
+                    'page' => $current_page,
+                    'user_id' => get_current_user_id()
+                ], 'access_control', 'warning');
+                return home_url('/');
+
+            default:
+                // Fallback for any unexpected status
+                return home_url('/');
+        }
+    }
+
+    /**
+     * Get My Account URL (WooCommerce or fallback)
+     */
+    private function get_my_account_url(): string {
+        // Try WooCommerce My Account page first
+        if (function_exists('wc_get_page_id') && wc_get_page_id('myaccount') > 0) {
+            return wc_get_account_endpoint_url('');
+        }
+
+        // Try WordPress-style my account page
+        $my_account_page = get_page_by_path('muj-ucet');
+        if ($my_account_page) {
+            return get_permalink($my_account_page->ID);
+        }
+
+        // Fallback to homepage
+        return home_url('/');
+    }
+
+    /**
+     * Get registration form URL
+     */
+    private function get_registration_form_url(): string {
+        $registration_page = get_page_by_path('registrace');
+        if ($registration_page) {
+            return get_permalink($registration_page->ID);
+        }
+
+        // Fallback to homepage if registrace page doesn't exist
+        return home_url('/');
+    }
+
+    /**
+     * Get registration pages array
+     */
+    public function get_registration_pages(): array {
+        return $this->registration_pages;
+    }
+
+    /**
+     * Check if current page is a registration page (public method)
+     */
+    public function is_current_page_registration_page(): bool {
+        return $this->is_registration_page($this->get_current_page_identifier());
     }
 }

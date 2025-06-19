@@ -36,10 +36,8 @@ class RegistrationHooks {
     public function init_hooks(): void {
         add_action('user_register', [$this, 'set_initial_user_role_on_creation'], 10, 1);
         
-        // Hook into Contact Form 7's validation (before mail sending)
-        add_action('wpcf7_validate', [$this, 'validate_registration_form'], 10, 2);
-        
         // Hook into successful submission (after mail sending)
+        // All validation will be done here to avoid interfering with CF7's internal validation
         add_action('wpcf7_mail_sent', [$this, 'handle_final_registration_submission'], 10, 1);
     }
 
@@ -91,85 +89,13 @@ class RegistrationHooks {
         }
     }
 
-    /**
-     * Validate Contact Form 7 registration form before processing
-     *
-     * This runs before mail sending, allowing us to add validation errors
-     * without breaking the CF7 flow or LeadHub integration.
-     *
-     * @param \WPCF7_Validation $result Validation result object
-     * @param \WPCF7_FormTag[] $tags Array of form tags
-     */
-    public function validate_registration_form(\WPCF7_Validation $result, array $tags): void {
-        $contact_form = wpcf7_get_current_contact_form();
-        
-        if (!$contact_form || !RegistrationConfig::isRegistrationForm($contact_form)) {
-            return;
-        }
-
-        mycred_debug('CF7 registration form validation started', [
-            'submitted_form_id' => $contact_form->id(),
-            'form_title' => $contact_form->title()
-        ], 'users', 'info');
-
-        // Get form data for validation
-        $submission = \WPCF7_Submission::get_instance();
-        $posted_data = $submission ? $submission->get_posted_data() : [];
-
-        // Detect user using multiple methods
-        $user_id = $this->user_detection_service->detectUser($posted_data);
-        
-        if (!$user_id) {
-            $result->invalidate('email', 'Uživatel není přihlášen. Nejprve se přihlaste pomocí SMS kódu.');
-            mycred_debug('Registration form validation failed - user not logged in', [
-                'form_id' => $contact_form->id(),
-                'detection_context' => $this->user_detection_service->getDetectionContext()
-            ], 'users', 'warning');
-            return;
-        }
-
-        // Check if user is eligible for registration
-        $eligibility_check = $this->check_user_registration_eligibility($user_id);
-        if (!$eligibility_check['eligible']) {
-            $result->invalidate('email', $eligibility_check['message']);
-            mycred_debug('Registration form validation failed - user not eligible', [
-                'user_id' => $user_id,
-                'form_id' => $contact_form->id(),
-                'reason' => $eligibility_check['reason'],
-                'message' => $eligibility_check['message']
-            ], 'users', 'warning');
-            return;
-        }
-
-        // Validate business data and IČO with ARES
-        try {
-            $business_data = $this->business_validator->validate_and_process_business_data($posted_data);
-            
-            mycred_debug('Business data validation successful in CF7 validation', [
-                'user_id' => $user_id,
-                'form_id' => $contact_form->id(),
-                'ico' => $business_data['ico'],
-                'company_name' => $business_data['company_name'],
-                'ares_validated' => $business_data['validation']['ares_verified']
-            ], 'users', 'info');
-
-        } catch (\Exception $e) {
-            $result->invalidate('ico', 'Chyba při validaci firemních údajů: ' . $e->getMessage());
-            mycred_debug('Business data validation failed in CF7 validation', [
-                'user_id' => $user_id,
-                'form_id' => $contact_form->id(),
-                'error' => $e->getMessage(),
-                'posted_data_keys' => array_keys($posted_data)
-            ], 'users', 'error');
-            return;
-        }
-    }
 
     /**
      * Handle successful Contact Form 7 registration form submission
      *
-     * This runs after mail sending and validation, so we can safely
-     * process the business data and update user status.
+     * This runs after mail sending and CF7's internal validation is complete.
+     * We perform our own validation and processing here to avoid interfering
+     * with CF7's validation flow.
      *
      * @param \WPCF7_ContactForm $contact_form The submitted contact form
      */
@@ -193,25 +119,35 @@ class RegistrationHooks {
         
         if (!$user_id) {
             mycred_debug('Cannot process registration - user not detected in mail_sent hook', [
-                'form_id' => $contact_form->id()
+                'form_id' => $contact_form->id(),
+                'detection_context' => $this->user_detection_service->getDetectionContext()
             ], 'users', 'error');
             return;
         }
 
-        // Double-check eligibility (should have been validated already)
+        // Check eligibility - this is our main validation now
         $eligibility_check = $this->check_user_registration_eligibility($user_id);
         if (!$eligibility_check['eligible']) {
-            mycred_debug('Cannot process registration - user not eligible in mail_sent hook', [
+            mycred_debug('Cannot process registration - user not eligible', [
                 'user_id' => $user_id,
                 'form_id' => $contact_form->id(),
-                'reason' => $eligibility_check['reason']
+                'reason' => $eligibility_check['reason'],
+                'message' => $eligibility_check['message']
             ], 'users', 'error');
             return;
         }
 
-        // Process business data (should have been validated already)
+        // Process and validate business data with ARES (including IČO uniqueness check)
         try {
-            $business_data = $this->business_validator->validate_and_process_business_data($posted_data);
+            $business_data = $this->business_validator->validate_and_process_business_data($posted_data, $user_id);
+            
+            mycred_debug('Business data validation successful', [
+                'user_id' => $user_id,
+                'form_id' => $contact_form->id(),
+                'ico' => $business_data['ico'],
+                'company_name' => $business_data['company_name'],
+                'ares_validated' => $business_data['validation']['ares_verified']
+            ], 'users', 'info');
             
             // Store validated business data
             $this->business_manager->store_business_data($user_id, $business_data);
@@ -235,10 +171,11 @@ class RegistrationHooks {
             do_action('mistr_fachman_user_awaiting_review', $user_id, $contact_form);
 
         } catch (\Exception $e) {
-            mycred_debug('Business registration processing failed in mail_sent hook', [
+            mycred_debug('Business registration processing failed', [
                 'user_id' => $user_id,
                 'form_id' => $contact_form->id(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'posted_data_keys' => array_keys($posted_data)
             ], 'users', 'error');
             
             // Log error but don't break the flow - mail has already been sent

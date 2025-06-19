@@ -59,8 +59,8 @@ class Manager {
         $this->user_detection_service = new UserDetectionService($this->role_manager);
         
         // Initialize business data components
-        $business_validator = new BusinessDataValidator();
         $this->business_manager = new BusinessDataManager();
+        $business_validator = new BusinessDataValidator($this->business_manager);
         
         $this->registration_hooks = new RegistrationHooks(
             $this->role_manager, 

@@ -391,4 +391,46 @@ class BusinessDataManager {
         
         return array_map('intval', $user_ids);
     }
+
+    /**
+     * Find user ID by IČO
+     *
+     * @param string $ico IČO to search for
+     * @return int|null User ID if found, null otherwise
+     */
+    public function find_user_by_ico(string $ico): ?int {
+        $users_with_business_data = $this->get_users_with_business_data();
+        
+        foreach ($users_with_business_data as $user_id) {
+            $business_data = $this->get_business_data($user_id);
+            
+            if ($business_data && isset($business_data['ico']) && $business_data['ico'] === $ico) {
+                return $user_id;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Check if IČO is already registered by another user
+     *
+     * @param string $ico IČO to check
+     * @param int|null $exclude_user_id User ID to exclude from check (for updates)
+     * @return bool True if IČO is already taken
+     */
+    public function is_ico_already_registered(string $ico, ?int $exclude_user_id = null): bool {
+        $existing_user_id = $this->find_user_by_ico($ico);
+        
+        if (!$existing_user_id) {
+            return false;
+        }
+        
+        // If exclude_user_id is provided, ignore if it's the same user
+        if ($exclude_user_id && $existing_user_id === $exclude_user_id) {
+            return false;
+        }
+        
+        return true;
+    }
 }

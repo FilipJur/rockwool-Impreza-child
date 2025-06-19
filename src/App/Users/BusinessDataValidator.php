@@ -21,14 +21,19 @@ if (!defined('ABSPATH')) {
 
 class BusinessDataValidator {
 
+    public function __construct(
+        private BusinessDataManager $business_manager
+    ) {}
+
     /**
      * Validate and process business registration data
      *
      * @param array $posted_data Form submission data
+     * @param int|null $current_user_id Current user ID (to exclude from IČO uniqueness check)
      * @return array Validated business data
      * @throws \Exception If validation fails
      */
-    public function validate_and_process_business_data(array $posted_data): array {
+    public function validate_and_process_business_data(array $posted_data, ?int $current_user_id = null): array {
         // Extract and validate required fields
         $ico = sanitize_text_field($posted_data['ico'] ?? '');
         $company_name = sanitize_text_field($posted_data['company-name'] ?? '');
@@ -83,6 +88,22 @@ class BusinessDataValidator {
         // Validate IČO format
         if (!$this->validate_ico_format($ico)) {
             throw new \Exception('Neplatný formát IČO');
+        }
+
+        // Check IČO uniqueness - prevent duplicate registrations
+        if ($this->business_manager->is_ico_already_registered($ico, $current_user_id)) {
+            $existing_user_id = $this->business_manager->find_user_by_ico($ico);
+            $existing_user = get_userdata($existing_user_id);
+            
+            if ($existing_user) {
+                throw new \Exception(sprintf(
+                    'IČO %s je již registrované na účet %s. Jeden IČO může být použit pouze jednou.',
+                    $ico,
+                    $existing_user->user_login
+                ));
+            } else {
+                throw new \Exception(sprintf('IČO %s je již registrované. Jeden IČO může být použit pouze jednou.', $ico));
+            }
         }
 
         // Validate business criteria acceptances (CF7 acceptance fields come as arrays)
