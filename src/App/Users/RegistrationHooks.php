@@ -148,9 +148,42 @@ class RegistrationHooks
 			return;
 		}
 
-		// Process and validate business data with ARES (including IČO uniqueness check)
+		// Because wpcf7_validate passed, we know the submission is valid.
 		try {
-			$business_data = $this->business_validator->validate_and_process_business_data($posted_data, $user_id);
+			$submission = \WPCF7_Submission::get_instance();
+			$posted_data = $submission ? $submission->get_posted_data() : [];
+
+			mycred_debug('REGISTRATION FLOW: Starting data processing', [
+				'user_id' => $user_id,
+				'form_id' => $contact_form->id(),
+				'posted_data_keys' => array_keys($posted_data),
+				'posted_data_sample' => [
+					'ico' => $posted_data['ico'] ?? 'MISSING',
+					'company-name' => $posted_data['company-name'] ?? 'MISSING',
+					'first-name' => $posted_data['first-name'] ?? 'MISSING',
+					'last-name' => $posted_data['last-name'] ?? 'MISSING',
+					'contact-email' => $posted_data['contact-email'] ?? 'MISSING'
+				]
+			], 'users', 'info');
+
+			// 1. Shape the data. This will correctly handle the optional `position` field.
+			$business_data = $this->business_validator->shape_business_data($posted_data, $user_id);
+
+			mycred_debug('REGISTRATION FLOW: Business data shaped', [
+				'user_id' => $user_id,
+				'shaped_data_structure' => [
+					'ico' => $business_data['ico'] ?? 'MISSING',
+					'company_name' => $business_data['company_name'] ?? 'MISSING',
+					'address' => $business_data['address'] ?? 'MISSING',
+					'representative' => [
+						'first_name' => $business_data['representative']['first_name'] ?? 'MISSING',
+						'last_name' => $business_data['representative']['last_name'] ?? 'MISSING',
+						'email' => $business_data['representative']['email'] ?? 'MISSING',
+						'position' => $business_data['representative']['position'] ?? 'MISSING'
+					],
+					'ares_verified' => $business_data['validation']['ares_verified'] ?? false
+				]
+			], 'users', 'info');
 
 			mycred_debug('Business data validation successful', [
 				'user_id' => $user_id,
@@ -160,13 +193,30 @@ class RegistrationHooks
 				'ares_validated' => $business_data['validation']['ares_verified']
 			], 'users', 'info');
 
-			// Store validated business data
+			// 2. Store the business data.
 			$this->business_manager->store_business_data($user_id, $business_data);
 
-			// Sync business data to WordPress user profile
-			$this->sync_business_data_to_user_profile($user_id, $business_data);
+			mycred_debug('REGISTRATION FLOW: Business data stored', [
+				'user_id' => $user_id,
+				'store_success' => true
+			], 'users', 'info');
 
-			// Update status to awaiting_review after successful processing
+			// 3. THIS WILL NOW SUCCEED: Sync data to user profile.
+			$sync_result = $this->sync_business_data_to_user_profile($user_id, $business_data);
+
+			mycred_debug('REGISTRATION FLOW: Profile sync attempted', [
+				'user_id' => $user_id,
+				'sync_result' => $sync_result,
+				'data_being_synced' => [
+					'first_name' => $business_data['representative']['first_name'],
+					'last_name' => $business_data['representative']['last_name'],
+					'email' => $business_data['representative']['email'],
+					'company_name' => $business_data['company_name'],
+					'address' => $business_data['address']
+				]
+			], 'users', 'info');
+
+			// 4. Update the user's status.
 			$this->role_manager->update_user_status($user_id, RegistrationStatus::AWAITING_REVIEW);
 
 			mycred_debug('Business registration processed successfully', [
@@ -182,15 +232,15 @@ class RegistrationHooks
 			do_action('mistr_fachman_user_awaiting_review', $user_id, $contact_form);
 
 		} catch (\Exception $e) {
-			mycred_debug('Business registration processing failed', [
+			// This is now a true failsafe for processing errors.
+			mycred_debug('CRITICAL ERROR during final registration processing', [
 				'user_id' => $user_id,
 				'form_id' => $contact_form->id(),
 				'error' => $e->getMessage(),
 				'posted_data_keys' => array_keys($posted_data)
 			], 'users', 'error');
 
-			// Log error but don't break the flow - mail has already been sent
-			error_log('Registration processing failed after mail sent: ' . $e->getMessage());
+			error_log('CRITICAL ERROR during final registration processing for user ' . $user_id . ': ' . $e->getMessage());
 		}
 	}
 
@@ -396,12 +446,26 @@ class RegistrationHooks
 	 */
 	private function sync_business_data_to_user_profile(int $user_id, array $business_data): bool
 	{
+		mycred_debug('SYNC FUNCTION: Starting user profile sync', [
+			'user_id' => $user_id,
+			'business_data_keys' => array_keys($business_data),
+			'representative_data' => $business_data['representative'] ?? 'MISSING'
+		], 'users', 'info');
+
 		$full_name_with_company = sprintf(
 			'%s %s (%s)',
 			$business_data['representative']['first_name'],
 			$business_data['representative']['last_name'],
 			$business_data['company_name']
 		);
+
+		mycred_debug('SYNC FUNCTION: Full name with company created', [
+			'user_id' => $user_id,
+			'full_name_with_company' => $full_name_with_company,
+			'first_name' => $business_data['representative']['first_name'],
+			'last_name' => $business_data['representative']['last_name'],
+			'company_name' => $business_data['company_name']
+		], 'users', 'info');
 
 		// Update WordPress user core fields
 		$user_updates = [
@@ -413,14 +477,36 @@ class RegistrationHooks
 			'nickname' => $full_name_with_company
 		];
 
+		mycred_debug('SYNC FUNCTION: About to call wp_update_user', [
+			'user_id' => $user_id,
+			'user_updates' => $user_updates
+		], 'users', 'info');
+
 		$result = wp_update_user($user_updates);
 
+		mycred_debug('SYNC FUNCTION: wp_update_user result', [
+			'user_id' => $user_id,
+			'result' => $result,
+			'is_wp_error' => is_wp_error($result),
+			'error_message' => is_wp_error($result) ? $result->get_error_message() : 'N/A'
+		], 'users', 'info');
+
 		if (is_wp_error($result)) {
-			mycred_debug('Failed to sync business data to user profile', [
-				'user_id' => $user_id,
-				'error' => $result->get_error_message(),
-				'updates' => $user_updates
-			], 'users', 'error');
+			// Check if this is an email conflict that should have been caught by validation
+			if (strpos($result->get_error_message(), 'e-mailov') !== false) {
+				mycred_debug('CRITICAL: Email conflict during profile sync - validation should have caught this', [
+					'user_id' => $user_id,
+					'attempted_email' => $business_data['representative']['email'],
+					'error' => $result->get_error_message(),
+					'updates' => $user_updates
+				], 'users', 'error');
+			} else {
+				mycred_debug('Failed to sync business data to user profile', [
+					'user_id' => $user_id,
+					'error' => $result->get_error_message(),
+					'updates' => $user_updates
+				], 'users', 'error');
+			}
 			return false;
 		}
 
@@ -439,9 +525,21 @@ class RegistrationHooks
 			$billing_updates['billing_phone'] = $business_data['representative']['phone'];
 		}
 
+		mycred_debug('SYNC FUNCTION: About to update billing meta fields', [
+			'user_id' => $user_id,
+			'billing_updates' => $billing_updates
+		], 'users', 'info');
+
 		// Update billing meta fields
 		foreach ($billing_updates as $meta_key => $meta_value) {
-			update_user_meta($user_id, $meta_key, $meta_value);
+			$meta_result = update_user_meta($user_id, $meta_key, $meta_value);
+			
+			mycred_debug('SYNC FUNCTION: Updated meta field', [
+				'user_id' => $user_id,
+				'meta_key' => $meta_key,
+				'meta_value' => $meta_value,
+				'update_result' => $meta_result
+			], 'users', 'info');
 		}
 
 		mycred_debug('Business data synced to user profile and billing', [
@@ -542,23 +640,41 @@ class RegistrationHooks
 			return $result; // Not our form, return original result immediately.
 		}
 
-		$submission = \WPCF7_Submission::get_instance();
-		$posted_data = $submission ? $submission->get_posted_data() : [];
-		$user_id = $this->user_detection_service->detectUser();
+		// This is the gatekeeper. If this try...catch block passes, the form is valid.
+		try {
+			$submission = \WPCF7_Submission::get_instance();
+			$posted_data = $submission ? $submission->get_posted_data() : [];
+			$user_id = $this->user_detection_service->detectUser();
 
-		// Final eligibility check
-		$eligibility = $this->check_user_registration_eligibility($user_id);
-		if (!$eligibility['eligible']) {
-			$result->invalidate('', $eligibility['message']); // Invalidate the form
-			return $result; // Return the invalidated result.
-		}
+			// Perform dynamic validation FIRST. This will now correctly ignore the optional 'position' field.
+			$this->business_validator->validate_form_data($posted_data, $contact_form);
 
-		// Final IČO uniqueness check
-		$ico = sanitize_text_field($posted_data['ico'] ?? '');
-		if ($this->business_manager->is_ico_already_registered($ico, $user_id)) {
-			// Invalidate the 'ico' field specifically.
-			$result->invalidate(['type' => 'text', 'name' => 'ico'], 'Toto IČO je již registrováno na jiný účet.');
-			return $result; // Return the invalidated result.
+			// Email uniqueness validation - validate specific field
+			$contact_email = sanitize_email($posted_data['contact-email'] ?? '');
+			if (!empty($contact_email)) {
+				$existing_user_id = email_exists($contact_email);
+				if ($existing_user_id && $existing_user_id !== $user_id) {
+					$result->invalidate('contact-email', 'Tato e-mailová adresa je již registrována na jiný účet.');
+					return $result; // Return immediately to show specific field error
+				}
+			}
+
+			// Other business logic checks can follow...
+			$eligibility = $this->check_user_registration_eligibility($user_id);
+			if (!$eligibility['eligible']) {
+				$result->invalidate('', $eligibility['message']); // General form error
+				return $result;
+			}
+
+			// Final IČO uniqueness check - validate specific field
+			$ico = sanitize_text_field($posted_data['ico'] ?? '');
+			if ($this->business_manager->is_ico_already_registered($ico, $user_id)) {
+				$result->invalidate('ico', 'Toto IČO je již registrováno na jiný účet.');
+				return $result; // Return immediately to show specific field error
+			}
+
+		} catch (\Exception $e) {
+			$result->invalidate('', $e->getMessage()); // Invalidate the entire form with the error message.
 		}
 
 		// IMPORTANT: If all checks pass, return the original (valid) result.
