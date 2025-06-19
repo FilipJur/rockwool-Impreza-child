@@ -36,11 +36,11 @@
 .mistr-modal-content {
   position: relative;
   max-width: 900px;
-  margin: $space-md auto;
+  margin: $space-sm auto;
   background: $color-white;
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-height: calc(100vh - #{$space-xl});
+  max-height: calc(100vh - #{$space-md});
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -49,7 +49,7 @@
 
 /* Modal header */
 .mistr-modal-header {
-  padding: $space-2xl;
+  padding: $space-md;
   background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
   color: $color-white;
   display: flex;
@@ -87,7 +87,7 @@
 
 /* Modal body */
 .mistr-modal-body {
-  padding: $space-2xl;
+  padding: $space-md;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -95,7 +95,7 @@
 }
 
 .mistr-modal-footer {
-  padding: $space-md $space-2xl;
+  padding: $space-sm $space-md;
   background: $color-white;
   border-top: 1px solid $color-gray-border;
   text-align: right;
@@ -104,7 +104,7 @@
 /* Business data review styles - all prefixed with .mistr- */
 .mistr-business-data-review {
   display: grid;
-  gap: $space-2xl;
+  gap: $space-md;
 
   section {
     background: $color-white;
@@ -116,7 +116,7 @@
 
   h3 {
     margin: 0;
-    padding: $space-lg $space-md;
+    padding: $space-sm $space-md;
     font-size: $font-size-base;
     font-weight: $font-weight-semibold;
     font-family: $font-primary;
@@ -125,18 +125,18 @@
     border-bottom: 1px solid $color-gray-border;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
   }
 
   .mistr-data-grid {
-    padding: $space-md;
+    padding: $space-sm;
   }
 }
 
 .mistr-data-grid .mistr-data-row {
   display: flex;
   align-items: center;
-  padding: 12px 0;
+  padding: 8px 0;
   border-bottom: 1px solid $color-gray-border;
 
   &:last-child {
@@ -146,7 +146,7 @@
   label {
     font-weight: $font-weight-medium;
     min-width: 140px;
-    margin-right: $space-lg;
+    margin-right: $space-sm;
     color: $color-gray-medium;
     font-size: $font-size-sm;
     font-family: $font-primary;
@@ -182,13 +182,13 @@
 
 /* Criteria list */
 .mistr-criteria-list {
-  padding: $space-md;
+  padding: $space-sm;
 }
 
 .mistr-criteria-item {
   display: flex;
   align-items: center;
-  padding: 12px 0;
+  padding: 8px 0;
   border-bottom: 1px solid $color-gray-border;
 
   &:last-child {
@@ -241,7 +241,7 @@
 /* Loading and error states */
 .mistr-modal-loading {
   text-align: center;
-  padding: $space-3xl $space-md;
+  padding: $space-lg $space-sm;
   color: $color-gray-medium;
   font-family: $font-primary;
 
@@ -256,7 +256,7 @@
 .mistr-error {
   color: $color-danger;
   background: rgba($color-danger, 0.1);
-  padding: $space-lg;
+  padding: $space-sm;
   border: 1px solid rgba($color-danger, 0.2);
   border-radius: 8px;
   font-size: $font-size-sm;
@@ -272,15 +272,15 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .mistr-modal-content {
-    margin: $space-lg;
-    max-height: calc(100vh - #{$space-md});
+    margin: $space-sm;
+    max-height: calc(100vh - #{$space-sm});
   }
 
   .mistr-modal-header,
   .mistr-modal-body,
   .mistr-modal-footer {
-    padding-left: $space-md;
-    padding-right: $space-md;
+    padding-left: $space-sm;
+    padding-right: $space-sm;
   }
 
   .mistr-data-row {

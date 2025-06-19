@@ -67,53 +67,12 @@ WordPress child theme development with enterprise-grade architecture. **FUNCTION
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
-- **2025-06-19**: 🚀 **FUNCTIONAL JAVASCRIPT MODERNIZATION COMPLETE** - Converted all feature modules from classes to functional patterns following setupAresForm approach for better reusability
-- **2025-06-19**: ✅ **MODULAR REUSABILITY ACHIEVED** - FileUpload, BusinessModal, and AccessControl now support multiple instances per page with isolated state and proper cleanup
-- **2025-06-19**: 🎯 **IMPROVED MAINTAINABILITY** - Each functional module returns control object with cleanup methods, following proven functional patterns from ARES handler
-- **2025-06-19**: 📦 **BETTER TESTING ISOLATION** - Functional modules are easier to test independently without complex class hierarchies and singleton patterns
-- **2025-06-19**: 🛡️ **BULLETPROOF ACCESS CONTROL IMPLEMENTED** - Defense-in-depth access control with server-side redirects and client-side validation for registration pages
-- **2025-06-19**: ✅ **IČO UNIQUENESS VALIDATION** - Prevents duplicate registrations with same IČO, clear error messages for users
-- **2025-06-19**: 🎯 **ROLE-BASED PAGE ACCESS** - Full members blocked from registration pages, pending users guided through proper flow
-- **2025-06-19**: 🚀 **FRONTEND ACCESS CONTROL** - JavaScript module provides immediate redirects with server-side data injection
-- **2025-06-18**: 🔐 **STRICT ARES ENFORCEMENT COMPLETE** - Server-side forced use of exact ARES data when IČO validates, with discrepancy logging and comprehensive user profile sync
-- **2025-06-18**: 👤 **ENHANCED USER PROFILE SYNC** - Added WordPress nickname and complete WooCommerce billing fields population from registration data
-- **2025-06-18**: 🔒 **ARES FIELD LOCKING COMPLETE** - ARES-validated fields (company name, address) become read-only after successful fetch, unlock for manual editing on ARES failure
-- **2025-06-18**: ✅ **DEPENDENCY INJECTION FIX** - Fixed BusinessDataManager injection in Users Manager for proper AdminCardRenderer functionality
-- **2025-06-18**: 🎯 **USER ACCOUNT INTEGRATION COMPLETE** - Bidirectional sync between business data and WordPress user profile fields (first_name, last_name, email, display_name)
-- **2025-06-18**: 🎨 **DESIGN SYSTEM COMPLIANCE** - Updated SCSS with proper ROCKWOOL design tokens, .mistr- prefixed CSS classes to avoid WordPress admin conflicts
-- **2025-06-18**: 🚀 **REALIZACE-READY ARCHITECTURE** - Data type abstraction in BusinessDataManager, myCred integration hooks (mistr_fachman_realizace_approved), future-ready admin cards
-- **2025-06-18**: ✅ **ADMIN UI ISOLATION** - All admin styles properly scoped with .mistr- prefixes using only _variables.scss design tokens
-- **2025-06-18**: 🎨 **ADMIN INTERFACE ENHANCED** - Card-based management system with design tokens, bidirectional promotion/revocation, persistent business data access
-- **2025-06-18**: ✅ **USER MANAGEMENT FLEXIBILITY** - Added revoke functionality to return full members back to pending status for admin control
-- **2025-06-18**: 🎯 **DESIGN TOKEN INTEGRATION** - Implemented proper ROCKWOOL brand colors, typography, and spacing throughout admin interface
-- **2025-06-18**: 🚀 **FUTURE-READY ARCHITECTURE** - Prepared admin cards for realizace management and project workflows
-- **2025-06-18**: 🎉 **BUSINESS REGISTRATION SYSTEM COMPLETE** - Enhanced registration with comprehensive ARES validation, structured business data storage, and modal-based admin review
-- **2025-06-18**: ✅ **SERVER-SIDE ARES VALIDATION** - IČO validation with ARES API integration, business criteria checking, and robust error handling
-- **2025-06-18**: ✅ **STRUCTURED BUSINESS DATA STORAGE** - Complete user meta schema for company info, representative details, and validation status
-- **2025-06-18**: ✅ **MODAL-BASED ADMIN INTERFACE** - Professional business data review modal with AJAX loading and comprehensive data display
-- **2025-06-18**: 🚀 **PHASE 1 REFACTORING COMPLETE** - Extracted UserDetectionService, RegistrationStatus, and RegistrationConfig
-- **2025-06-18**: ✅ **IMPROVED MODULARITY** - RegistrationHooks reduced from 260 to 190 LOC with better separation of concerns
-- **2025-06-18**: ✅ **SINGLE SOURCE OF TRUTH** - Status constants and form configuration centralized in dedicated classes
-- **2025-06-18**: ✅ **ENHANCED MAINTAINABILITY** - User detection logic extracted to reusable service with comprehensive fallback methods
-- **2025-06-18**: 🎉 **REGISTRATION SYSTEM COMPLETE** - Three-stage user flow fully functional and production-ready
-- **2025-06-18**: ✅ **AJAX SESSION ISSUE RESOLVED** - Cookie fallback successfully handles incognito/session edge cases
-- **2025-06-18**: ✅ **USER FLOW VERIFIED** - SMS OTP → Form Submission → Admin Approval workflow working perfectly
-- **2025-06-18**: Fixed all namespace mismatches: Services and Shortcodes now use correct `MistrFachman\` prefix
-- **2025-06-18**: Enhanced user detection with cookie parsing for Contact Form 7 AJAX submissions
-- **2025-06-18**: Simplified final registration form to "fire and forget" - automatic status updates
-- **2025-06-18**: Fixed ShortcodeManager auto-discovery to use correct namespaces
-- **2025-06-18**: Resolved bootstrap dependency injection to use proper service instances
-- **2025-06-17**: SHORTCODE ARCHITECTURE SIMPLIFICATION - Two major optimization commits
-- **2025-06-17**: Streamlined ProductGridShortcode to inline template rendering (74 insertions, 145 deletions)
-- **2025-06-17**: Replaced complex method-based rendering with direct template output using `ob_start()`/`ob_get_clean()`
-- **2025-06-17**: Eliminated unnecessary abstraction layers: removed `render_builtin_grid()`, `render_balance_info()`, `render_product_item()`
-- **2025-06-17**: Simplified shortcode system by removing admin documentation and complex permission checking (151 total deletions)
-- **2025-06-17**: Removed 76-line admin documentation system from ShortcodeManager
-- **2025-06-17**: Streamlined attribute sanitization in ShortcodeBase using inline validation
-- **2025-06-17**: Maintained React-like component benefits while reducing boilerplate complexity
-- **2025-06-17**: Created domain-based Repomix bundles for better code organization (10 logical bundles including app-comprehensive)
-- **2025-06-17**: Added comprehensive App directory bundle for complete enterprise architecture analysis
-- **2025-06-17**: Established mandatory bundle maintenance protocol for all new files
+- **2025-06-19**: [update] Remove dependency passthrough in AdminCardRenderer - Direct BusinessDataManager injection eliminates unnecessary RegistrationHooks intermediary
+- **2025-06-19**: Functional JavaScript modernization complete - All feature modules converted to functional patterns with isolated state and proper cleanup
+- **2025-06-19**: Access control system complete - Defense-in-depth access control with IČO uniqueness validation and role-based page access
+- **2025-06-18**: Business registration system complete - Full ARES integration with structured data storage and modal admin interface
+- **2025-06-18**: User management system complete - Three-stage approval workflow with bidirectional role management
+- **2025-06-18**: Design system integration complete - ROCKWOOL design tokens with proper CSS isolation using .mistr- prefixes
 
 ## User Registration System
 
@@ -142,44 +101,32 @@ WordPress child theme development with enterprise-grade architecture. **FUNCTION
 - **Single Source of Truth**: Centralized constants and configuration classes
 
 ## Active Decisions
-- **PSR-4 autoloading for entire codebase**: Composer autoloader replaces all manual require_once statements
-- **Domain-driven architecture**: Code organized by business domain (ECommerce, Shortcodes) not implementation features
-- **Component-based shortcodes**: React/Next.js-style reusable components with data injection and templating
-- **Auto-discovery pattern**: Shortcodes automatically registered by scanning directory structure
-- **Single Source of Truth balance system**: available = balance - cart_total with context-aware purchasability (shop vs cart/checkout)
-- **Modern namespaced classes**: `MistrFachman\MyCred\ECommerce\Manager` replaces legacy underscore naming
-- **Single bootstrap file**: One require_once for autoloader, eliminates dependency management complexity
-- **Functional module pattern for features**: All feature modules (FileUpload, BusinessModal, AccessControl) use setupFunction() pattern for reusability and isolation
-- **Classes for application coordinators only**: ThemeApp and AdminApp remain classes for single-instance lifecycle management and module coordination
-- **Tailwind CSS for component styling**: Utility-first CSS framework for consistent, maintainable component styling
-- **NO INLINE STYLING IN SHORTCODES**: Shortcodes are functional smart components - styling handled via Tailwind classes
-- **Semantic CSS naming**: Wrapper elements include context classes for targeted styling (e.g., `filter-affordable`, `filter-unavailable`)
-- **Template simplification**: Direct `ob_start()`/`ob_get_clean()` output over complex method abstraction layers
-- **Administrative feature simplification**: Remove boilerplate admin documentation and permission checking systems
-- **Registration system architecture**: Three-stage user approval with modular services (UserDetectionService, RegistrationStatus, RegistrationConfig)
-- **AJAX session handling**: Cookie fallback ensures form submissions work across all browser contexts
-- **Living memory system architecture**: CLAUDE.md as central hub with context-aware documentation consultation
-- **Documentation integration protocol**: Agent must read relevant docs/ files based on task context (architecture, development, features, design)
+- **Enterprise architecture**: Domain-driven structure with PSR-4 autoloading and single bootstrap
+- **Functional JavaScript patterns**: setupFunction() approach for all feature modules with isolated state
+- **Component-based shortcodes**: React-style reusable components with auto-discovery
+- **Single Source of Truth**: Centralized balance calculation and status management
+- **Direct dependency injection**: Eliminate unnecessary passthroughs, inject concrete dependencies
+- **Tailwind CSS only**: No inline styling, semantic wrapper classes for targeted styling
+- **Three-stage user approval**: Modular services with AJAX session handling via cookies
+- **Living memory system**: CLAUDE.md hub with context-aware documentation triggers
 
 ## Known Issues
 *No current known issues. System is production-ready.*
 
 ## Archive
 
+### Archived Recent Changes (2025-06-17 to 2025-06-18)
+- **SHORTCODE ARCHITECTURE SIMPLIFICATION** - Streamlined rendering with direct template output
+- **REGISTRATION SYSTEM DEVELOPMENT** - Complete three-stage user approval workflow
+- **ARES INTEGRATION** - Server-side validation with business data sync
+- **ADMIN INTERFACE ENHANCEMENTS** - Card-based UI with design token integration
+- **DEPENDENCY MANAGEMENT** - Service extraction and modular architecture improvements
+
 ### Archived Recent Changes (2025-01-15)
-- **REVOLUTIONARY ARCHITECTURE TRANSFORMATION** - Completed App-centric enterprise structure
-- **Created `src/App/` directory** - Housing all PHP application logic with perfect separation
-- **Achieved domain decoupling** - Independent ECommerce and Shortcodes domains
-- **Transformed bootstrap** - Eliminated vestigial `includes/` dir, renamed to `src/bootstrap.php`
-- **Implemented React-like shortcode components** - With dependency injection
-- **PSR-4 autoloading** - `MistrFachman\` → `src/App/` with optimized class mapping
-- **Modern namespaces** - `MistrFachman\MyCred\ECommerce\Manager`, `MistrFachman\Shortcodes\ShortcodeManager`
-- **Completed cart-aware balance calculation** - Single Source of Truth architecture
-- **Replaced 40+ individual product checks** - With unified calculation system
-- **Added context-aware purchasability** - Preventing double-counting in cart/checkout
-- **Enhanced WooCommerce REST API detection** - For block-based checkout compatibility
-- **Simplified file upload animations** - Removing View Transitions API complexity (2025-01-14)
-- **Modernized JavaScript** - From classes to functional patterns (2025-01-14)
+- **REVOLUTIONARY ARCHITECTURE TRANSFORMATION** - App-centric enterprise structure
+- **PSR-4 AUTOLOADING** - Modern namespace organization
+- **CART-AWARE BALANCE SYSTEM** - Single Source of Truth implementation
+- **REACT-LIKE SHORTCODES** - Component-based architecture with dependency injection
 
 ## Bundle Management Protocol
 
@@ -192,4 +139,4 @@ WordPress child theme development with enterprise-grade architecture. **FUNCTION
 
 
 ## Last Updated
-2025-06-19
+2025-06-19 (cleaned and refocused)
