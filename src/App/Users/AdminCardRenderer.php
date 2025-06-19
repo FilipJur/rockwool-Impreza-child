@@ -23,7 +23,6 @@ class AdminCardRenderer {
 
     public function __construct(
         private RoleManager $role_manager,
-        private RegistrationHooks $registration_hooks,
         private BusinessDataManager $business_manager
     ) {}
 
@@ -76,7 +75,7 @@ class AdminCardRenderer {
      * Render business data card
      */
     public function render_business_data_card(\WP_User $user): void {
-        $has_business_data = $this->registration_hooks->has_business_data($user->ID);
+        $has_business_data = $this->business_manager->has_user_data($user->ID, BusinessDataManager::DATA_TYPE_BUSINESS);
         ?>
         <div class="management-card">
             <div class="card-header">
@@ -87,7 +86,7 @@ class AdminCardRenderer {
             </div>
             <div class="card-content">
                 <?php if ($has_business_data): ?>
-                    <?php $business_data = $this->registration_hooks->get_business_data($user->ID); ?>
+                    <?php $business_data = $this->business_manager->get_user_data($user->ID, BusinessDataManager::DATA_TYPE_BUSINESS); ?>
                     <div class="business-summary">
                         <div class="summary-item">
                             <span class="summary-label">Společnost:</span>

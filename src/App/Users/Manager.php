@@ -73,7 +73,7 @@ class Manager {
         
         // Initialize admin interface components
         $style_manager = new AdminStyleManager();
-        $card_renderer = new AdminCardRenderer($this->role_manager, $this->registration_hooks, $this->business_manager);
+        $card_renderer = new AdminCardRenderer($this->role_manager, $this->business_manager);
         $asset_manager = new AdminAssetManager();
         $action_handler = new AdminActionHandler($this->role_manager, $this->registration_hooks);
         $modal_renderer = new BusinessDataModalRenderer();
