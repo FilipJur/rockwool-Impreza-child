@@ -50,8 +50,8 @@ class RegistrationHooks
 		// Add validation hook as security gate
 		add_filter('wpcf7_validate', [$this->registration_validator, 'validate_registration_form_submission'], 20, 2);
 
-		// Add hook for frontend registration form assets
-		add_action('wp_enqueue_scripts', [$this, 'enqueue_registration_form_scripts']);
+		// Add hook for ARES form scripts - runs on every frontend page
+		add_action('wp_enqueue_scripts', [$this, 'enqueue_ares_form_scripts']);
 	}
 
 	/**
@@ -439,28 +439,31 @@ class RegistrationHooks
 
 
 	/**
-	 * Enqueue scripts and styles specifically for the frontend registration form.
+	 * Enqueues scripts needed for ARES forms across the entire site.
+	 * The JavaScript itself will check if the form exists before running.
 	 */
-	public function enqueue_registration_form_scripts(): void
+	public function enqueue_ares_form_scripts(): void
 	{
-		// Only load these assets on the '/registrace' page
-		if (!is_page('registrace')) {
+		// Do not run in the admin backend.
+		if (is_admin()) {
 			return;
 		}
 
-		// Enqueue the main theme JavaScript which contains the ARES handler
+		// 1. Enqueue the main script on all frontend pages.
+		// This ensures it's available wherever a CF7 form might be placed.
 		wp_enqueue_script('theme-main-js');
 
-		// Localize the script with the necessary AJAX data and nonce
-		// This creates the `mistrFachmanAjax` object in JavaScript
-		wp_localize_script(
-			'theme-main-js',
-			'mistrFachmanAjax',
-			[
-				'ajax_url' => admin_url('admin-ajax.php'),
-				'ico_validation_nonce' => wp_create_nonce('mistr_fachman_ico_validation_nonce')
-			]
-		);
+		// 2. Always localize the data. The JS object is small and harmless.
+		if (!wp_script_is('mistrFachmanAjax', 'data')) {
+			wp_localize_script(
+				'theme-main-js',
+				'mistrFachmanAjax',
+				[
+					'ajax_url' => admin_url('admin-ajax.php'),
+					'ico_validation_nonce' => wp_create_nonce('mistr_fachman_ico_validation_nonce')
+				]
+			);
+		}
 	}
 
 }

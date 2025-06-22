@@ -67,11 +67,11 @@ class RegistrationValidator {
                 return $result; // Return immediately if eligibility check failed
             }
 
-            // Final IČO uniqueness check - validate specific field
-            $this->validate_ico_uniqueness($result, $posted_data, $user_id);
-            if (!$result->is_valid()) {
-                return $result; // Return immediately if IČO validation failed
-            }
+            // Final IČO uniqueness check - DISABLED to allow multiple users with same IČO
+            // $this->validate_ico_uniqueness($result, $posted_data, $user_id);
+            // if (!$result->is_valid()) {
+            //     return $result; // Return immediately if IČO validation failed
+            // }
 
         } catch (\Exception $e) {
             $result->invalidate('', $e->getMessage()); // Invalidate the entire form with the error message.

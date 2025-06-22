@@ -35,6 +35,9 @@ class BusinessDataProcessor {
      * @return array Shaped business data.
      */
     public function shape_business_data(array $posted_data, ?int $current_user_id = null): array {
+        // Suppress unused variable warning - parameter kept for potential IČO validation re-enabling
+        unset($current_user_id);
+        
         // Extract and sanitize fields
         $ico = sanitize_text_field($posted_data['ico'] ?? '');
         $company_name = sanitize_text_field($posted_data['company-name'] ?? '');
@@ -56,21 +59,21 @@ class BusinessDataProcessor {
         $zateplovani = is_array($zateplovani_raw) ? !empty($zateplovani_raw) : !empty($zateplovani_raw);
         $kriteria_obratu = is_array($kriteria_obratu_raw) ? !empty($kriteria_obratu_raw) : !empty($kriteria_obratu_raw);
 
-        // Check IČO uniqueness - prevent duplicate registrations
-        if ($this->business_manager->is_ico_already_registered($ico, $current_user_id)) {
-            $existing_user_id = $this->business_manager->find_user_by_ico($ico);
-            $existing_user = get_userdata($existing_user_id);
-            
-            if ($existing_user) {
-                throw new \Exception(sprintf(
-                    'IČO %s je již registrované na účet %s. Jeden IČO může být použit pouze jednou.',
-                    $ico,
-                    $existing_user->user_login
-                ));
-            } else {
-                throw new \Exception(sprintf('IČO %s je již registrované. Jeden IČO může být použit pouze jednou.', $ico));
-            }
-        }
+        // Check IČO uniqueness - DISABLED to allow multiple users with same IČO
+        // if ($this->business_manager->is_ico_already_registered($ico, $current_user_id)) {
+        //     $existing_user_id = $this->business_manager->find_user_by_ico($ico);
+        //     $existing_user = get_userdata($existing_user_id);
+        //     
+        //     if ($existing_user) {
+        //         throw new \Exception(sprintf(
+        //             'IČO %s je již registrované na účet %s. Jeden IČO může být použit pouze jednou.',
+        //             $ico,
+        //             $existing_user->user_login
+        //         ));
+        //     } else {
+        //         throw new \Exception(sprintf('IČO %s je již registrované. Jeden IČO může být použit pouze jednou.', $ico));
+        //     }
+        // }
 
         // Validate with ARES API
         $ares_data = $this->ares_client->validate_ico_with_ares($ico);

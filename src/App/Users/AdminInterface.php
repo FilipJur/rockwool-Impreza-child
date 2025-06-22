@@ -148,50 +148,45 @@ class AdminInterface {
 
     /**
      * Handle AJAX request for IČO validation.
-     * Performs format check, uniqueness check, and ARES API call.
+     * This endpoint is public but secured by a nonce.
+     * Works for both logged-in and logged-out users.
      */
     public function handle_ico_validation_ajax(): void {
         try {
-            // Security Check 1: User must be logged in.
-            if (!is_user_logged_in()) {
-                throw new \Exception('Přístup odepřen.', 403);
-            }
-
-            // Security Check 2: Verify the nonce. Use a specific nonce for this action.
+            // Security Check 1: Nonce is now the primary security gate for all users.
             check_ajax_referer('mistr_fachman_ico_validation_nonce', 'nonce');
 
-            $user_id = get_current_user_id();
             $ico = sanitize_text_field($_POST['ico'] ?? '');
 
             if (empty($ico)) {
-                throw new \Exception('IČO nebylo zadáno.', 400); // 400 Bad Request
+                throw new \Exception('IČO nebylo zadáno.', 400);
             }
 
-            // Step 1: Validate Format (fast)
+            // Step 1: Validate Format (for everyone)
             if (!$this->business_validator->validate_ico_format($ico)) {
-                throw new \Exception('Neplatný formát IČO.', 422); // 422 Unprocessable Entity
+                throw new \Exception('Neplatný formát IČO.', 422);
             }
 
-            // Step 2: Validate Uniqueness (fast DB query)
-            if ($this->business_manager->is_ico_already_registered($ico, $user_id)) {
-                throw new \Exception('Toto IČO je již registrováno na jiný účet.', 409); // 409 Conflict
+            // Step 2: Perform USER-SPECIFIC checks ONLY if the user is logged in.
+            if (is_user_logged_in()) {
+                $user_id = get_current_user_id();
+                // Business Rule: As per new requirements, we no longer check for IČO uniqueness.
+                // This block remains for future user-specific logic.
             }
 
-            // Step 3: Validate with ARES API (slow external call)
+            // Step 3: Validate with ARES API (for everyone)
             $ares_result = $this->business_validator->validate_ico_with_ares($ico);
             if (!$ares_result['valid']) {
-                // Pass ARES-specific error message to the frontend
                 throw new \Exception($ares_result['error'], 422);
             }
 
-            // All checks passed. Return success with ARES data.
+            // All checks passed. Return success.
             wp_send_json_success([
                 'company_name' => $ares_result['data']['obchodniJmeno'],
                 'address'      => $this->extract_ares_address_from_result($ares_result['data']),
             ]);
 
         } catch (\Exception $e) {
-            // Centralized error handling
             $code = is_int($e->getCode()) && $e->getCode() >= 400 ? $e->getCode() : 400;
             wp_send_json_error(['message' => $e->getMessage()], $code);
         }

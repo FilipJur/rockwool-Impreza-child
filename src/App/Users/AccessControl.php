@@ -55,6 +55,11 @@ class AccessControl {
             return;
         }
 
+        // Admin users should be excluded from any access control
+        if (current_user_can('manage_options')) {
+            return;
+        }
+
         $user_status = $this->user_service->get_user_registration_status();
 
         // Handle logged-out users
@@ -259,7 +264,7 @@ class AccessControl {
         $rest_prefix = rest_get_url_prefix();
         $request_uri = $_SERVER['REQUEST_URI'] ?? '';
 
-        return strpos($request_uri, "/$rest_prefix/") !== false;
+        return str_contains($request_uri, "/$rest_prefix/");
     }
 
     /**
@@ -270,17 +275,17 @@ class AccessControl {
         $request_method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
         // Allow all POST requests to wp-json endpoints
-        if ($request_method === 'POST' && strpos($request_uri, '/wp-json/') !== false) {
+        if ($request_method === 'POST' && str_contains($request_uri, '/wp-json/')) {
             return true;
         }
 
         // Allow Contact Form 7 endpoints
-        if (strpos($request_uri, '/wp-json/contact-form-7/') !== false) {
+        if (str_contains($request_uri, '/wp-json/contact-form-7/')) {
             return true;
         }
 
         // Allow WooCommerce endpoints
-        if (strpos($request_uri, '/wp-json/wc/') !== false) {
+        if (str_contains($request_uri, '/wp-json/wc/')) {
             return true;
         }
 

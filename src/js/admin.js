@@ -4,6 +4,7 @@
  */
 
 import { setupBusinessModal } from './features/admin/business-data-modal.js';
+import { setupAresForm } from './features/ares/handler.js';
 
 /**
  * Admin Application Class
@@ -12,7 +13,8 @@ import { setupBusinessModal } from './features/admin/business-data-modal.js';
 class AdminApp {
   constructor() {
     this.modules = {
-      businessModal: null
+      businessModal: null,
+      aresHandler: null
     };
     this.isInitialized = false;
 
@@ -47,6 +49,18 @@ class AdminApp {
       console.log('Business data modal initialized');
     } catch (error) {
       console.error('Failed to initialize business data modal:', error);
+    }
+
+    // ARES handler for IČO validation in admin forms (business data modal)
+    // Look for forms that might contain IČO fields
+    if (document.querySelector('[name="ico"]') || document.querySelector('#business-data-modal')) {
+      try {
+        // The ARES handler will look for forms containing IČO fields
+        this.modules.aresHandler = setupAresForm('.business-data-form, .registration-form, form');
+        console.log('ARES handler initialized for admin');
+      } catch (error) {
+        console.error('Failed to initialize ARES handler for admin:', error);
+      }
     }
   }
 
