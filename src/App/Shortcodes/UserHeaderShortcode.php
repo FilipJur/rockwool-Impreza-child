@@ -50,7 +50,7 @@ class UserHeaderShortcode extends ShortcodeBase
             'login_url' => '/prihlaseni',
             'registration_url' => '/registrace',
             'account_url' => '/muj-ucet',
-            'add_realization_url' => '#',
+            'add_realization_url' => '/pridat-realizaci',
             'add_invoice_url' => '#'
         ], $attributes);
 

@@ -124,6 +124,14 @@ add_action('init', function () {
         mycred_debug('Users Manager class not found.', null, 'bootstrap', 'error');
     }
 
+    // 1.5. Initialize the Realizace System
+    $RealizaceManager = \MistrFachman\Realizace\Manager::class;
+    if (class_exists($RealizaceManager)) {
+        $RealizaceManager::get_instance();
+    } else {
+        mycred_debug('Realizace Manager class not found.', null, 'bootstrap', 'error');
+    }
+
     // 2. Initialize the E-Commerce System
     $ecommerce_manager = $ECommerceManager::get_instance();
 
@@ -141,7 +149,7 @@ add_action('init', function () {
 
     mycred_log_architecture_event('PSR-4 Application Initialized with Service Layer', [
         'autoloader' => 'composer',
-        'domains' => ['Users', 'ECommerce', 'Shortcodes', 'Services'],
+        'domains' => ['Users', 'Realizace', 'ECommerce', 'Shortcodes', 'Services'],
         'pattern' => 'decoupled with service injection'
     ]);
 }, 20); // Later priority to ensure plugins are loaded
