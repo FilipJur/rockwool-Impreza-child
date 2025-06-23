@@ -69,10 +69,10 @@ WordPress child theme development with enterprise-grade architecture. **REALIZAC
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
+- **2025-06-23**: [fix] Add permanent deletion handler with No Debt policy - Complete point revocation system now handles permanent deletion while preventing negative balances
+- **2025-06-23**: [refactor] Realizace admin architecture consolidation - Merged AdminSetup, AdminUIManager, and AdminAjaxHandler into unified AdminController, fixed status revert bug, improved bulk approve logic
 - **2025-06-23**: [fix] Remove Tailwind CSS from WordPress admin - Fixed admin table layout issues caused by Tailwind .fixed class conflicting with WordPress core table behavior
 - **2025-06-23**: [fix] Implement "No Debt" policy in PointsHandler - Points revocation now respects user balance limits to prevent negative balances, maintaining business rule integrity
-- **2025-06-23**: [update] Fix diagnostic issues in AdminController - Addressed type safety, code quality, and IDE compatibility while maintaining cohesive architecture
-- **2025-06-23**: [refactor] Realizace admin architecture consolidation - Merged AdminSetup, AdminUIManager, and AdminAjaxHandler into unified AdminController, fixed status revert bug, improved bulk approve logic
 - **2025-06-19**: [update] Remove dependency passthrough in AdminCardRenderer - Direct BusinessDataManager injection eliminates unnecessary RegistrationHooks intermediary
 - **2025-06-19**: Functional JavaScript modernization complete - All feature modules converted to functional patterns with isolated state and proper cleanup
 - **2025-06-19**: Access control system complete - Defense-in-depth access control with IČO uniqueness validation and role-based page access
@@ -119,7 +119,7 @@ WordPress child theme development with enterprise-grade architecture. **REALIZAC
 - **Frontend-only Tailwind CSS** (2025-06-23): Tailwind CSS only loaded on frontend via wp_enqueue_scripts to prevent admin class conflicts with WordPress core
 
 ## Known Issues
-*No current known issues. System is production-ready.*
+*No current known issues. System is production-ready with complete No Debt policy.*
 
 ## Archive
 

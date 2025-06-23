@@ -27,6 +27,7 @@ class PointsHandler {
     public function init_hooks(): void {
         add_action('save_post_realizace', [$this, 'handle_points_on_save'], 20, 2);
         add_action('transition_post_status', [$this, 'handle_status_change_points'], 15, 3);
+        add_action('before_delete_post', [$this, 'handle_permanent_deletion'], 5);
     }
 
     /**
@@ -262,6 +263,20 @@ class PointsHandler {
     }
 
     /**
+     * Handle permanent deletion of realizace posts
+     *
+     * @param int $post_id Post ID being permanently deleted
+     */
+    public function handle_permanent_deletion(int $post_id): void {
+        if (get_post_type($post_id) === 'realizace') {
+            $user_id = (int)get_post_field('post_author', $post_id);
+            if ($user_id > 0) {
+                $this->revoke_points($post_id, $user_id, 'deleted');
+            }
+        }
+    }
+
+    /**
      * Get localized status label
      *
      * @param string $status Post status
@@ -273,6 +288,7 @@ class PointsHandler {
             'pending' => 'čeká na schválení',
             'draft' => 'koncept',
             'trash' => 'koš',
+            'deleted' => 'smazáno',
             default => $status
         };
     }
