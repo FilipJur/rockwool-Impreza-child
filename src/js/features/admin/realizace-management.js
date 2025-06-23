@@ -103,6 +103,7 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
     document.addEventListener('click', handleQuickAction);
     document.addEventListener('click', handleBulkApprove);
     document.addEventListener('click', handleSaveRejection);
+    document.addEventListener('click', handleSectionToggle);
   }
 
   /**
@@ -162,6 +163,27 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
   }
 
   /**
+   * Handle section toggle for collapsible sections
+   * @param {Event} event - Click event
+   */
+  function handleSectionToggle(event) {
+    const toggleButton = event.target.closest('.section-toggle');
+    if (!toggleButton || !isRealizaceContainer(event.target)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const targetSection = toggleButton.dataset.target;
+    if (!targetSection) {
+      console.error('Missing target section on toggle button');
+      return;
+    }
+
+    toggleSection(toggleButton, targetSection);
+  }
+
+  /**
    * Handle bulk approve action
    * @param {Event} event - Click event
    */
@@ -198,6 +220,45 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
   }
 
   /**
+   * Toggle collapsible section
+   * @param {Element} toggleButton - Toggle button element
+   * @param {string} targetSection - Target section identifier
+   */
+  function toggleSection(toggleButton, targetSection) {
+    // Find the section content within the same realizace container
+    const realizaceSection = toggleButton.closest('.realizace-section');
+    if (!realizaceSection) {
+      console.error('Toggle button not within realizace section');
+      return;
+    }
+
+    const sectionContent = realizaceSection.querySelector('.section-content.collapsible');
+    if (!sectionContent) {
+      console.error('Collapsible section content not found');
+      return;
+    }
+
+    const toggleIcon = toggleButton.querySelector('.toggle-icon');
+    const isCollapsed = sectionContent.classList.contains('collapsed');
+
+    if (isCollapsed) {
+      // Expand section
+      sectionContent.classList.remove('collapsed');
+      if (toggleIcon) {
+        toggleIcon.textContent = '▼';
+      }
+      console.log(`Expanded section: ${targetSection}`);
+    } else {
+      // Collapse section
+      sectionContent.classList.add('collapsed');
+      if (toggleIcon) {
+        toggleIcon.textContent = '▶';
+      }
+      console.log(`Collapsed section: ${targetSection}`);
+    }
+  }
+
+  /**
    * Perform quick action (approve/reject)
    * @param {Element} button - Action button
    * @param {string} postId - Post ID
@@ -206,9 +267,11 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
    */
   async function performQuickAction(button, postId, action, requestId) {
     // Determine if this is rejecting an approved post
-    const realizaceItem = button.closest('.realizace-item');
+    const realizaceItem = button.closest('.realizace-item, .realizace-item-compact');
     const statusBadge = realizaceItem ? realizaceItem.querySelector('.status-badge.status-publish') : null;
-    const isApprovedRevoke = statusBadge && action === 'reject';
+    // For compact items, we know they're in the approved section, so they're approved posts
+    const isCompactItem = realizaceItem && realizaceItem.classList.contains('realizace-item-compact');
+    const isApprovedRevoke = (statusBadge && action === 'reject') || (isCompactItem && action === 'reject');
     
     const actionText = action === 'approve' ? 'schválit' : (isApprovedRevoke ? 'zrušit schválení' : 'odmítnout');
     
@@ -404,13 +467,26 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
     // Collect individual points for each pending realizace
     const pointsData = {};
     const pointsInputs = document.querySelectorAll('.quick-points-input[data-post-id]');
+    console.log('Found points inputs for bulk approve:', pointsInputs.length);
+    
     pointsInputs.forEach(input => {
       const postId = input.dataset.postId;
       const points = parseInt(input.value, 10) || 0;
+      console.log(`Post ${postId}: ${points} points (input value: "${input.value}")`);
       if (points > 0) {
         pointsData[postId] = points;
       }
     });
+    
+    console.log('Final points data for bulk approve:', pointsData);
+    
+    if (Object.keys(pointsData).length === 0) {
+      showNotification('Nejdříve zadejte body pro jednotlivé realizace.', 'error');
+      button.disabled = false;
+      button.textContent = originalText;
+      state.activeRequests.delete(requestId);
+      return;
+    }
 
     try {
       const response = await makeAjaxRequest('mistr_fachman_bulk_approve_realizace', {
@@ -482,6 +558,7 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
     document.removeEventListener('click', handleQuickAction);
     document.removeEventListener('click', handleBulkApprove);
     document.removeEventListener('click', handleSaveRejection);
+    document.removeEventListener('click', handleSectionToggle);
 
     // Clear state
     state.containers = [];

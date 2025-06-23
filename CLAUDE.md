@@ -69,6 +69,7 @@ WordPress child theme development with enterprise-grade architecture. **REALIZAC
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
+- **2025-06-23**: [update] Improve admin interface enhancements - Added pending realizace column to wp-admin/users.php table, improved MyCred notices to show realizace titles instead of IDs, implemented dynamic grid layout for realizace cards (1 item = full width, 2 items = 50% each, 3+ items = standard grid)
 - **2025-06-23**: [fix] Add permanent deletion handler with No Debt policy - Complete point revocation system now handles permanent deletion while preventing negative balances
 - **2025-06-23**: [refactor] Realizace admin architecture consolidation - Merged AdminSetup, AdminUIManager, and AdminAjaxHandler into unified AdminController, fixed status revert bug, improved bulk approve logic
 - **2025-06-23**: [fix] Remove Tailwind CSS from WordPress admin - Fixed admin table layout issues caused by Tailwind .fixed class conflicting with WordPress core table behavior

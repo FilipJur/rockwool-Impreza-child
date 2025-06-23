@@ -11,7 +11,7 @@ namespace MistrFachman\Realizace;
  *
  * RESPONSIBILITIES:
  * - Status management coordination
- * - UI customizations (columns, forms, user profiles)
+ * - UI customizations (columns, forms, user profiles, users table integration)
  * - AJAX endpoints (quick actions, bulk operations)
  * - Asset management coordination
  *
@@ -22,6 +22,11 @@ namespace MistrFachman\Realizace;
  * - Status revert bug (removed save_post hook that fought WordPress core)
  * - Bulk approve logic (properly processes points from UI)
  * - Inline CSS violations (moved to SCSS files)
+ *
+ * RECENT ADDITIONS:
+ * - Users table "Pending Realizace" column with clickable counts
+ * - Efficient query caching for user pending counts
+ * - Asset loading extended to users.php page
  *
  * @package mistr-fachman
  * @since 1.0.0
@@ -84,6 +89,10 @@ class AdminController {
         // Admin list view customization
         add_filter('manage_realizace_posts_columns', [$this, 'add_admin_columns']);
         add_action('manage_realizace_posts_custom_column', [$this, 'render_custom_columns'], 10, 2);
+
+        // Users table customization
+        add_filter('manage_users_columns', [$this, 'add_users_columns']);
+        add_action('manage_users_custom_column', [$this, 'render_users_custom_column'], 10, 3);
 
         // Post editor form customization
         add_action('admin_footer-post.php', [$this, 'add_rejected_status_to_dropdown']);
@@ -184,6 +193,89 @@ class AdminController {
                 'class' => 'status-default'
             ]
         };
+    }
+
+    /**
+     * Add custom columns to the users table
+     */
+    public function add_users_columns(array $columns): array {
+        // Insert the "Pending Realizace" column before the "Posts" column if it exists,
+        // otherwise before the "Date" column
+        $insert_before = isset($columns['posts']) ? 'posts' : 'date';
+        
+        // Find the position to insert the new column
+        $position = array_search($insert_before, array_keys($columns));
+        if ($position !== false) {
+            $columns = array_slice($columns, 0, $position, true) +
+                      ['pending_realizace' => 'Čekající realizace'] +
+                      array_slice($columns, $position, null, true);
+        } else {
+            // Fallback: add at the end
+            $columns['pending_realizace'] = 'Čekající realizace';
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Render custom column content for users table
+     */
+    public function render_users_custom_column(string $output, string $column_name, int $user_id): string {
+        if ($column_name === 'pending_realizace') {
+            return $this->render_pending_realizace_column($user_id);
+        }
+        return $output;
+    }
+
+    /**
+     * Render pending realizace column content
+     */
+    private function render_pending_realizace_column(int $user_id): string {
+        // Get pending realizace count for this user
+        $pending_count = $this->get_user_pending_realizace_count($user_id);
+        
+        if ($pending_count === 0) {
+            return '<span style="color: #999;">0</span>';
+        }
+
+        // Make the count clickable to filter realizace posts for this user
+        $admin_url = admin_url('edit.php');
+        $filter_url = add_query_arg([
+            'post_type' => 'realizace',
+            'post_status' => 'pending',
+            'author' => $user_id
+        ], $admin_url);
+
+        return sprintf(
+            '<a href="%s" style="color: #d63638; font-weight: 600;" title="Zobrazit čekající realizace tohoto uživatele">%d</a>',
+            esc_url($filter_url),
+            $pending_count
+        );
+    }
+
+    /**
+     * Get pending realizace count for a specific user
+     */
+    private function get_user_pending_realizace_count(int $user_id): int {
+        static $cache = [];
+        
+        // Use static cache to avoid multiple queries for the same user during page load
+        if (isset($cache[$user_id])) {
+            return $cache[$user_id];
+        }
+
+        global $wpdb;
+        
+        $count = (int) $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*)
+            FROM {$wpdb->posts}
+            WHERE post_type = 'realizace'
+            AND post_author = %d
+            AND post_status = 'pending'
+        ", $user_id));
+
+        $cache[$user_id] = $count;
+        return $count;
     }
 
     /**
@@ -299,19 +391,10 @@ class AdminController {
         // Show cards if user has realizace or is eligible to submit them
         if ($has_realizace || $is_pending || in_array('full_member', $user->roles)) {
             echo '<div class="realizace-management-modern">';
-            echo '<div class="management-layout">';
-
-            // Left sidebar - compact overview
-            echo '<div class="management-sidebar">';
-            $this->card_renderer->render_realizace_overview_card($user);
-            echo '</div>';
-
-            // Right main area - realizace grid
-            echo '<div class="management-main">';
-            $this->card_renderer->render_recent_realizace_card($user);
-            echo '</div>';
-
-            echo '</div>';
+            
+            // Consolidated dashboard replacing the dual-card layout
+            $this->card_renderer->render_consolidated_realizace_dashboard($user);
+            
             echo '</div>';
         }
     }
@@ -417,6 +500,16 @@ class AdminController {
 
         error_log("[REALIZACE:AJAX] Set points to {$points_to_award} for post {$post_id}");
 
+        // Clear rejection reason when approving (clean slate for approved realizace)
+        if (function_exists('update_field')) {
+            /** @var callable $update_field */
+            $update_field = 'update_field';
+            $update_field('duvod_zamitnuti', '', $post_id);
+            error_log("[REALIZACE:AJAX] Cleared rejection reason for post {$post_id}");
+        } else {
+            update_post_meta($post_id, 'duvod_zamitnuti', '');
+        }
+
         // Now update post status - this will trigger the points award via PointsHandler
         $result = wp_update_post([
             'ID' => $post_id,
@@ -516,17 +609,25 @@ class AdminController {
         $user_id = (int)($_POST['user_id'] ?? 0);
         $points_data_json = $_POST['points_data'] ?? '{}';
 
+        error_log('[REALIZACE:AJAX] Bulk approve raw POST data: ' . json_encode($_POST));
+
         if (!$user_id || !get_userdata($user_id)) {
             wp_send_json_error(['message' => 'Invalid user']);
         }
 
-        // Parse points data
-        $points_data = json_decode($points_data_json, true);
+        // Parse points data - handle potential escaping from FormData
+        $points_data = json_decode(stripslashes($points_data_json), true);
         if (!is_array($points_data)) {
-            $points_data = [];
+            // Try without stripslashes in case it's not escaped
+            $points_data = json_decode($points_data_json, true);
+            if (!is_array($points_data)) {
+                $points_data = [];
+            }
         }
 
-        error_log('[REALIZACE:AJAX] Points data received: ' . json_encode($points_data));
+        error_log('[REALIZACE:AJAX] Points data JSON: ' . $points_data_json);
+        error_log('[REALIZACE:AJAX] Points data with stripslashes: ' . stripslashes($points_data_json));
+        error_log('[REALIZACE:AJAX] Points data parsed: ' . json_encode($points_data));
 
         try {
             $approved_count = $this->process_bulk_approve($user_id, $points_data);
@@ -578,6 +679,15 @@ class AdminController {
             }
 
             error_log("[REALIZACE:AJAX] Set points to {$points} for post {$post_id}");
+
+            // Clear rejection reason when approving (clean slate for approved realizace)
+            if (function_exists('update_field')) {
+                /** @var callable $update_field */
+                $update_field = 'update_field';
+                $update_field('duvod_zamitnuti', '', $post_id);
+            } else {
+                update_post_meta($post_id, 'duvod_zamitnuti', '');
+            }
 
             // Now update status - this will trigger the points award via PointsHandler
             $result = wp_update_post([

@@ -304,6 +304,235 @@
   }
 }
 
+/* Consolidated Realizace Dashboard */
+.realizace-dashboard {
+  .card-header {
+    padding: $spacing-lg $spacing-xl;
+
+    .card-title {
+      font-size: $font-size-lg;
+      margin-bottom: $spacing-md;
+    }
+  }
+
+  .stats-header {
+    .stats-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: $spacing-md;
+      margin-bottom: $spacing-md;
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background: $bg-white;
+        border-radius: $border-radius;
+        border: 1px solid $border-color;
+        font-size: $font-size-sm;
+
+        .stat-label {
+          color: $gray-500;
+          font-weight: 600;
+        }
+
+        .stat-value {
+          color: #000;
+          font-weight: 700;
+        }
+
+        &.stat-pending .stat-value {
+          color: #f59e0b;
+        }
+
+        &.stat-approved .stat-value {
+          color: $color-success;
+        }
+
+        &.stat-rejected .stat-value {
+          color: $color-danger;
+        }
+
+        &.stat-points .stat-value {
+          color: $color-primary;
+        }
+      }
+    }
+
+    .stats-actions {
+      display: flex;
+      gap: $spacing-sm;
+
+      .button-small {
+        font-size: $font-size-xs;
+        padding: 4px 8px;
+      }
+    }
+  }
+}
+
+/* Realizace Sections */
+.realizace-section {
+  margin-bottom: $spacing-xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-md;
+    padding: $spacing-sm $spacing-md;
+    background: $bg-light;
+    border-radius: $border-radius;
+    border: 1px solid $border-color;
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+      margin: 0;
+      font-size: $font-size-base;
+      font-weight: $font-weight-medium;
+      color: #000;
+
+      .status-indicator {
+        font-size: 12px;
+
+        &.pending {
+          color: #f59e0b;
+        }
+
+        &.approved {
+          color: $color-success;
+        }
+
+        &.rejected {
+          color: $color-danger;
+        }
+      }
+    }
+
+    .section-toggle {
+      background: none;
+      border: 1px solid $border-color;
+      border-radius: $border-radius;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: $transition-fast;
+
+      &:hover {
+        background: $bg-white;
+        border-color: $color-primary;
+      }
+
+      .toggle-icon {
+        font-size: 12px;
+        color: $gray-500;
+        transition: $transition-fast;
+      }
+    }
+  }
+
+  .section-content {
+    &.collapsible {
+      transition: all 0.3s ease;
+      overflow: hidden;
+
+      &.collapsed {
+        max-height: 0;
+        opacity: 0;
+        margin-bottom: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+
+      &:not(.collapsed) {
+        max-height: none;
+        opacity: 1;
+      }
+    }
+  }
+
+  // Section-specific styling
+  &.section-pending {
+    .section-header {
+      border-left: 3px solid #f59e0b;
+    }
+  }
+
+  &.section-rejected {
+    .section-header {
+      border-left: 3px solid $color-danger;
+    }
+  }
+
+  &.section-approved {
+    .section-header {
+      border-left: 3px solid $color-success;
+    }
+  }
+}
+
+/* Compact Realizace Items */
+.realizace-list-compact {
+  .realizace-item-compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    background: $bg-white;
+    margin-bottom: $spacing-sm;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .compact-content {
+      flex: 1;
+
+      .compact-title {
+        margin-bottom: 2px;
+
+        a {
+          text-decoration: none;
+          color: #000;
+          font-weight: 600;
+          font-size: $font-size-sm;
+
+          &:hover {
+            color: $color-primary;
+          }
+        }
+      }
+
+      .compact-meta {
+        display: flex;
+        gap: $spacing-sm;
+        font-size: $font-size-xs;
+        color: $gray-500;
+
+        .compact-points {
+          font-weight: 600;
+          color: $color-success;
+        }
+      }
+    }
+
+    .compact-actions {
+      .button-small {
+        font-size: $font-size-xs;
+        padding: 2px 8px;
+      }
+    }
+  }
+}
+
 /* Summary Grid for Overview */
 .summary-grid {
   display: grid;
@@ -314,6 +543,41 @@
 .realizace-list {
   display: grid;
   gap: $spacing-md;
+  grid-template-columns: repeat(3, 1fr);
+
+  // Dynamic layout based on number of children
+  // Single child - full width
+  &:has(.realizace-item:nth-child(1):nth-last-child(1)) {
+    .realizace-item {
+      grid-column: 1 / span 3;
+    }
+  }
+
+  // Two children - each takes half width
+  &:has(.realizace-item:nth-child(2):nth-last-child(1)) {
+    grid-template-columns: 1fr 1fr;
+    
+    .realizace-item {
+      grid-column: span 1;
+    }
+  }
+
+  // Fallback for browsers without :has() support
+  @supports not (selector(:has(*))) {
+    // Single child fallback
+    .realizace-item:only-child {
+      grid-column: 1 / span 3;
+    }
+    
+    // Two children fallback - split the 3-column grid evenly
+    .realizace-item:first-child:nth-last-child(2) {
+      grid-column: 1 / 2;
+    }
+    
+    .realizace-item:first-child:nth-last-child(2) ~ .realizace-item {
+      grid-column: 2 / 4;
+    }
+  }
 }
 
 .realizace-item {
@@ -487,40 +751,40 @@
   border-radius: $border-radius;
   border-left: 4px solid $color-info;
   background: #f0f9ff;
-  
+
   &.notice-success {
     border-left-color: $color-success;
     background: #f0fdf4;
-    
+
     p {
       color: #166534;
     }
   }
-  
+
   &.notice-error {
     border-left-color: $color-danger;
     background: #fef2f2;
-    
+
     p {
       color: #dc2626;
     }
   }
-  
+
   &.notice-info {
     border-left-color: $color-info;
     background: #f0f9ff;
-    
+
     p {
       color: #1d4ed8;
     }
   }
-  
+
   p {
     margin: 0;
     font-size: $font-size-sm;
     font-weight: $font-weight-medium;
   }
-  
+
   .notice-dismiss {
     position: absolute;
     top: 0;
@@ -531,17 +795,17 @@
     cursor: pointer;
     color: inherit;
     opacity: 0.7;
-    
+
     &:hover {
       opacity: 1;
     }
-    
+
     &:before {
       content: '×';
       font-size: 18px;
       font-weight: bold;
     }
-    
+
     .screen-reader-text {
       clip: rect(1px, 1px, 1px, 1px);
       position: absolute !important;

@@ -128,7 +128,7 @@ class PointsHandler {
         
         // Only process if there's a change
         if ($point_difference !== 0) {
-            $log_message = $this->get_log_message($context, $point_difference);
+            $log_message = $this->get_log_message($post_id, $context, $point_difference);
             
             // Award or deduct points via myCred
             $result = mycred_add(
@@ -186,12 +186,15 @@ class PointsHandler {
             $points_to_revoke = min($points_awarded, $current_balance);
             
             if ($points_to_revoke > 0) {
+                // Get realizace title for better user experience
+                $post_title = get_the_title($post_id) ?: "Realizace #{$post_id}";
+                
                 // Revoke only the amount that won't create negative balance
                 $result = mycred_add(
                     'revoke_realizace_points',
                     $user_id,
                     -$points_to_revoke,
-                    "Odebrání bodů: Realizace ID %d změněna na stav \"{$new_status}\"",
+                    sprintf('Odebrání bodů: %s změněna na stav "%s"', $post_title, $this->get_status_label($new_status)),
                     $post_id
                 );
                 
@@ -246,19 +249,22 @@ class PointsHandler {
     }
 
     /**
-     * Get appropriate log message based on context
+     * Get appropriate log message based on context with realizace title
      *
+     * @param int $post_id Post ID
      * @param string $context Action context
      * @param int $point_difference Point difference
      * @return string Log message
      */
-    private function get_log_message(string $context, int $point_difference): string {
+    private function get_log_message(int $post_id, string $context, int $point_difference): string {
+        $post_title = get_the_title($post_id) ?: "Realizace #{$post_id}";
+        
         return match ($context) {
             'approve' => $point_difference > 0 
-                ? 'Udělení bodů za schválenou realizaci ID: %d'
-                : 'Úprava bodů za realizaci ID: %d',
-            'save' => 'Úprava bodů za realizaci ID: %d',
-            default => 'Změna bodů za realizaci ID: %d'
+                ? sprintf('Udělení bodů za schválenou realizaci: %s', $post_title)
+                : sprintf('Úprava bodů za realizaci: %s', $post_title),
+            'save' => sprintf('Úprava bodů za realizaci: %s', $post_title),
+            default => sprintf('Změna bodů za realizaci: %s', $post_title)
         };
     }
 

@@ -186,11 +186,11 @@ class AdminCardRenderer {
                     <div class="realizace-summary">
                         <div class="summary-stats">
                             <div class="stat-item">
-                                <span class="stat-number"><?php echo esc_html($realizace_count); ?></span>
+                                <span class="stat-number"><?php echo esc_html((string)$realizace_count); ?></span>
                                 <span class="stat-label">Celkem realizací</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-number"><?php echo esc_html($pending_realizace); ?></span>
+                                <span class="stat-number"><?php echo esc_html((string)$pending_realizace); ?></span>
                                 <span class="stat-label">Čeká na schválení</span>
                             </div>
                         </div>
@@ -232,27 +232,41 @@ class AdminCardRenderer {
     }
 
     /**
-     * Get user realizace count (placeholder for future implementation)
+     * Get user realizace count
      *
      * @param int $user_id User ID
      * @return int Number of realizace posts
      */
     private function get_user_realizace_count(int $user_id): int {
-        // Future implementation will query realizace post type
-        // For now, return 0 as placeholder
-        return 0;
+        $query = new \WP_Query([
+            'post_type' => 'realizace',
+            'author' => $user_id,
+            'post_status' => ['pending', 'publish', 'rejected'],
+            'posts_per_page' => 1,
+            'fields' => 'ids',
+            'no_found_rows' => false
+        ]);
+        
+        return $query->found_posts;
     }
 
     /**
-     * Get pending realizace count for user (placeholder for future implementation)
+     * Get pending realizace count for user
      *
      * @param int $user_id User ID
      * @return int Number of pending realizace posts
      */
     private function get_pending_realizace_count(int $user_id): int {
-        // Future implementation will query realizace posts with pending status
-        // For now, return 0 as placeholder
-        return 0;
+        $query = new \WP_Query([
+            'post_type' => 'realizace',
+            'author' => $user_id,
+            'post_status' => 'pending',
+            'posts_per_page' => 1,
+            'fields' => 'ids',
+            'no_found_rows' => false
+        ]);
+        
+        return $query->found_posts;
     }
 
     /**

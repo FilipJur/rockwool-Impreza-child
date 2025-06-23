@@ -25,8 +25,8 @@ class AdminAssetManager {
      * Enqueue admin assets for realizace management
      */
     public function enqueue_admin_assets(): void {
-        // Only load on user edit screens
-        if (!$this->is_user_edit_screen()) {
+        // Load on user edit screens and users list page
+        if (!$this->is_realizace_admin_screen()) {
             return;
         }
 
@@ -118,9 +118,9 @@ class AdminAssetManager {
     /**
      * Check if current screen is user edit page
      */
-    private function is_user_edit_screen(): bool {
+    private function is_realizace_admin_screen(): bool {
         $screen = get_current_screen();
-        return $screen && in_array($screen->id, ['user-edit', 'profile']);
+        return $screen && in_array($screen->id, ['user-edit', 'profile', 'users']);
     }
 
     /**
@@ -129,6 +129,25 @@ class AdminAssetManager {
     public function get_admin_css(): string {
         return '
         /* Realizace Admin Interface Styles */
+        
+        /* Users table pending realizace column */
+        .wp-list-table .column-pending_realizace {
+            width: 120px;
+            text-align: center;
+        }
+        
+        .wp-list-table .column-pending_realizace a {
+            text-decoration: none;
+            padding: 2px 6px;
+            border-radius: 3px;
+            display: inline-block;
+            min-width: 20px;
+        }
+        
+        .wp-list-table .column-pending_realizace a:hover {
+            background-color: #f0f0f1;
+            text-decoration: none;
+        }
         .realizace-management-section {
             margin-top: 20px;
             display: grid;
