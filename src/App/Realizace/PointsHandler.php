@@ -26,6 +26,7 @@ class PointsHandler {
      */
     public function init_hooks(): void {
         add_action('save_post_realizace', [$this, 'handle_points_on_save'], 20, 2);
+        add_action('transition_post_status', [$this, 'handle_status_change_points'], 15, 3);
     }
 
     /**
@@ -50,6 +51,11 @@ class PointsHandler {
 
         // Only award points for published (approved) posts
         if ($post->post_status !== 'publish') {
+            return;
+        }
+
+        // Prevent running if this is a status transition (handled by other hook)
+        if (isset($_POST['post_status']) && $_POST['post_status'] !== 'publish') {
             return;
         }
 
@@ -169,12 +175,12 @@ class PointsHandler {
         $points_awarded = (int)get_post_meta($post_id, '_realizace_points_awarded', true);
         
         if ($points_awarded > 0) {
+            // The final arguments are for the log entry template
             $result = mycred_add(
                 'revoke_realizace_points',
                 $user_id,
                 -$points_awarded,
-                'Odebrání bodů - realizace změněna na: %s (ID: %d)',
-                $this->get_status_label($new_status),
+                'Odebrání bodů: Realizace ID %d změněna na stav "' . $new_status . '"',
                 $post_id
             );
             

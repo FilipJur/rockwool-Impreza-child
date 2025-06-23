@@ -178,8 +178,20 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
    */
   async function performQuickAction(button, postId, action, requestId) {
     const actionText = action === 'approve' ? 'schválit' : 'odmítnout';
+    
+    // For approve action, get points value and validate
+    let points = null;
+    if (action === 'approve') {
+      const pointsInput = document.querySelector('.quick-points-input[data-post-id="' + postId + '"]');
+      points = pointsInput ? parseInt(pointsInput.value, 10) : 0;
+      
+      if (!points || points <= 0) {
+        showNotification('Zadejte platný počet bodů.', 'error');
+        return;
+      }
+    }
+    
     const confirmMessage = `Opravdu chcete ${actionText} tuto realizaci?`;
-
     if (!showConfirmation(confirmMessage)) {
       return;
     }
@@ -202,11 +214,18 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
     state.activeRequests.add(requestId);
 
     try {
-      const response = await makeAjaxRequest('mistr_fachman_realizace_quick_action', {
+      const requestData = {
         post_id: postId,
         realizace_action: action,
         nonce: nonce
-      });
+      };
+      
+      // Add points for approve action
+      if (action === 'approve' && points) {
+        requestData.points = points;
+      }
+      
+      const response = await makeAjaxRequest('mistr_fachman_realizace_quick_action', requestData);
 
       if (response.success) {
         showNotification(response.data.message, 'success');

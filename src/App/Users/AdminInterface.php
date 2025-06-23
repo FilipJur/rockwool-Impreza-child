@@ -92,7 +92,6 @@ class AdminInterface {
                 <?php $this->card_renderer->render_user_status_card($user, $is_pending); ?>
                 <?php $this->card_renderer->render_business_data_card($user); ?>
                 <?php $this->card_renderer->render_admin_actions_card($user, $is_pending); ?>
-                <?php $this->card_renderer->render_future_features_card($user); ?>
             </div>
             
             <?php

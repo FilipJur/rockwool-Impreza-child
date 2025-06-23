@@ -139,6 +139,13 @@ class AdminCardRenderer {
                                     </a>
                                     
                                     <?php if ($post->post_status === 'pending'): ?>
+                                        <div class="quick-points-wrapper">
+                                            <input type="number" 
+                                                   class="quick-points-input" 
+                                                   placeholder="Body" 
+                                                   data-post-id="<?php echo esc_attr($post->ID); ?>" 
+                                                   style="width: 60px; height: 24px; text-align: right; margin-right: 5px;">
+                                        </div>
                                         <button type="button" 
                                                 class="action-link action-approve" 
                                                 data-post-id="<?php echo esc_attr($post->ID); ?>"
