@@ -33,6 +33,7 @@ class AdminAjaxHandler {
         // AJAX handlers for quick actions
         add_action('wp_ajax_mistr_fachman_realizace_quick_action', [$this, 'handle_quick_action_ajax']);
         add_action('wp_ajax_mistr_fachman_bulk_approve_realizace', [$this, 'handle_bulk_approve_ajax']);
+        add_action('wp_ajax_mistr_fachman_update_acf_field', [$this, 'handle_update_acf_field_ajax']);
     }
 
     /**
@@ -71,7 +72,9 @@ class AdminAjaxHandler {
             if ($action === 'approve') {
                 $this->process_approve_action($post_id, $post);
             } else {
-                $this->process_reject_action($post_id, $post);
+                // Get rejection reason from request
+                $rejection_reason = sanitize_textarea_field($_POST['rejection_reason'] ?? '');
+                $this->process_reject_action($post_id, $post, $rejection_reason);
             }
             
         } catch (\Exception $e) {
@@ -120,8 +123,9 @@ class AdminAjaxHandler {
      *
      * @param int $post_id Post ID
      * @param \WP_Post $post Post object
+     * @param string $rejection_reason Rejection reason from user input
      */
-    private function process_reject_action(int $post_id, \WP_Post $post): void {
+    private function process_reject_action(int $post_id, \WP_Post $post, string $rejection_reason = ''): void {
         error_log("[REALIZACE:AJAX] Processing REJECT action for post {$post_id}");
         error_log("[REALIZACE:AJAX] Current post status before reject: {$post->post_status}");
         
@@ -151,11 +155,17 @@ class AdminAjaxHandler {
             }
         }
         
-        // Add default rejection reason if none exists
-        $rejection_reason = get_post_meta($post_id, 'duvod_zamitnuti', true);
-        if (empty($rejection_reason)) {
-            update_post_meta($post_id, 'duvod_zamitnuti', 'Rychle odmítnuto administrátorem');
-            error_log("[REALIZACE:AJAX] Added default rejection reason");
+        // Set rejection reason from user input or use default
+        if (!empty($rejection_reason)) {
+            update_post_meta($post_id, 'duvod_zamitnuti', $rejection_reason);
+            error_log("[REALIZACE:AJAX] Set user-provided rejection reason: " . $rejection_reason);
+        } else {
+            // Only set default if no existing reason and no user input
+            $existing_reason = get_post_meta($post_id, 'duvod_zamitnuti', true);
+            if (empty($existing_reason)) {
+                update_post_meta($post_id, 'duvod_zamitnuti', 'Rychle odmítnuto administrátorem');
+                error_log("[REALIZACE:AJAX] Added default rejection reason");
+            }
         }
         
         $this->handle_update_result($result, $post_id, 'reject');
@@ -204,13 +214,20 @@ class AdminAjaxHandler {
         }
         
         $user_id = (int)($_POST['user_id'] ?? 0);
+        $points_data_json = $_POST['points_data'] ?? '{}';
         
         if (!$user_id || !get_userdata($user_id)) {
             wp_send_json_error(['message' => 'Invalid user']);
         }
         
+        // Parse points data
+        $points_data = json_decode($points_data_json, true);
+        if (!is_array($points_data)) {
+            $points_data = [];
+        }
+        
         try {
-            $approved_count = $this->process_bulk_approve($user_id);
+            $approved_count = $this->process_bulk_approve($user_id, $points_data);
             
             wp_send_json_success([
                 'message' => sprintf('Schváleno %d realizací', $approved_count),
@@ -227,9 +244,10 @@ class AdminAjaxHandler {
      * Process bulk approve operation for a user
      *
      * @param int $user_id User ID
+     * @param array $points_data Array mapping post IDs to points values
      * @return int Number of approved posts
      */
-    private function process_bulk_approve(int $user_id): int {
+    private function process_bulk_approve(int $user_id, array $points_data = []): int {
         // Get all pending realizace for user
         $pending_posts = get_posts([
             'post_type' => 'realizace',
@@ -243,20 +261,87 @@ class AdminAjaxHandler {
         
         $approved_count = 0;
         foreach ($pending_posts as $post_id) {
+            // Get points for this specific post
+            $points = isset($points_data[$post_id]) ? (int)$points_data[$post_id] : 0;
+            
+            // Skip posts without points specified
+            if ($points <= 0) {
+                error_log("[REALIZACE:AJAX] Skipping post {$post_id} - no points specified");
+                continue;
+            }
+            
             $result = wp_update_post([
                 'ID' => $post_id,
                 'post_status' => 'publish'
             ]);
             
             if (!is_wp_error($result)) {
+                // Set points for the approved post
+                update_field('pridelene_body', $points, $post_id);
+                error_log("[REALIZACE:AJAX] Bulk approved post {$post_id} with {$points} points");
+                
+                // Award points through the points handler
+                if (class_exists('\\MistrFachman\\Realizace\\PointsHandler')) {
+                    $points_handler = new \MistrFachman\Realizace\PointsHandler();
+                    $points_handler->process_realizace_points($post_id, 'approve');
+                }
+                
                 $approved_count++;
-                error_log("[REALIZACE:AJAX] Bulk approved post {$post_id}");
             } else {
                 error_log("[REALIZACE:AJAX] Failed to bulk approve post {$post_id}: " . $result->get_error_message());
             }
         }
         
         return $approved_count;
+    }
+
+    /**
+     * Handle ACF field update AJAX action
+     */
+    public function handle_update_acf_field_ajax(): void {
+        error_log('[REALIZACE:AJAX] Update ACF field called');
+        error_log('[REALIZACE:AJAX] POST data: ' . json_encode($_POST));
+        
+        try {
+            // Verify nonce and permissions
+            check_ajax_referer('mistr_fachman_realizace_action', 'nonce');
+            
+            if (!current_user_can('edit_posts')) {
+                wp_send_json_error(['message' => 'Insufficient permissions']);
+            }
+            
+            $post_id = (int)($_POST['post_id'] ?? 0);
+            $field_name = sanitize_text_field($_POST['field_name'] ?? '');
+            $field_value = sanitize_textarea_field($_POST['field_value'] ?? '');
+            
+            if (!$post_id || !$field_name) {
+                wp_send_json_error(['message' => 'Invalid parameters']);
+            }
+            
+            $post = get_post($post_id);
+            if (!$post || $post->post_type !== 'realizace') {
+                wp_send_json_error(['message' => 'Invalid post']);
+            }
+            
+            // Update the ACF field
+            $result = update_field($field_name, $field_value, $post_id);
+            
+            if ($result !== false) {
+                error_log("[REALIZACE:AJAX] Updated ACF field '{$field_name}' for post {$post_id}");
+                wp_send_json_success([
+                    'message' => 'Field updated successfully',
+                    'field_name' => $field_name,
+                    'field_value' => $field_value
+                ]);
+            } else {
+                error_log("[REALIZACE:AJAX] Failed to update ACF field '{$field_name}' for post {$post_id}");
+                wp_send_json_error(['message' => 'Failed to update field']);
+            }
+            
+        } catch (\Exception $e) {
+            error_log('[REALIZACE:AJAX] Exception in update ACF field: ' . $e->getMessage());
+            wp_send_json_error(['message' => 'Error updating field: ' . $e->getMessage()]);
+        }
     }
 
     /**

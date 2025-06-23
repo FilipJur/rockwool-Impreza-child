@@ -66,9 +66,9 @@ class AdminApp {
     }
 
     // Realizace management for user admin interface
-    if (document.querySelector('.realizace-management-section')) {
+    if (document.querySelector('.realizace-management-modern')) {
       try {
-        this.modules.realizaceManagement = setupRealizaceManagement();
+        this.modules.realizaceManagement = setupRealizaceManagement('.realizace-management-modern');
         console.log('Realizace management initialized for admin');
       } catch (error) {
         console.error('Failed to initialize realizace management for admin:', error);

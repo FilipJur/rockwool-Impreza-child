@@ -320,12 +320,20 @@ class AdminUIManager {
         
         // Show cards if user has realizace or is eligible to submit them
         if ($has_realizace || $is_pending || in_array('full_member', $user->roles)) {
-            echo '<div class="realizace-management-section">';
+            echo '<div class="realizace-management-modern">';
+            echo '<div class="management-layout">';
             
+            // Left sidebar - compact overview
+            echo '<div class="management-sidebar">';
             $this->card_renderer->render_realizace_overview_card($user);
-            $this->card_renderer->render_recent_realizace_card($user);
-            $this->card_renderer->render_quick_actions_card($user);
+            echo '</div>';
             
+            // Right main area - realizace grid
+            echo '<div class="management-main">';
+            $this->card_renderer->render_recent_realizace_card($user);
+            echo '</div>';
+            
+            echo '</div>';
             echo '</div>';
         }
     }

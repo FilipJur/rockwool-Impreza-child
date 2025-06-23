@@ -103,12 +103,18 @@ class StatusManager {
         if (isset($registered_statuses['rejected'])) {
             error_log('[REALIZACE:STATUS] SUCCESS: Rejected status found in registration');
             $rejected_status = $registered_statuses['rejected'];
-            error_log('[REALIZACE:STATUS] Properties: ' . json_encode([
-                'label' => $rejected_status->label,
-                'public' => $rejected_status->public,
-                'show_in_admin_all_list' => $rejected_status->show_in_admin_all_list,
-                'show_in_admin_status_list' => $rejected_status->show_in_admin_status_list
-            ]));
+            
+            // Check if it's an object or string
+            if (is_object($rejected_status)) {
+                error_log('[REALIZACE:STATUS] Properties: ' . json_encode([
+                    'label' => property_exists($rejected_status, 'label') ? $rejected_status->label : 'not set',
+                    'public' => property_exists($rejected_status, 'public') ? $rejected_status->public : 'not set',
+                    'show_in_admin_all_list' => property_exists($rejected_status, 'show_in_admin_all_list') ? $rejected_status->show_in_admin_all_list : 'not set',
+                    'show_in_admin_status_list' => property_exists($rejected_status, 'show_in_admin_status_list') ? $rejected_status->show_in_admin_status_list : 'not set'
+                ]));
+            } else {
+                error_log('[REALIZACE:STATUS] Status is not an object, type: ' . gettype($rejected_status) . ', value: ' . json_encode($rejected_status));
+            }
         } else {
             error_log('[REALIZACE:STATUS] CRITICAL: Rejected status NOT found after wp_loaded!');
             error_log('[REALIZACE:STATUS] This will cause AJAX reject actions to fail');

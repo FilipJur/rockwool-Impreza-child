@@ -154,6 +154,28 @@
   &:last-child {
     border-bottom: none;
   }
+
+  // Modest status coloring
+  &.status-pending {
+    .summary-value {
+      color: #f59e0b;
+      font-weight: 600;
+    }
+  }
+
+  &.status-approved {
+    .summary-value {
+      color: $color-success;
+      font-weight: 600;
+    }
+  }
+
+  &.status-rejected {
+    .summary-value {
+      color: $color-danger;
+      font-weight: 600;
+    }
+  }
 }
 
 .summary-label {
@@ -257,187 +279,203 @@
   }
 }
 
-/* Realizace Management Styles */
-.realizace-management-section {
-  .stats-grid {
+/* Realizace Management Layout */
+.realizace-management-modern {
+  margin: $spacing-xl 0;
+
+  .management-layout {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: $spacing-md;
-    margin-bottom: $spacing-lg;
-  }
+    grid-template-columns: 1fr 2fr;
+    gap: $spacing-xl;
+    align-items: start;
 
-  .stat-item {
-    text-align: center;
-    padding: $spacing-md;
-    border-radius: $border-radius;
-    background: $bg-light;
-
-    .stat-number {
-      font-size: 24px;
-      font-weight: 600;
-      color: #000;
-      margin-bottom: 4px;
-    }
-
-    .stat-label {
-      font-size: $font-size-xs;
-      color: $gray-500;
-    }
-
-    &.stat-pending {
-      border-left: 4px solid #f59e0b;
-    }
-
-    &.stat-approved {
-      border-left: 4px solid $color-success;
-    }
-
-    &.stat-rejected {
-      border-left: 4px solid $color-danger;
-    }
-
-    &.stat-points {
-      border-left: 4px solid #8b5cf6;
+    @media (max-width: 1200px) {
+      grid-template-columns: 1fr;
+      gap: $spacing-xl;
     }
   }
 
-  .realizace-list {
-    .realizace-item {
-      padding: $spacing-md;
-      border: 1px solid $border-color;
-      border-radius: $border-radius;
-      background: $bg-white;
-      margin-bottom: $spacing-md;
-
-      .item-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: $spacing-sm;
-
-        .item-title {
-          margin: 0;
-          font-size: $font-size-sm;
-          font-weight: $font-weight-medium;
-
-          a {
-            text-decoration: none;
-            color: #000;
-
-            &:hover {
-              color: $color-primary;
-            }
-          }
-        }
-      }
-
-      .item-meta {
-        display: flex;
-        gap: $spacing-md;
-        font-size: $font-size-xs;
-        color: $gray-500;
-        margin-bottom: $spacing-sm;
-
-        .meta-points {
-          color: #8b5cf6;
-          font-weight: $font-weight-medium;
-        }
-      }
-
-      .item-actions {
-        display: flex;
-        gap: $spacing-sm;
-
-        .action-link {
-          font-size: $font-size-xs;
-          padding: 4px 8px;
-          border-radius: $border-radius;
-          text-decoration: none;
-          border: none;
-          cursor: pointer;
-          background: none;
-
-          &.action-edit {
-            color: $color-primary;
-          }
-
-          &.action-approve {
-            color: $color-success;
-          }
-
-          &.action-reject {
-            color: $color-danger;
-          }
-
-          &:hover {
-            background-color: $bg-light;
-          }
-        }
-      }
-    }
+  .management-sidebar {
+    // Remove sticky positioning for cleaner layout
   }
 
-  .action-buttons {
+  .management-main {
+    min-width: 0; // Prevent overflow
+  }
+}
+
+/* Summary Grid for Overview */
+.summary-grid {
+  display: grid;
+  gap: 8px;
+}
+
+/* Realizace List */
+.realizace-list {
+  display: grid;
+  gap: $spacing-md;
+}
+
+.realizace-item {
+  padding: $spacing-md;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background: $bg-white;
+
+  &[data-status="pending"] {
+    border-left: 3px solid #f59e0b;
+  }
+
+  &[data-status="publish"] {
+    border-left: 3px solid $color-success;
+  }
+
+  &[data-status="rejected"] {
+    border-left: 3px solid $color-danger;
+  }
+}
+
+.realizace-header {
+  margin-bottom: $spacing-sm;
+
+  .realizace-title {
     display: flex;
-    flex-direction: column;
-    gap: $spacing-sm;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
 
-    .action-button {
-      display: flex;
-      align-items: center;
-      gap: $spacing-sm;
-      padding: $spacing-sm $spacing-md;
-      border-radius: $border-radius;
+    a {
       text-decoration: none;
-      font-size: $font-size-sm;
-      border: none;
-      cursor: pointer;
-      transition: $transition-fast;
+      color: #000;
+      font-weight: 600;
 
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      &.action-primary {
-        background: $color-primary;
-        color: $bg-white;
-      }
-
-      &.action-secondary {
-        background: $gray-500;
-        color: $bg-white;
-      }
-
-      &.action-warning {
-        background: #f59e0b;
-        color: $bg-white;
-      }
-
-      &.action-info {
-        background: $color-info;
-        color: $bg-white;
+      &:hover {
+        color: $color-primary;
       }
     }
   }
 
-  .action-notice {
-    margin-top: $spacing-md;
-    padding: $spacing-sm;
+  .realizace-meta {
+    display: flex;
+    gap: $spacing-md;
+    font-size: $font-size-xs;
+    color: $gray-500;
+
+    .points-assigned,
+    .points-awarded {
+      font-weight: 600;
+    }
+  }
+}
+
+.realizace-excerpt {
+  font-size: $font-size-sm;
+  color: $gray-500;
+  margin-bottom: $spacing-sm;
+  line-height: 1.4;
+}
+
+.realizace-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+  padding: 8px;
+  background: $color-gray-bg;
+  border-radius: 4px;
+
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: $font-size-xs;
+
+    .detail-label {
+      color: $gray-500;
+      font-weight: 600;
+    }
+
+    .detail-value {
+      color: $color-black;
+    }
+  }
+}
+
+.realizace-gallery {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+
+  .gallery-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid $border-color;
+    background: $color-gray-bg;
+  }
+
+  .gallery-more {
+    font-size: $font-size-xs;
+    color: $gray-500;
+    background: $color-gray-bg;
+    padding: 2px 6px;
+    border-radius: 12px;
+    margin-left: 4px;
+  }
+}
+
+.rejection-reason {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 8px;
+  border-radius: $border-radius;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-sm;
+  color: #7f1d1d;
+}
+
+.realizace-actions {
+  padding-top: $spacing-sm;
+  border-top: 1px solid $border-color;
+
+  .points-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: $spacing-sm;
+
+    label {
+      font-weight: 600;
+    }
+  }
+
+  .rejection-input {
+    margin-top: $spacing-sm;
+  }
+}
+
+/* Clean status badges */
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: $font-size-xs;
+  font-weight: 600;
+
+  &.status-pending {
     background: #fef3c7;
-    border-left: 4px solid #f59e0b;
-    border-radius: $border-radius;
-
-    .notice-text {
-      font-size: $font-size-xs;
-      color: #92400e;
-      margin: 0;
-    }
+    color: #92400e;
   }
 
-  .empty-message {
-    margin: 0;
-    font-style: italic;
+  &.status-publish {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  &.status-rejected {
+    background: #fef2f2;
+    color: #dc2626;
   }
 }
 

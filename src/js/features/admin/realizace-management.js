@@ -10,7 +10,7 @@
  * @param {string} containerSelector - Container selector for realizace cards
  * @returns {Object} Module instance with cleanup function
  */
-export function setupRealizaceManagement(containerSelector = '.realizace-management-section') {
+export function setupRealizaceManagement(containerSelector = '.realizace-management-modern') {
   console.log('Setting up realizace management...');
 
   let isInitialized = false;
@@ -102,6 +102,7 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
     // Use event delegation for dynamic content
     document.addEventListener('click', handleQuickAction);
     document.addEventListener('click', handleBulkApprove);
+    document.addEventListener('click', handleSaveRejection);
   }
 
   /**
@@ -131,6 +132,33 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
     }
 
     performQuickAction(button, postId, action, requestId);
+  }
+
+  /**
+   * Handle save rejection reason
+   * @param {Event} event - Click event
+   */
+  function handleSaveRejection(event) {
+    const button = event.target.closest('.save-rejection-btn');
+    if (!button || !isRealizaceContainer(event.target)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const postId = button.dataset.postId;
+    if (!postId) {
+      console.error('Missing post ID on save rejection button');
+      return;
+    }
+
+    // Prevent multiple requests for the same post
+    const requestId = `save-rejection-${postId}`;
+    if (state.activeRequests.has(requestId)) {
+      return;
+    }
+
+    performSaveRejection(button, postId, requestId);
   }
 
   /**
@@ -177,10 +205,17 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
    * @param {string} requestId - Unique request identifier
    */
   async function performQuickAction(button, postId, action, requestId) {
-    const actionText = action === 'approve' ? 'schválit' : 'odmítnout';
+    // Determine if this is rejecting an approved post
+    const realizaceItem = button.closest('.realizace-item');
+    const statusBadge = realizaceItem ? realizaceItem.querySelector('.status-badge.status-publish') : null;
+    const isApprovedRevoke = statusBadge && action === 'reject';
+    
+    const actionText = action === 'approve' ? 'schválit' : (isApprovedRevoke ? 'zrušit schválení' : 'odmítnout');
     
     // For approve action, get points value and validate
     let points = null;
+    let rejectionReason = null;
+    
     if (action === 'approve') {
       const pointsInput = document.querySelector('.quick-points-input[data-post-id="' + postId + '"]');
       points = pointsInput ? parseInt(pointsInput.value, 10) : 0;
@@ -189,9 +224,31 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
         showNotification('Zadejte platný počet bodů.', 'error');
         return;
       }
+    } else if (action === 'reject') {
+      // For rejecting approved posts, require rejection reason
+      if (isApprovedRevoke) {
+        rejectionReason = prompt('Zadejte důvod zrušení schválení:');
+        if (!rejectionReason || !rejectionReason.trim()) {
+          showNotification('Důvod zrušení schválení je povinný.', 'error');
+          return;
+        }
+        rejectionReason = rejectionReason.trim();
+      } else {
+        // For pending posts, get from textarea
+        const rejectionInput = document.querySelector('.rejection-reason-input[data-post-id="' + postId + '"]');
+        rejectionReason = rejectionInput ? rejectionInput.value.trim() : '';
+        
+        if (!rejectionReason) {
+          showNotification('Zadejte důvod zamítnutí.', 'error');
+          return;
+        }
+      }
     }
     
-    const confirmMessage = `Opravdu chcete ${actionText} tuto realizaci?`;
+    const confirmMessage = isApprovedRevoke 
+      ? `Opravdu chcete zrušit schválení této realizace? Bude přesunuta do stavu "Odmítnuto".`
+      : `Opravdu chcete ${actionText} tuto realizaci?`;
+    
     if (!showConfirmation(confirmMessage)) {
       return;
     }
@@ -225,6 +282,11 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
         requestData.points = points;
       }
       
+      // Add rejection reason for reject action
+      if (action === 'reject' && rejectionReason) {
+        requestData.rejection_reason = rejectionReason;
+      }
+      
       const response = await makeAjaxRequest('mistr_fachman_realizace_quick_action', requestData);
 
       if (response.success) {
@@ -237,6 +299,69 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
     } catch (error) {
       console.error('Quick action failed:', error);
       showNotification(`Chyba při ${actionText === 'schválit' ? 'schvalování' : 'odmítání'}: ${error.message}`, 'error');
+
+      // Restore button state
+      button.disabled = false;
+      button.textContent = originalText;
+    } finally {
+      state.activeRequests.delete(requestId);
+    }
+  }
+
+  /**
+   * Perform save rejection reason (updates ACF field)
+   * @param {Element} button - Save rejection button
+   * @param {string} postId - Post ID
+   * @param {string} requestId - Unique request identifier
+   */
+  async function performSaveRejection(button, postId, requestId) {
+    const rejectionInput = document.querySelector('.rejection-reason-input[data-post-id="' + postId + '"]');
+    const rejectionReason = rejectionInput ? rejectionInput.value.trim() : '';
+    
+    if (!rejectionReason) {
+      showNotification('Zadejte důvod odmítnutí.', 'error');
+      return;
+    }
+
+    // Get localized data
+    const ajaxData = window.mistrRealizaceAdmin || {};
+    const nonce = ajaxData.nonces?.save_rejection || ajaxData.nonces?.quick_action || '';
+
+    if (!nonce) {
+      console.error('Missing AJAX nonce for save rejection');
+      showNotification('Chyba: Chybí bezpečnostní token. Obnovte stránku a zkuste znovu.', 'error');
+      return;
+    }
+
+    // Update button state
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Ukládá se...';
+
+    state.activeRequests.add(requestId);
+
+    try {
+      // Update ACF field directly
+      const response = await makeAjaxRequest('mistr_fachman_update_acf_field', {
+        post_id: postId,
+        field_name: 'duvod_zamitnuti',
+        field_value: rejectionReason,
+        nonce: nonce
+      });
+
+      if (response.success) {
+        showNotification('Důvod odmítnutí byl uložen do ACF pole.', 'success');
+        button.textContent = 'Uloženo ✓';
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.disabled = false;
+        }, 2000);
+      } else {
+        throw new Error(response.data?.message || 'Neznámá chyba');
+      }
+    } catch (error) {
+      console.error('Save rejection to ACF failed:', error);
+      showNotification(`Chyba při ukládání do ACF: ${error.message}`, 'error');
 
       // Restore button state
       button.disabled = false;
@@ -276,9 +401,21 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
 
     state.activeRequests.add(requestId);
 
+    // Collect individual points for each pending realizace
+    const pointsData = {};
+    const pointsInputs = document.querySelectorAll('.quick-points-input[data-post-id]');
+    pointsInputs.forEach(input => {
+      const postId = input.dataset.postId;
+      const points = parseInt(input.value, 10) || 0;
+      if (points > 0) {
+        pointsData[postId] = points;
+      }
+    });
+
     try {
       const response = await makeAjaxRequest('mistr_fachman_bulk_approve_realizace', {
         user_id: userId,
+        points_data: JSON.stringify(pointsData),
         nonce: nonce
       });
 
@@ -344,6 +481,7 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
     // Remove event listeners
     document.removeEventListener('click', handleQuickAction);
     document.removeEventListener('click', handleBulkApprove);
+    document.removeEventListener('click', handleSaveRejection);
 
     // Clear state
     state.containers = [];
