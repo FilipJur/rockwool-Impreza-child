@@ -48,10 +48,17 @@ class Manager {
         // Initialize form handler with dependencies
         $this->form_handler = new RealizaceFormHandler($user_detection_service);
         
-        // Initialize admin components
+        // Initialize admin components with service architecture
         $card_renderer = new AdminCardRenderer();
         $asset_manager = new AdminAssetManager();
-        $admin_setup = new AdminSetup($card_renderer, $asset_manager);
+        
+        // Create specialized admin services
+        $status_manager = new StatusManager();
+        $ui_manager = new AdminUIManager($card_renderer);
+        $ajax_handler = new AdminAjaxHandler($status_manager);
+        
+        // Create clean coordinator with service injection
+        $admin_setup = new AdminSetup($status_manager, $ui_manager, $ajax_handler, $asset_manager);
         $admin_setup->init_hooks();
         
         // Initialize points handler for myCred integration
