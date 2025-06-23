@@ -24,7 +24,7 @@ export const validation = {
     const weights = [8, 7, 6, 5, 4, 3, 2];
     const sum = digits.slice(0, 7).reduce((acc, digit, index) => acc + digit * weights[index], 0);
     const remainder = sum % 11;
-    const checksum = remainder < 2 ? remainder : 11 - remainder;
+    const checksum = remainder === 0 ? 1 : (remainder === 1 ? 0 : 11 - remainder);
 
     if (digits[7] !== checksum) {
       return {

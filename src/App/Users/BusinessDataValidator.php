@@ -332,7 +332,7 @@ class BusinessDataValidator {
         }
         
         $remainder = $sum % 11;
-        $check_digit = $remainder < 2 ? $remainder : 11 - $remainder;
+        $check_digit = $remainder === 0 ? 1 : ($remainder === 1 ? 0 : 11 - $remainder);
         
         return ((int)$ico[7]) === $check_digit;
     }
