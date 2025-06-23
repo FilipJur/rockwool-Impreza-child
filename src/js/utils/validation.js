@@ -11,11 +11,11 @@ export const validation = {
    */
   ico(ico) {
     const cleaned = ico.replace(/\s/g, '');
-    
+
     if (!/^\d{8}$/.test(cleaned)) {
       return {
         valid: false,
-        error: 'IČO musí mít 8 číslic'
+        error: 'I mistr se někdy utne. Zadané IČO je neplatné.'
       };
     }
 
@@ -29,7 +29,7 @@ export const validation = {
     if (digits[7] !== checksum) {
       return {
         valid: false,
-        error: 'Neplatné IČO (chybný kontrolní součet)'
+        error: 'I mistr se někdy utne. Zadané IČO je neplatné.'
       };
     }
 
@@ -43,7 +43,7 @@ export const validation = {
    */
   email(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (!emailRegex.test(email)) {
       return {
         valid: false,
@@ -62,7 +62,7 @@ export const validation = {
   phone(phone) {
     const cleaned = phone.replace(/[\s\-\(\)]/g, '');
     const phoneRegex = /^(\+420)?[0-9]{9}$/;
-    
+
     if (!phoneRegex.test(cleaned)) {
       return {
         valid: false,
