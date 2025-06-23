@@ -94,6 +94,11 @@ class AdminInterface {
                 <?php $this->card_renderer->render_admin_actions_card($user, $is_pending); ?>
                 <?php $this->card_renderer->render_future_features_card($user); ?>
             </div>
+            
+            <?php
+            // Allow other domains to add their management cards
+            do_action('mistr_fachman_user_profile_cards', $user, $is_pending);
+            ?>
         </div>
 
         <?php $this->style_manager->render_admin_styles(); ?>

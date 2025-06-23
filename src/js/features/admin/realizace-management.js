@@ -1,0 +1,356 @@
+/**
+ * Realizace Management Admin Module
+ *
+ * Handles quick actions (approve/reject) and bulk operations for realizace management
+ * in the WordPress admin user management interface.
+ */
+
+/**
+ * Setup realizace management functionality
+ * @param {string} containerSelector - Container selector for realizace cards
+ * @returns {Object} Module instance with cleanup function
+ */
+export function setupRealizaceManagement(containerSelector = '.realizace-management-section') {
+  console.log('Setting up realizace management...');
+
+  let isInitialized = false;
+  const state = {
+    containers: [],
+    activeRequests: new Set()
+  };
+
+  // Prevent double initialization and inline script conflicts
+  if (window.realizaceManagementInitialized) {
+    console.warn('Realizace management already initialized elsewhere');
+    return { cleanup: () => {}, isInitialized: () => false };
+  }
+  window.realizaceManagementInitialized = true;
+
+  /**
+   * Show notification message
+   * @param {string} message - Message to display
+   * @param {string} type - Type of notification (success, error, info)
+   */
+  function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    document.querySelectorAll('.realizace-notification').forEach(el => el.remove());
+
+    const notification = document.createElement('div');
+    notification.className = `realizace-notification notice notice-${type} is-dismissible`;
+    notification.innerHTML = `
+      <p>${message}</p>
+      <button type="button" class="notice-dismiss">
+        <span class="screen-reader-text">Dismiss this notice.</span>
+      </button>
+    `;
+
+    // Insert at the top of the admin content
+    const adminContent = document.querySelector('.wrap') || document.querySelector('#wpbody-content');
+    if (adminContent) {
+      adminContent.insertBefore(notification, adminContent.firstChild);
+    }
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
+
+    // Handle manual dismiss
+    const dismissBtn = notification.querySelector('.notice-dismiss');
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', () => notification.remove());
+    }
+  }
+
+  /**
+   * Show confirmation dialog
+   * @param {string} message - Confirmation message
+   * @returns {boolean} True if confirmed
+   */
+  function showConfirmation(message) {
+    return confirm(message);
+  }
+
+  /**
+   * Initialize the module
+   */
+  function init() {
+    if (isInitialized) {
+      console.warn('Realizace management already initialized');
+      return;
+    }
+
+    const containers = document.querySelectorAll(containerSelector);
+    if (containers.length === 0) {
+      console.log('No realizace management containers found');
+      return;
+    }
+
+    state.containers = Array.from(containers);
+    bindEvents();
+
+    isInitialized = true;
+    console.log(`Realizace management initialized for ${containers.length} container(s)`);
+  }
+
+  /**
+   * Bind event handlers
+   */
+  function bindEvents() {
+    // Use event delegation for dynamic content
+    document.addEventListener('click', handleQuickAction);
+    document.addEventListener('click', handleBulkApprove);
+  }
+
+  /**
+   * Handle quick approve/reject actions
+   * @param {Event} event - Click event
+   */
+  function handleQuickAction(event) {
+    const button = event.target.closest('.action-approve, .action-reject');
+    if (!button || !isRealizaceContainer(event.target)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const postId = button.dataset.postId;
+    const action = button.dataset.action;
+
+    if (!postId || !action) {
+      console.error('Missing required data attributes on action button');
+      return;
+    }
+
+    // Prevent multiple requests for the same post
+    const requestId = `${action}-${postId}`;
+    if (state.activeRequests.has(requestId)) {
+      return;
+    }
+
+    performQuickAction(button, postId, action, requestId);
+  }
+
+  /**
+   * Handle bulk approve action
+   * @param {Event} event - Click event
+   */
+  function handleBulkApprove(event) {
+    const button = event.target.closest('.bulk-approve-btn');
+    if (!button || !isRealizaceContainer(event.target)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const userId = button.dataset.userId;
+    if (!userId) {
+      console.error('Missing user ID on bulk approve button');
+      return;
+    }
+
+    // Prevent multiple requests
+    const requestId = `bulk-approve-${userId}`;
+    if (state.activeRequests.has(requestId)) {
+      return;
+    }
+
+    performBulkApprove(button, userId, requestId);
+  }
+
+  /**
+   * Check if target is within a realizace container
+   * @param {Element} target - Event target
+   * @returns {boolean} True if within realizace container
+   */
+  function isRealizaceContainer(target) {
+    return state.containers.some(container => container.contains(target));
+  }
+
+  /**
+   * Perform quick action (approve/reject)
+   * @param {Element} button - Action button
+   * @param {string} postId - Post ID
+   * @param {string} action - Action type (approve/reject)
+   * @param {string} requestId - Unique request identifier
+   */
+  async function performQuickAction(button, postId, action, requestId) {
+    const actionText = action === 'approve' ? 'schválit' : 'odmítnout';
+    const confirmMessage = `Opravdu chcete ${actionText} tuto realizaci?`;
+
+    if (!showConfirmation(confirmMessage)) {
+      return;
+    }
+
+    // Get localized data
+    const ajaxData = window.mistrRealizaceAdmin || {};
+    const nonce = ajaxData.nonces?.quick_action || '';
+
+    if (!nonce) {
+      console.error('Missing AJAX nonce for quick action');
+      showNotification('Chyba: Chybí bezpečnostní token. Obnovte stránku a zkuste znovu.', 'error');
+      return;
+    }
+
+    // Update button state
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Zpracovává se...';
+
+    state.activeRequests.add(requestId);
+
+    try {
+      const response = await makeAjaxRequest('mistr_fachman_realizace_quick_action', {
+        post_id: postId,
+        realizace_action: action,
+        nonce: nonce
+      });
+
+      if (response.success) {
+        showNotification(response.data.message, 'success');
+        // Reload the page to show updated status
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        throw new Error(response.data?.message || 'Neznámá chyba');
+      }
+    } catch (error) {
+      console.error('Quick action failed:', error);
+      showNotification(`Chyba při ${actionText === 'schválit' ? 'schvalování' : 'odmítání'}: ${error.message}`, 'error');
+
+      // Restore button state
+      button.disabled = false;
+      button.textContent = originalText;
+    } finally {
+      state.activeRequests.delete(requestId);
+    }
+  }
+
+  /**
+   * Perform bulk approve action
+   * @param {Element} button - Bulk approve button
+   * @param {string} userId - User ID
+   * @param {string} requestId - Unique request identifier
+   */
+  async function performBulkApprove(button, userId, requestId) {
+    const confirmMessage = 'Opravdu chcete hromadně schválit všechny čekající realizace tohoto uživatele?';
+
+    if (!showConfirmation(confirmMessage)) {
+      return;
+    }
+
+    // Get localized data
+    const ajaxData = window.mistrRealizaceAdmin || {};
+    const nonce = ajaxData.nonces?.bulk_approve || '';
+
+    if (!nonce) {
+      console.error('Missing AJAX nonce for bulk approve');
+      showNotification('Chyba: Chybí bezpečnostní token. Obnovte stránku a zkuste znovu.', 'error');
+      return;
+    }
+
+    // Update button state
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Zpracovává se...';
+
+    state.activeRequests.add(requestId);
+
+    try {
+      const response = await makeAjaxRequest('mistr_fachman_bulk_approve_realizace', {
+        user_id: userId,
+        nonce: nonce
+      });
+
+      if (response.success) {
+        showNotification(response.data.message, 'success');
+        // Reload the page to show updated status
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        throw new Error(response.data?.message || 'Neznámá chyba');
+      }
+    } catch (error) {
+      console.error('Bulk approve failed:', error);
+      showNotification(`Chyba při hromadném schvalování: ${error.message}`, 'error');
+
+      // Restore button state
+      button.disabled = false;
+      button.textContent = originalText;
+    } finally {
+      state.activeRequests.delete(requestId);
+    }
+  }
+
+  /**
+   * Make AJAX request to WordPress
+   * @param {string} action - WordPress AJAX action
+   * @param {Object} data - Request data
+   * @returns {Promise<Object>} Response data
+   */
+  async function makeAjaxRequest(action, data) {
+    const ajaxData = window.mistrRealizaceAdmin || {};
+    const ajaxUrl = ajaxData.ajax_url || window.ajaxurl || '/wp-admin/admin-ajax.php';
+
+    const formData = new FormData();
+    formData.append('action', action);
+
+    // Add all data parameters
+    Object.entries(data).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+
+    const response = await fetch(ajaxUrl, {
+      method: 'POST',
+      body: formData,
+      credentials: 'same-origin'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  }
+
+  /**
+   * Cleanup function
+   */
+  function cleanup() {
+    if (!isInitialized) {
+      return;
+    }
+
+    // Remove event listeners
+    document.removeEventListener('click', handleQuickAction);
+    document.removeEventListener('click', handleBulkApprove);
+
+    // Clear state
+    state.containers = [];
+    state.activeRequests.clear();
+
+    // Remove notifications
+    document.querySelectorAll('.realizace-notification').forEach(el => el.remove());
+
+    // Reset initialization flag
+    window.realizaceManagementInitialized = false;
+
+    isInitialized = false;
+    console.log('Realizace management cleanup completed');
+  }
+
+  // Initialize immediately
+  init();
+
+  // Return public interface
+  return {
+    cleanup,
+    isInitialized: () => isInitialized,
+    getState: () => ({ ...state }),
+    reinitialize: () => {
+      cleanup();
+      init();
+    }
+  };
+}

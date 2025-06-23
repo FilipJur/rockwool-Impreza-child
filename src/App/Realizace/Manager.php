@@ -48,6 +48,16 @@ class Manager {
         // Initialize form handler with dependencies
         $this->form_handler = new RealizaceFormHandler($user_detection_service);
         
+        // Initialize admin components
+        $card_renderer = new AdminCardRenderer();
+        $asset_manager = new AdminAssetManager();
+        $admin_setup = new AdminSetup($card_renderer, $asset_manager);
+        $admin_setup->init_hooks();
+        
+        // Initialize points handler for myCred integration
+        $points_handler = new PointsHandler();
+        $points_handler->init_hooks();
+        
         // Hook form handler into WPCF7
         add_action('wpcf7_mail_sent', [$this->form_handler, 'handle_submission']);
         

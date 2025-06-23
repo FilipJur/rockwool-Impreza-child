@@ -256,3 +256,260 @@
     margin: 0;
   }
 }
+
+/* Realizace Management Styles */
+.realizace-management-section {
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-md;
+    margin-bottom: $spacing-lg;
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: $spacing-md;
+    border-radius: $border-radius;
+    background: $bg-light;
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: $font-size-xs;
+      color: $gray-500;
+    }
+
+    &.stat-pending {
+      border-left: 4px solid #f59e0b;
+    }
+
+    &.stat-approved {
+      border-left: 4px solid $color-success;
+    }
+
+    &.stat-rejected {
+      border-left: 4px solid $color-danger;
+    }
+
+    &.stat-points {
+      border-left: 4px solid #8b5cf6;
+    }
+  }
+
+  .realizace-list {
+    .realizace-item {
+      padding: $spacing-md;
+      border: 1px solid $border-color;
+      border-radius: $border-radius;
+      background: $bg-white;
+      margin-bottom: $spacing-md;
+
+      .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: $spacing-sm;
+
+        .item-title {
+          margin: 0;
+          font-size: $font-size-sm;
+          font-weight: $font-weight-medium;
+
+          a {
+            text-decoration: none;
+            color: #000;
+
+            &:hover {
+              color: $color-primary;
+            }
+          }
+        }
+      }
+
+      .item-meta {
+        display: flex;
+        gap: $spacing-md;
+        font-size: $font-size-xs;
+        color: $gray-500;
+        margin-bottom: $spacing-sm;
+
+        .meta-points {
+          color: #8b5cf6;
+          font-weight: $font-weight-medium;
+        }
+      }
+
+      .item-actions {
+        display: flex;
+        gap: $spacing-sm;
+
+        .action-link {
+          font-size: $font-size-xs;
+          padding: 4px 8px;
+          border-radius: $border-radius;
+          text-decoration: none;
+          border: none;
+          cursor: pointer;
+          background: none;
+
+          &.action-edit {
+            color: $color-primary;
+          }
+
+          &.action-approve {
+            color: $color-success;
+          }
+
+          &.action-reject {
+            color: $color-danger;
+          }
+
+          &:hover {
+            background-color: $bg-light;
+          }
+        }
+      }
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    .action-button {
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+      padding: $spacing-sm $spacing-md;
+      border-radius: $border-radius;
+      text-decoration: none;
+      font-size: $font-size-sm;
+      border: none;
+      cursor: pointer;
+      transition: $transition-fast;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &.action-primary {
+        background: $color-primary;
+        color: $bg-white;
+      }
+
+      &.action-secondary {
+        background: $gray-500;
+        color: $bg-white;
+      }
+
+      &.action-warning {
+        background: #f59e0b;
+        color: $bg-white;
+      }
+
+      &.action-info {
+        background: $color-info;
+        color: $bg-white;
+      }
+    }
+  }
+
+  .action-notice {
+    margin-top: $spacing-md;
+    padding: $spacing-sm;
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    border-radius: $border-radius;
+
+    .notice-text {
+      font-size: $font-size-xs;
+      color: #92400e;
+      margin: 0;
+    }
+  }
+
+  .empty-message {
+    margin: 0;
+    font-style: italic;
+  }
+}
+
+/* Realizace Notification Styles */
+.realizace-notification {
+  position: relative;
+  margin: $spacing-lg 0;
+  padding: $spacing-md;
+  border-radius: $border-radius;
+  border-left: 4px solid $color-info;
+  background: #f0f9ff;
+  
+  &.notice-success {
+    border-left-color: $color-success;
+    background: #f0fdf4;
+    
+    p {
+      color: #166534;
+    }
+  }
+  
+  &.notice-error {
+    border-left-color: $color-danger;
+    background: #fef2f2;
+    
+    p {
+      color: #dc2626;
+    }
+  }
+  
+  &.notice-info {
+    border-left-color: $color-info;
+    background: #f0f9ff;
+    
+    p {
+      color: #1d4ed8;
+    }
+  }
+  
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+  }
+  
+  .notice-dismiss {
+    position: absolute;
+    top: 0;
+    right: $spacing-sm;
+    padding: $spacing-sm;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    
+    &:hover {
+      opacity: 1;
+    }
+    
+    &:before {
+      content: '×';
+      font-size: 18px;
+      font-weight: bold;
+    }
+    
+    .screen-reader-text {
+      clip: rect(1px, 1px, 1px, 1px);
+      position: absolute !important;
+      height: 1px;
+      width: 1px;
+      overflow: hidden;
+    }
+  }
+}

@@ -5,6 +5,7 @@
 
 import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAresForm } from './features/ares/handler.js';
+import { setupRealizaceManagement } from './features/admin/realizace-management.js';
 
 /**
  * Admin Application Class
@@ -14,7 +15,8 @@ class AdminApp {
   constructor() {
     this.modules = {
       businessModal: null,
-      aresHandler: null
+      aresHandler: null,
+      realizaceManagement: null
     };
     this.isInitialized = false;
 
@@ -60,6 +62,16 @@ class AdminApp {
         console.log('ARES handler initialized for admin');
       } catch (error) {
         console.error('Failed to initialize ARES handler for admin:', error);
+      }
+    }
+
+    // Realizace management for user admin interface
+    if (document.querySelector('.realizace-management-section')) {
+      try {
+        this.modules.realizaceManagement = setupRealizaceManagement();
+        console.log('Realizace management initialized for admin');
+      } catch (error) {
+        console.error('Failed to initialize realizace management for admin:', error);
       }
     }
   }

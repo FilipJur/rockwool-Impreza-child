@@ -1,0 +1,77 @@
+{
+  "key": "group_6675e2a3b4c5d",
+  "title": "Detaily Realizace",
+  "fields": [
+      {
+          "key": "field_6675e2a4e6f7a",
+          "label": "Počet m²",
+          "name": "pocet_m2",
+          "type": "number",
+          "instructions": "Zadejte celkovou plochu realizace v metrech čtverečních.",
+          "required": 1,
+          "wrapper": { "width": "50" }
+      },
+      {
+          "key": "field_6675e3e8e6f7b",
+          "label": "Typy konstrukcí (Text)",
+          "name": "typ_konstrukce",
+          "type": "textarea",
+          "instructions": "Uživatelem zadané typy konstrukcí jako prostý text.",
+          "required": 1,
+          "rows": 3
+      },
+      {
+          "key": "field_6675e42ce6f7c",
+          "label": "Použité materiály (Text)",
+          "name": "pouzite_materialy",
+          "type": "textarea",
+          "instructions": "Uživatelem zadané materiály a množství jako prostý text.",
+          "required": 0,
+          "rows": 5
+      },
+      {
+          "key": "field_6675e46be6f7d",
+          "label": "Fotky z realizace",
+          "name": "fotky_realizace",
+          "type": "gallery",
+          "instructions": "Fotky nahrané uživatelem z frontend formuláře.",
+          "required": 1,
+          "return_format": "id",
+          "library": "all"
+      },
+      {
+          "key": "field_6675e4a7e6f7e",
+          "label": "Správa a body",
+          "name": "",
+          "type": "tab",
+          "placement": "left"
+      },
+      {
+          "key": "field_6675e4b6e6f7f",
+          "label": "Udělené body",
+          "name": "pridelene_body",
+          "type": "number",
+          "instructions": "Zadejte počet bodů, které chcete uživateli za tuto realizaci udělit.",
+          "wrapper": { "width": "50" }
+      },
+      {
+          "key": "field_6675e4f4e6f80",
+          "label": "Důvod zamítnutí",
+          "name": "duvod_zamitnuti",
+          "type": "textarea",
+          "instructions": "Pokud realizaci zamítáte, uveďte zde stručný důvod pro uživatele.",
+          "rows": 3
+      }
+  ],
+  "location": [
+      [
+          {
+              "param": "post_type",
+              "operator": "==",
+              "value": "realizace"
+          }
+      ]
+  ],
+  "style": "default",
+  "label_placement": "top"
+}
