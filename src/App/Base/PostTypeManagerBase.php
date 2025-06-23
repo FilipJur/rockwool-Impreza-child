@@ -1,0 +1,171 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MistrFachman\Base;
+
+/**
+ * Base Post Type Manager - Abstract Foundation
+ *
+ * Provides common patterns for managing custom post types with approval workflows.
+ * Designed to be extended by domain-specific managers (Realizace, Faktury, etc.).
+ *
+ * @package mistr-fachman
+ * @since 1.0.0
+ */
+
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+abstract class PostTypeManagerBase {
+
+    /**
+     * Get the post type slug for this domain
+     */
+    abstract protected function getPostType(): string;
+
+    /**
+     * Get the default points value for this domain
+     * 
+     * @param int $post_id Optional post ID for dynamic calculations
+     * @return int Default points value
+     */
+    abstract protected function getDefaultPoints(int $post_id = 0): int;
+
+    /**
+     * Get the ACF field name that stores points for this domain
+     */
+    abstract protected function getPointsFieldName(): string;
+
+    /**
+     * Get the display name for this domain (e.g., "Realizace", "Faktury")
+     */
+    abstract protected function getDomainDisplayName(): string;
+
+    /**
+     * Initialize common hooks for post type management
+     */
+    public function init_common_hooks(): void {
+        add_action('save_post_' . $this->getPostType(), [$this, 'handle_post_save'], 10, 2);
+        add_action('transition_post_status', [$this, 'handle_status_transition'], 10, 3);
+        add_action('wp_after_insert_post', [$this, 'populate_default_points'], 20, 2);
+    }
+
+    /**
+     * Handle post save - populate default points if needed
+     */
+    public function handle_post_save(int $post_id, \WP_Post $post): void {
+        // Skip autosaves and revisions
+        if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
+            return;
+        }
+
+        $this->ensure_default_points($post_id);
+    }
+
+    /**
+     * Handle status transitions for logging
+     */
+    public function handle_status_transition(string $new_status, string $old_status, \WP_Post $post): void {
+        if ($post->post_type !== $this->getPostType()) {
+            return;
+        }
+
+        error_log(sprintf(
+            '[%s:MANAGER] Status transition: %s → %s for post #%d',
+            strtoupper($this->getPostType()),
+            $old_status,
+            $new_status,
+            $post->ID
+        ));
+    }
+
+    /**
+     * Populate default points after post insertion
+     */
+    public function populate_default_points(\WP_Post $post, bool $update): void {
+        if ($post->post_type !== $this->getPostType()) {
+            return;
+        }
+
+        // Only set defaults for new posts or posts without points
+        if (!$update || $this->get_current_points($post->ID) === 0) {
+            $this->ensure_default_points($post->ID);
+        }
+    }
+
+    /**
+     * Ensure post has default points if none are set
+     */
+    protected function ensure_default_points(int $post_id): void {
+        $current_points = $this->get_current_points($post_id);
+        
+        if ($current_points === 0) {
+            $default_points = $this->getDefaultPoints($post_id);
+            
+            if ($default_points > 0) {
+                $this->set_points($post_id, $default_points);
+                
+                error_log(sprintf(
+                    '[%s:MANAGER] Set default points: %d for post #%d',
+                    strtoupper($this->getPostType()),
+                    $default_points,
+                    $post_id
+                ));
+            }
+        }
+    }
+
+    /**
+     * Get current points value for a post
+     */
+    protected function get_current_points(int $post_id): int {
+        if (function_exists('get_field')) {
+            $points = get_field($this->getPointsFieldName(), $post_id);
+        } else {
+            $points = get_post_meta($post_id, $this->getPointsFieldName(), true);
+        }
+
+        return is_numeric($points) ? (int)$points : 0;
+    }
+
+    /**
+     * Set points value for a post
+     */
+    protected function set_points(int $post_id, int $points): bool {
+        if (function_exists('update_field')) {
+            $result = update_field($this->getPointsFieldName(), $points, $post_id);
+            return $result !== false;
+        } else {
+            return update_post_meta($post_id, $this->getPointsFieldName(), $points) !== false;
+        }
+    }
+
+    /**
+     * Get posts by status for this domain
+     */
+    protected function get_posts_by_status(int $user_id, string $status, int $limit = -1): array {
+        return get_posts([
+            'post_type' => $this->getPostType(),
+            'author' => $user_id,
+            'post_status' => $status,
+            'posts_per_page' => $limit,
+            'orderby' => 'date',
+            'order' => 'DESC'
+        ]);
+    }
+
+    /**
+     * Get domain configuration for frontend localization
+     */
+    public function get_domain_config(): array {
+        return [
+            'post_type' => $this->getPostType(),
+            'display_name' => $this->getDomainDisplayName(),
+            'default_points' => $this->getDefaultPoints(),
+            'points_field' => $this->getPointsFieldName()
+        ];
+    }
+}

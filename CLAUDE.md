@@ -69,6 +69,7 @@ WordPress child theme development with enterprise-grade architecture. **REALIZAC
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
+- **2025-06-23**: [refactor] Create domain abstraction architecture with fixed points - Created base classes (PostTypeManagerBase, AdminControllerBase, PointsHandlerBase, FormHandlerBase) and refactored Realizace domain to use them. Implemented fixed 2500 points default for realizace with admin override capability. Simplified bulk approval workflow by removing UI points collection since defaults are automatically applied.
 - **2025-06-23**: [update] Improve admin interface enhancements - Added pending realizace column to wp-admin/users.php table, improved MyCred notices to show realizace titles instead of IDs, implemented dynamic grid layout for realizace cards (1 item = full width, 2 items = 50% each, 3+ items = standard grid)
 - **2025-06-23**: [fix] Add permanent deletion handler with No Debt policy - Complete point revocation system now handles permanent deletion while preventing negative balances
 - **2025-06-23**: [refactor] Realizace admin architecture consolidation - Merged AdminSetup, AdminUIManager, and AdminAjaxHandler into unified AdminController, fixed status revert bug, improved bulk approve logic
@@ -108,6 +109,8 @@ WordPress child theme development with enterprise-grade architecture. **REALIZAC
 
 ## Active Decisions
 - **Enterprise architecture**: Domain-driven structure with PSR-4 autoloading and single bootstrap
+- **Abstract base class architecture** (2025-06-23): Created PostTypeManagerBase, AdminControllerBase, PointsHandlerBase, and FormHandlerBase for domain abstraction. Enables rapid creation of new domains (Faktury, Certifikace) by extending proven patterns
+- **Fixed default points system** (2025-06-23): Realizace awards fixed 2500 points with admin override capability. Single source of truth through ACF fields with automatic population. Simplifies admin workflow while maintaining flexibility
 - **Functional JavaScript patterns**: setupFunction() approach for all feature modules with isolated state
 - **Component-based shortcodes**: React-style reusable components with auto-discovery
 - **Single Source of Truth**: Centralized balance calculation and status management

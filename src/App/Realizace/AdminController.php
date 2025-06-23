@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Realizace;
 
+use MistrFachman\Base\AdminControllerBase;
+
 /**
  * Realizace Admin Controller - Unified Admin Interface Controller
  *
@@ -37,7 +39,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class AdminController {
+class AdminController extends AdminControllerBase {
 
     public function __construct(
         private StatusManager $status_manager,
@@ -62,14 +64,11 @@ class AdminController {
     public function init_hooks(): void {
         error_log('[REALIZACE:ADMIN] Initializing unified admin hooks');
 
+        // Initialize base class hooks
+        $this->init_common_hooks();
+
         // Status management hooks
         $this->status_manager->init_hooks();
-
-        // UI customization hooks
-        $this->init_ui_hooks();
-
-        // AJAX endpoint hooks
-        $this->init_ajax_hooks();
 
         // Asset management hooks
         add_action('admin_enqueue_scripts', [$this->asset_manager, 'enqueue_admin_assets']);
@@ -85,7 +84,7 @@ class AdminController {
     /**
      * Initialize UI customization hooks
      */
-    private function init_ui_hooks(): void {
+    protected function init_ui_hooks(): void {
         // Admin list view customization
         add_filter('manage_realizace_posts_columns', [$this, 'add_admin_columns']);
         add_action('manage_realizace_posts_custom_column', [$this, 'render_custom_columns'], 10, 2);
@@ -137,7 +136,7 @@ class AdminController {
     /**
      * Render points column content
      */
-    private function render_points_column(int $post_id): void {
+    protected function render_points_column(int $post_id): void {
         $points_assigned = function_exists('get_field')
             ? get_field('pridelene_body', $post_id)
             : get_post_meta($post_id, 'pridelene_body', true);
@@ -157,7 +156,7 @@ class AdminController {
     /**
      * Render status column content
      */
-    private function render_status_column(int $post_id): void {
+    protected function render_status_column(int $post_id): void {
         $post = get_post($post_id);
         $status_config = $this->get_status_display_config($post->post_status);
 
@@ -170,7 +169,7 @@ class AdminController {
     /**
      * Get status display configuration
      */
-    private function get_status_display_config(string $status): array {
+    protected function get_status_display_config(string $status): array {
         return match ($status) {
             'publish' => [
                 'label' => 'Schváleno',
@@ -422,7 +421,7 @@ class AdminController {
     /**
      * Initialize AJAX hooks
      */
-    private function init_ajax_hooks(): void {
+    protected function init_ajax_hooks(): void {
         add_action('wp_ajax_mistr_fachman_realizace_quick_action', [$this, 'handle_quick_action_ajax']);
         add_action('wp_ajax_mistr_fachman_bulk_approve_realizace', [$this, 'handle_bulk_approve_ajax']);
         add_action('wp_ajax_mistr_fachman_update_acf_field', [$this, 'handle_update_acf_field_ajax']);
@@ -476,15 +475,20 @@ class AdminController {
     }
 
     /**
-     * Process approve action with points validation
+     * Process approve action with points validation and default population
      */
-    private function process_approve_action(int $post_id): void {
+    protected function process_approve_action(int $post_id): void {
         error_log("[REALIZACE:AJAX] Processing APPROVE action for post {$post_id}");
 
-        // Get points to award from POST data
-        $points_to_award = isset($_POST['points']) ? (int)$_POST['points'] : 0;
+        // Get points to award from POST data or use default
+        $points_to_award = isset($_POST['points']) ? (int)$_POST['points'] : $this->getDefaultPoints($post_id);
 
-        // Validate points
+        // If still no points, use the fixed default
+        if ($points_to_award <= 0) {
+            $points_to_award = $this->getDefaultPoints($post_id);
+        }
+
+        // Final validation
         if ($points_to_award <= 0) {
             wp_send_json_error(['message' => 'Počet bodů musí být kladné číslo.']);
         }
@@ -522,7 +526,7 @@ class AdminController {
     /**
      * Process reject action with comprehensive status validation
      */
-    private function process_reject_action(int $post_id, \WP_Post $post, string $rejection_reason = ''): void {
+    protected function process_reject_action(int $post_id, \WP_Post $post, string $rejection_reason = ''): void {
         error_log("[REALIZACE:AJAX] Processing REJECT action for post {$post_id}");
         error_log("[REALIZACE:AJAX] Current post status before reject: {$post->post_status}");
 
@@ -607,30 +611,13 @@ class AdminController {
         }
 
         $user_id = (int)($_POST['user_id'] ?? 0);
-        $points_data_json = $_POST['points_data'] ?? '{}';
-
-        error_log('[REALIZACE:AJAX] Bulk approve raw POST data: ' . json_encode($_POST));
 
         if (!$user_id || !get_userdata($user_id)) {
             wp_send_json_error(['message' => 'Invalid user']);
         }
 
-        // Parse points data - handle potential escaping from FormData
-        $points_data = json_decode(stripslashes($points_data_json), true);
-        if (!is_array($points_data)) {
-            // Try without stripslashes in case it's not escaped
-            $points_data = json_decode($points_data_json, true);
-            if (!is_array($points_data)) {
-                $points_data = [];
-            }
-        }
-
-        error_log('[REALIZACE:AJAX] Points data JSON: ' . $points_data_json);
-        error_log('[REALIZACE:AJAX] Points data with stripslashes: ' . stripslashes($points_data_json));
-        error_log('[REALIZACE:AJAX] Points data parsed: ' . json_encode($points_data));
-
         try {
-            $approved_count = $this->process_bulk_approve($user_id, $points_data);
+            $approved_count = $this->process_bulk_approve($user_id);
 
             wp_send_json_success([
                 'message' => sprintf('Schváleno %d realizací', $approved_count),
@@ -644,9 +631,9 @@ class AdminController {
     }
 
     /**
-     * Process bulk approve operation for a user with proper points handling
+     * Process bulk approve operation with default points population
      */
-    private function process_bulk_approve(int $user_id, array $points_data = []): int {
+    protected function process_bulk_approve(int $user_id): int {
         // Get all pending realizace for user
         $pending_posts = get_posts([
             'post_type' => 'realizace',
@@ -660,25 +647,15 @@ class AdminController {
 
         $approved_count = 0;
         foreach ($pending_posts as $post_id) {
-            // Get points for this specific post from the UI data
-            $points = isset($points_data[$post_id]) ? (int)$points_data[$post_id] : 0;
-
-            // Skip posts without points specified
-            if ($points <= 0) {
-                error_log("[REALIZACE:AJAX] Skipping post {$post_id} - no points specified (got: {$points})");
-                continue;
-            }
-
-            // Set points to ACF field first
-            if (function_exists('update_field')) {
-                /** @var callable $update_field */
-                $update_field = 'update_field';
-                $update_field('pridelene_body', $points, $post_id);
+            // Ensure default points are set (2500 for realizace)
+            $current_points = $this->get_current_points($post_id);
+            if ($current_points === 0) {
+                $default_points = $this->getDefaultPoints($post_id);
+                $this->set_points($post_id, $default_points);
+                error_log("[REALIZACE:AJAX] Set default points {$default_points} for post {$post_id}");
             } else {
-                update_post_meta($post_id, 'pridelene_body', $points);
+                error_log("[REALIZACE:AJAX] Using existing points {$current_points} for post {$post_id}");
             }
-
-            error_log("[REALIZACE:AJAX] Set points to {$points} for post {$post_id}");
 
             // Clear rejection reason when approving (clean slate for approved realizace)
             if (function_exists('update_field')) {
@@ -696,7 +673,8 @@ class AdminController {
             ]);
 
             if (!is_wp_error($result)) {
-                error_log("[REALIZACE:AJAX] Bulk approved post {$post_id} with {$points} points");
+                $final_points = $this->get_current_points($post_id);
+                error_log("[REALIZACE:AJAX] Bulk approved post {$post_id} with {$final_points} points");
                 $approved_count++;
             } else {
                 error_log("[REALIZACE:AJAX] Failed to bulk approve post {$post_id}: " . $result->get_error_message());
@@ -774,5 +752,47 @@ class AdminController {
      */
     public function validate_rejected_status(?int $post_id = null): array {
         return $this->status_manager->validate_status_implementation($post_id);
+    }
+
+    // ===========================================
+    // ABSTRACT METHOD IMPLEMENTATIONS
+    // Required by AdminControllerBase
+    // ===========================================
+
+    /**
+     * Get the post type slug for this domain
+     */
+    protected function getPostType(): string {
+        return 'realizace';
+    }
+
+    /**
+     * Get the display name for this domain
+     */
+    protected function getDomainDisplayName(): string {
+        return 'Realizace';
+    }
+
+    /**
+     * Get the default points for realizace (fixed 2500)
+     */
+    protected function getDefaultPoints(int $post_id = 0): int {
+        return 2500;
+    }
+
+    /**
+     * Get the points field name
+     */
+    protected function getPointsFieldName(): string {
+        return 'pridelene_body';
+    }
+
+    /**
+     * Render realizace-specific user profile card
+     */
+    protected function render_user_profile_card(\WP_User $user): void {
+        echo '<div class="realizace-management-modern">';
+        $this->card_renderer->render_consolidated_realizace_dashboard($user);
+        echo '</div>';
     }
 }

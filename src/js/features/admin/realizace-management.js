@@ -90,6 +90,7 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
 
     state.containers = Array.from(containers);
     bindEvents();
+    populateDefaultPoints();
 
     isInitialized = true;
     console.log(`Realizace management initialized for ${containers.length} container(s)`);
@@ -104,6 +105,24 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
     document.addEventListener('click', handleBulkApprove);
     document.addEventListener('click', handleSaveRejection);
     document.addEventListener('click', handleSectionToggle);
+  }
+
+  /**
+   * Populate default points (2500) in all empty points inputs
+   */
+  function populateDefaultPoints() {
+    const DEFAULT_POINTS = 2500;
+    const pointsInputs = document.querySelectorAll('.quick-points-input[data-post-id]');
+    
+    pointsInputs.forEach(input => {
+      if (!input.value || input.value === '0' || input.value === '') {
+        input.value = DEFAULT_POINTS.toString();
+        input.setAttribute('placeholder', DEFAULT_POINTS.toString());
+        console.log(`Populated default ${DEFAULT_POINTS} points for post ${input.dataset.postId}`);
+      }
+    });
+    
+    console.log(`Populated default points for ${pointsInputs.length} realizace inputs`);
   }
 
   /**
@@ -464,34 +483,10 @@ export function setupRealizaceManagement(containerSelector = '.realizace-managem
 
     state.activeRequests.add(requestId);
 
-    // Collect individual points for each pending realizace
-    const pointsData = {};
-    const pointsInputs = document.querySelectorAll('.quick-points-input[data-post-id]');
-    console.log('Found points inputs for bulk approve:', pointsInputs.length);
-    
-    pointsInputs.forEach(input => {
-      const postId = input.dataset.postId;
-      const points = parseInt(input.value, 10) || 0;
-      console.log(`Post ${postId}: ${points} points (input value: "${input.value}")`);
-      if (points > 0) {
-        pointsData[postId] = points;
-      }
-    });
-    
-    console.log('Final points data for bulk approve:', pointsData);
-    
-    if (Object.keys(pointsData).length === 0) {
-      showNotification('Nejdříve zadejte body pro jednotlivé realizace.', 'error');
-      button.disabled = false;
-      button.textContent = originalText;
-      state.activeRequests.delete(requestId);
-      return;
-    }
-
     try {
+      // Backend now handles default points automatically (2500 per realizace)
       const response = await makeAjaxRequest('mistr_fachman_bulk_approve_realizace', {
         user_id: userId,
-        points_data: JSON.stringify(pointsData),
         nonce: nonce
       });
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MistrFachman\Realizace;
 
+use MistrFachman\Base\PostTypeManagerBase;
 use MistrFachman\Services\UserDetectionService;
 use MistrFachman\Users\RoleManager;
 
@@ -24,7 +25,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class Manager {
+class Manager extends PostTypeManagerBase {
 
     private static ?self $instance = null;
 
@@ -41,6 +42,8 @@ class Manager {
      * Private constructor to prevent direct instantiation
      */
     private function __construct() {
+        // Initialize base class hooks
+        $this->init_common_hooks();
         // Initialize dependencies
         $role_manager = new RoleManager();
         $user_detection_service = new UserDetectionService($role_manager);
@@ -191,5 +194,33 @@ class Manager {
         );
 
         return $form_elements;
+    }
+
+    /**
+     * Get the post type slug for this domain
+     */
+    protected function getPostType(): string {
+        return 'realizace';
+    }
+
+    /**
+     * Get the default points value for realizace (fixed 2500)
+     */
+    protected function getDefaultPoints(int $post_id = 0): int {
+        return 2500;
+    }
+
+    /**
+     * Get the ACF field name that stores points
+     */
+    protected function getPointsFieldName(): string {
+        return 'pridelene_body';
+    }
+
+    /**
+     * Get the display name for this domain
+     */
+    protected function getDomainDisplayName(): string {
+        return 'Realizace';
     }
 }
