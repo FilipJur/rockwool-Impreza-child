@@ -161,34 +161,55 @@ class PointsHandler {
     }
 
     /**
-     * Revoke all points when post is rejected or unpublished
+     * Revoke points when post is rejected or unpublished with "No Debt" policy
+     * 
+     * Implements the "No Debt" business rule: never allow users to have negative balances.
+     * Only revokes up to the user's current balance to prevent debt.
      *
      * @param int $post_id Post ID
      * @param int $user_id User ID
      * @param string $new_status New status
      */
     private function revoke_points(int $post_id, int $user_id, string $new_status): void {
-        if (!function_exists('mycred_add')) {
+        if (!function_exists('mycred_add') || !function_exists('mycred_get_users_balance')) {
             return;
         }
 
         $points_awarded = (int)get_post_meta($post_id, '_realizace_points_awarded', true);
         
         if ($points_awarded > 0) {
-            // The final arguments are for the log entry template
-            $result = mycred_add(
-                'revoke_realizace_points',
-                $user_id,
-                -$points_awarded,
-                'Odebrání bodů: Realizace ID %d změněna na stav "' . $new_status . '"',
-                $post_id
-            );
+            // Get user's current balance to implement "No Debt" policy
+            $current_balance = (int)mycred_get_users_balance($user_id);
             
-            if ($result) {
-                update_post_meta($post_id, '_realizace_points_awarded', 0);
-                error_log("[REALIZACE:INFO] Revoked {$points_awarded} points from post {$post_id} (status: {$new_status})");
+            // Calculate maximum points we can revoke without creating debt
+            $points_to_revoke = min($points_awarded, $current_balance);
+            
+            if ($points_to_revoke > 0) {
+                // Revoke only the amount that won't create negative balance
+                $result = mycred_add(
+                    'revoke_realizace_points',
+                    $user_id,
+                    -$points_to_revoke,
+                    "Odebrání bodů: Realizace ID %d změněna na stav \"{$new_status}\"",
+                    $post_id
+                );
+                
+                if ($result) {
+                    // Update tracking to reflect actual points revoked
+                    update_post_meta($post_id, '_realizace_points_awarded', $points_awarded - $points_to_revoke);
+                    
+                    if ($points_to_revoke < $points_awarded) {
+                        error_log("[REALIZACE:INFO] No Debt Policy: Revoked {$points_to_revoke}/{$points_awarded} points from post {$post_id} (balance: {$current_balance}, status: {$new_status})");
+                    } else {
+                        error_log("[REALIZACE:INFO] Revoked {$points_to_revoke} points from post {$post_id} (status: {$new_status})");
+                    }
+                } else {
+                    error_log("[REALIZACE:ERROR] Failed to revoke {$points_to_revoke} points from post {$post_id}");
+                }
             } else {
-                error_log("[REALIZACE:ERROR] Failed to revoke {$points_awarded} points from post {$post_id}");
+                // User has insufficient balance - log but don't revoke
+                error_log("[REALIZACE:INFO] No Debt Policy: Cannot revoke {$points_awarded} points from post {$post_id} - user balance too low ({$current_balance})");
+                // Keep the awarded points tracking unchanged since no points were actually revoked
             }
         }
     }

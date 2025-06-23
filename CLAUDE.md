@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. **FUNCTIONAL JAVASCRIPT MODERNIZATION COMPLETE** - Converted class-based modules to modern functional patterns for better reusability and maintainability. All feature modules (FileUpload, BusinessModal, AccessControl) now follow setupAresForm pattern with isolated state and proper cleanup.
+WordPress child theme development with enterprise-grade architecture. **REALIZACE SYSTEM FULLY STABILIZED** - All critical bugs resolved: status revert bug eliminated, bulk approval properly processes UI points data, and "No Debt" policy implemented to prevent negative balances. Architecture consolidated into cohesive AdminController. System is production-ready and follows controlled complexity patterns.
 
 ## Build & Development Commands
 
@@ -40,6 +40,7 @@ WordPress child theme development with enterprise-grade architecture. **FUNCTION
 ### **File-Based Triggers**
 - **Working in `src/App/MyCred/`** → Read `docs/architecture.md` for e-commerce domain patterns
 - **Working in `src/App/Users/`** → Read `docs/features.md` for registration system specs + `docs/development.md` for user testing patterns
+- **Working in `src/App/Realizace/`** → Read `docs/architecture.md` for admin controller patterns + CLAUDE.md Active Decisions for complexity rules
 - **Working in `src/App/Shortcodes/`** → Read `docs/architecture.md` for component patterns + `docs/development.md` for template rendering
 - **Working in `src/js/features/`** → Read `docs/development.md` for JavaScript patterns + `docs/architecture.md` for frontend structure
 - **Working with `.scss` files** → Read `docs/design/` for design tokens + `docs/development.md` for Tailwind integration
@@ -55,6 +56,7 @@ WordPress child theme development with enterprise-grade architecture. **FUNCTION
 ### **High-Level Context Triggers**
 - **"Registration not working"** → Read `docs/features.md` registration flow + `docs/development.md` user testing + check AJAX session handling
 - **"Balance calculation issues"** → Read `docs/architecture.md` e-commerce domain + Single Source of Truth pattern + context-aware logic
+- **"Realizace status problems"** → Check CLAUDE.md Active Decisions + verify AdminController consolidation + review PointsHandler hooks
 - **"Shortcode rendering problems"** → Read `docs/architecture.md` component patterns + `docs/development.md` template rendering + semantic CSS
 - **"User permissions wrong"** → Read `docs/features.md` role system + `docs/development.md` user domain patterns + service layer usage
 - **"Frontend build issues"** → Read `docs/architecture.md` frontend structure + `docs/development.md` JavaScript patterns + build commands
@@ -67,12 +69,15 @@ WordPress child theme development with enterprise-grade architecture. **FUNCTION
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
+- **2025-06-23**: [fix] Remove Tailwind CSS from WordPress admin - Fixed admin table layout issues caused by Tailwind .fixed class conflicting with WordPress core table behavior
+- **2025-06-23**: [fix] Implement "No Debt" policy in PointsHandler - Points revocation now respects user balance limits to prevent negative balances, maintaining business rule integrity
+- **2025-06-23**: [update] Fix diagnostic issues in AdminController - Addressed type safety, code quality, and IDE compatibility while maintaining cohesive architecture
+- **2025-06-23**: [refactor] Realizace admin architecture consolidation - Merged AdminSetup, AdminUIManager, and AdminAjaxHandler into unified AdminController, fixed status revert bug, improved bulk approve logic
 - **2025-06-19**: [update] Remove dependency passthrough in AdminCardRenderer - Direct BusinessDataManager injection eliminates unnecessary RegistrationHooks intermediary
 - **2025-06-19**: Functional JavaScript modernization complete - All feature modules converted to functional patterns with isolated state and proper cleanup
 - **2025-06-19**: Access control system complete - Defense-in-depth access control with IČO uniqueness validation and role-based page access
 - **2025-06-18**: Business registration system complete - Full ARES integration with structured data storage and modal admin interface
 - **2025-06-18**: User management system complete - Three-stage approval workflow with bidirectional role management
-- **2025-06-18**: Design system integration complete - ROCKWOOL design tokens with proper CSS isolation using .mistr- prefixes
 
 ## User Registration System
 
@@ -109,6 +114,9 @@ WordPress child theme development with enterprise-grade architecture. **FUNCTION
 - **Tailwind CSS only**: No inline styling, semantic wrapper classes for targeted styling
 - **Three-stage user approval**: Modular services with AJAX session handling via cookies
 - **Living memory system**: CLAUDE.md hub with context-aware documentation triggers
+- **Cohesive controllers over fragmentation** (2025-06-23): Single AdminController with clear responsibility sections instead of over-decomposed classes - line count is secondary to preventing mixed responsibilities and tight coupling
+- **"No Debt" business policy** (2025-06-23): Point revocation never creates negative balances - revoke only up to current user balance to maintain financial integrity
+- **Frontend-only Tailwind CSS** (2025-06-23): Tailwind CSS only loaded on frontend via wp_enqueue_scripts to prevent admin class conflicts with WordPress core
 
 ## Known Issues
 *No current known issues. System is production-ready.*
@@ -139,4 +147,4 @@ WordPress child theme development with enterprise-grade architecture. **FUNCTION
 
 
 ## Last Updated
-2025-06-19 (cleaned and refocused)
+2025-06-23 (stabilized admin architecture)

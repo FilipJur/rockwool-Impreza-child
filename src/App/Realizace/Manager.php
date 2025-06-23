@@ -48,18 +48,14 @@ class Manager {
         // Initialize form handler with dependencies
         $this->form_handler = new RealizaceFormHandler($user_detection_service);
         
-        // Initialize admin components with service architecture
+        // Initialize admin components with consolidated architecture
         $card_renderer = new AdminCardRenderer();
         $asset_manager = new AdminAssetManager();
-        
-        // Create specialized admin services
         $status_manager = new StatusManager();
-        $ui_manager = new AdminUIManager($card_renderer);
-        $ajax_handler = new AdminAjaxHandler($status_manager);
         
-        // Create clean coordinator with service injection
-        $admin_setup = new AdminSetup($status_manager, $ui_manager, $ajax_handler, $asset_manager);
-        $admin_setup->init_hooks();
+        // Create consolidated admin controller
+        $admin_controller = new AdminController($status_manager, $card_renderer, $asset_manager);
+        $admin_controller->init_hooks();
         
         // Initialize points handler for myCred integration
         $points_handler = new PointsHandler();
@@ -112,44 +108,15 @@ class Manager {
         // Wrap form in disabled class container
         $form_elements = '<div class="mistr-realizace-disabled">' . $form_elements . '</div>';
         
-        // Add CSS for disabled cursor
-        $styles = '<style>
-            .wpcf7-form input[disabled],
-            .wpcf7-form input[readonly],
-            .wpcf7-form textarea[disabled],
-            .wpcf7-form textarea[readonly],
-            .wpcf7-form select[disabled],
-            .wpcf7-form button[disabled],
-            .wpcf7-form .wpcf7-submit[disabled],
-            .wpcf7-form .mistr-realizace-disabled * {
-                cursor: not-allowed !important;
-                pointer-events: none !important;
-                opacity: 0.6 !important;
-            }
-            .wpcf7-form .mistr-realizace-disabled {
-                cursor: not-allowed !important;
-                user-select: none !important;
-            }
-        </style>';
-        
-        // Add a prominent notice about pending approval
-        $notice = '<div class="mistr-realizace-notice" style="
-            background: #fff3cd;
-            border: 1px solid #ffd60a;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 20px;
-            color: #856404;
-            font-size: 14px;
-            line-height: 1.5;
-        ">
-            <strong style="display: block; margin-bottom: 5px; font-size: 16px;">⚠️ Formulář je nedostupný</strong>
+        // Add a prominent notice about pending approval (styles are in SCSS)
+        $notice = '<div class="mistr-realizace-notice">
+            <strong class="notice-title">⚠️ Formulář je nedostupný</strong>
             Váš účet čeká na schválení administrátorem. Po schválení budete moci přidávat realizace.
         </div>';
         
         error_log('[REALIZACE:DEBUG] Adding pending approval notice to form');
         
-        $form_elements = $styles . $notice . $form_elements;
+        $form_elements = $notice . $form_elements;
 
         return $form_elements;
     }

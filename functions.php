@@ -9,7 +9,10 @@
 include_once("includes/leadhub.php");
 
 /**
- * Enqueue scripts and styles.
+ * Enqueue scripts and styles for frontend only.
+ * 
+ * Note: Tailwind CSS is intentionally NOT loaded in admin to prevent 
+ * class conflicts with WordPress core (e.g., .fixed class on admin tables).
  */
 add_action('wp_enqueue_scripts', 'impreza_parent_theme_enqueue_styles');
 function impreza_parent_theme_enqueue_styles()
@@ -17,7 +20,7 @@ function impreza_parent_theme_enqueue_styles()
 	// Parent theme styles
 	wp_enqueue_style('impreza-style', get_template_directory_uri() . '/style.css');
 	
-	// Tailwind utilities (loaded first, lower priority)
+	// Tailwind utilities (frontend only - loaded first, lower priority)
 	wp_enqueue_style(
 		'tailwind-utilities',
 		get_stylesheet_directory_uri() . '/tailwind.css',
@@ -101,26 +104,15 @@ function impreza_child_inject_user_data()
 	wp_localize_script('theme-main-js', 'mistrFachman', $js_data);
 }
 
-// Admin-specific asset enqueuing 
+// Admin-specific asset enqueuing (no Tailwind to avoid conflicts)
 add_action('admin_enqueue_scripts', 'impreza_child_enqueue_admin_assets');
 function impreza_child_enqueue_admin_assets()
 {
-	// Register parent theme styles for admin
-	wp_enqueue_style('impreza-style', get_template_directory_uri() . '/style.css');
-	
-	// Register Tailwind utilities for admin
+	// Only register child theme custom styles for admin (no Tailwind!)
 	wp_enqueue_style(
-		'tailwind-utilities',
-		get_stylesheet_directory_uri() . '/tailwind.css',
-		['impreza-style'],
-		'1.0.0'
-	);
-	
-	// Register child theme custom styles for admin
-	wp_enqueue_style(
-		'impreza-child-style',
+		'impreza-child-admin-style',
 		get_stylesheet_directory_uri() . '/style.css',
-		['impreza-style', 'tailwind-utilities'],
+		[],
 		'1.0.0'
 	);
 
