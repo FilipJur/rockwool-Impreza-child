@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. **DUAL-PATHWAY ARCHITECTURE - FINAL RACE CONDITION SOLUTION** - Implemented context-aware point awarding using appropriate hooks for each execution context: acf/save_post for post editor (guaranteed after ACF saves) + direct award_points() calls for AJAX admin UI (immediate transaction). wp_doing_ajax() guard prevents pathway conflicts. Eliminates all timing issues while maintaining unified transaction logic. Ready for both manual admin edits and calculation-based Faktury domain.
+WordPress child theme development with enterprise-grade architecture. **CENTRALIZED FIELD ACCESS ARCHITECTURE COMPLETE** - Implemented comprehensive RealizaceFieldService providing single source of truth for all ACF field selectors. Eliminates hardcoded field names across entire codebase with centralized API for field access. Fixed frontend synchronization bugs and created future-proof foundation. Dual-pathway point awarding system with context-aware hooks ensures perfect synchronization between AJAX UI and post editor. Ready for rapid Faktury domain implementation using proven patterns.
 
 ## Build & Development Commands
 
@@ -69,7 +69,8 @@ WordPress child theme development with enterprise-grade architecture. **DUAL-PAT
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
-- **2025-06-24**: [fix] Dual-pathway architecture - FINAL solution using context-aware point awarding. Post editor flow uses acf/save_post hook (guaranteed after ACF saves). AJAX admin flow uses direct award_points() method calls (immediate transaction). wp_doing_ajax() guard prevents conflicts. Eliminates ALL race conditions by using appropriate execution pattern for each context. Unified transaction logic via public award_points() method. Both manual admin edits and AJAX approvals work perfectly with correct point values. Ready for Faktury calculation-based logic.
+- **2025-06-24**: [fix] COMPREHENSIVE CENTRALIZED FIELD ACCESS - Implemented RealizaceFieldService as single source of truth for all ACF field selectors. Fixed frontend synchronization bug where rejection reasons weren't displaying immediately in [my_realizace] shortcode. Created centralized field access API eliminating hardcoded field names across 11+ files. Extended base classes with comprehensive field selector methods. All domain classes now delegate field access to centralized service. Prevents field synchronization issues and provides future-proof architecture for easy field modifications.
+- **2025-06-24**: [fix] Dual-pathway architecture - Context-aware point awarding using appropriate hooks for each execution context: acf/save_post for post editor (guaranteed after ACF saves) + direct award_points() calls for AJAX admin UI (immediate transaction). wp_doing_ajax() guard prevents pathway conflicts. Eliminates all timing issues while maintaining unified transaction logic. Ready for both manual admin edits and calculation-based Faktury domain.
 - **2025-06-23**: [refactor] Create domain abstraction architecture with fixed points - Created base classes (PostTypeManagerBase, AdminControllerBase, PointsHandlerBase, FormHandlerBase) and refactored Realizace domain to use them. Implemented fixed 2500 points default for realizace with admin override capability. Simplified bulk approval workflow by removing UI points collection since defaults are automatically applied.
 - **2025-06-23**: [update] Improve admin interface enhancements - Added pending realizace column to wp-admin/users.php table, improved MyCred notices to show realizace titles instead of IDs, implemented dynamic grid layout for realizace cards (1 item = full width, 2 items = 50% each, 3+ items = standard grid)
 - **2025-06-23**: [fix] Add permanent deletion handler with No Debt policy - Complete point revocation system now handles permanent deletion while preventing negative balances
@@ -108,7 +109,33 @@ WordPress child theme development with enterprise-grade architecture. **DUAL-PAT
 - **Modular Architecture**: Extracted services for user detection, status management, and configuration
 - **Single Source of Truth**: Centralized constants and configuration classes
 
+## Centralized Field Access System
+
+### **RealizaceFieldService - Single Source of Truth** ✅
+**Location**: `src/App/Realizace/RealizaceFieldService.php`
+
+**Pattern**: All ACF field access must use centralized service methods:
+```php
+// CORRECT - Use centralized service
+$points = RealizaceFieldService::getPoints($post_id);
+$reason = RealizaceFieldService::getRejectionReason($post_id);
+RealizaceFieldService::setPoints($post_id, 2500);
+
+// INCORRECT - Never use hardcoded field names
+$points = get_field('sprava_a_hodnoceni_realizace_pridelene_body', $post_id);
+update_field('realizace_duvod_zamitnuti', $reason, $post_id);
+```
+
+**Benefits**:
+- **Field name changes**: Update only in RealizaceFieldService constants
+- **Type safety**: Consistent return types and validation
+- **ACF/meta fallback**: Automatic graceful degradation
+- **Future domains**: Copy pattern for Faktury, Certifikace, etc.
+
+**Architecture**: Abstract base classes delegate to field service for true abstraction without hardcoded dependencies.
+
 ## Active Decisions
+- **Centralized field access**: All ACF field access through RealizaceFieldService - eliminates hardcoded field names and synchronization bugs
 - **Enterprise architecture**: Domain-driven structure with PSR-4 autoloading and single bootstrap
 - **Abstract base class architecture** (2025-06-23): Created PostTypeManagerBase, AdminControllerBase, PointsHandlerBase, and FormHandlerBase for domain abstraction. Enables rapid creation of new domains (Faktury, Certifikace) by extending proven patterns
 - **Fixed default points system** (2025-06-23): Realizace awards fixed 2500 points with admin override capability. Single source of truth through ACF fields with automatic population. Simplifies admin workflow while maintaining flexibility
@@ -122,10 +149,10 @@ WordPress child theme development with enterprise-grade architecture. **DUAL-PAT
 - **Cohesive controllers over fragmentation** (2025-06-23): Single AdminController with clear responsibility sections instead of over-decomposed classes - line count is secondary to preventing mixed responsibilities and tight coupling
 - **"No Debt" business policy** (2025-06-23): Point revocation never creates negative balances - revoke only up to current user balance to maintain financial integrity
 - **Frontend-only Tailwind CSS** (2025-06-23): Tailwind CSS only loaded on frontend via wp_enqueue_scripts to prevent admin class conflicts with WordPress core
-- **Single Source of Truth field access** (2025-06-24): All ACF field access through abstract methods (getPointsFieldName(), getRejectionReasonFieldName()) - no hardcoded field names in controllers or base classes. Enables true domain abstraction and eliminates synchronization bugs between AJAX UI and WordPress editor
+- **Comprehensive centralized field access** (2025-06-24): Implemented RealizaceFieldService as single source of truth for all ACF field selectors. Eliminated hardcoded field names across 11+ files with centralized API. Abstract base classes delegate to field service for true abstraction. Fixes frontend synchronization bugs and provides future-proof architecture for easy field modifications
 
 ## Known Issues
-*No current known issues. System is production-ready with complete No Debt policy.*
+*No current known issues. System is production-ready with comprehensive centralized field access architecture and complete No Debt policy.*
 
 ## Archive
 
@@ -153,4 +180,4 @@ WordPress child theme development with enterprise-grade architecture. **DUAL-PAT
 
 
 ## Last Updated
-2025-06-23 (stabilized admin architecture)
+2025-06-24 (comprehensive centralized field access architecture)
