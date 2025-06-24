@@ -162,7 +162,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 
 		// Rejection reason (only for rejected posts)
 		if ($status === 'rejected') {
-			$rejection_reason = function_exists('get_field') ? get_field('duvod_zamitnuti', $post_id) : get_post_meta($post_id, 'duvod_zamitnuti', true);
+			$rejection_reason = \MistrFachman\Realizace\RealizaceFieldService::getRejectionReason($post_id);
 			if ($rejection_reason) {
 				$clean_reason = wp_kses_post($rejection_reason);
 				$output .= "<div class='bg-red-50 border border-red-200 rounded p-3 text-sm'>";

@@ -8,7 +8,13 @@ namespace MistrFachman\Base;
  * Base Points Handler - Abstract Foundation
  *
  * Provides common patterns for myCred points integration with "No Debt" policy.
- * Handles point awards, corrections, and revocations across domains.
+ * Uses DUAL-PATHWAY architecture to handle WordPress execution context differences:
+ * 
+ * - Post Editor Flow: acf/save_post hook (guaranteed after ACF saves)
+ * - AJAX Admin Flow: transition_post_status hook (works with pre-saved values)
+ * 
+ * DEFINITIVE SOLUTION: Eliminates race conditions by using appropriate hooks
+ * for each execution context while maintaining unified transaction logic.
  *
  * @package mistr-fachman
  * @since 1.0.0
@@ -47,106 +53,122 @@ abstract class PointsHandlerBase {
     abstract protected function getMyCredReference(): string;
 
     /**
-     * Initialize points handling hooks
+     * Initialize dual-pathway hooks for different execution contexts
      */
     public function init_hooks(): void {
-        add_action('transition_post_status', [$this, 'handle_status_change_points'], 15, 3);
+        // Path A: Handles the Post Editor workflow. Runs after ACF saves.
+        add_action('acf/save_post', [$this, 'handle_editor_save'], 20);
+
+        // Path B: Handles point REVOCATION for all workflows (AJAX and Editor).
+        add_action('transition_post_status', [$this, 'handle_points_revocation'], 15, 3);
+        
+        // Deletion handling
         add_action('before_delete_post', [$this, 'handle_permanent_deletion'], 5);
     }
 
-
     /**
-     * Handle points when post status changes
+     * The callback for the Post Editor workflow.
+     * Uses acf/save_post to ensure ACF data is completely saved.
      */
-    public function handle_status_change_points(string $new_status, string $old_status, \WP_Post $post): void {
-        if ($post->post_type !== $this->getPostType()) {
+    public function handle_editor_save($post_id): void {
+        $post_id = (int)$post_id;
+
+        // Prevent this from running during an AJAX request, which has its own logic.
+        if (wp_doing_ajax()) {
             return;
         }
 
-        $user_id = (int)$post->post_author;
-        if (!get_userdata($user_id)) {
+        // Verify this is the correct post type and status
+        if (get_post_type($post_id) !== $this->getPostType()) {
             return;
         }
 
-        // Handle status transitions
-        if ($old_status !== 'publish' && $new_status === 'publish') {
-            // Post was approved - award points
-            $this->process_point_change($post->ID, $user_id, 'approve');
-        } elseif ($old_status === 'publish' && $new_status !== 'publish') {
-            // Post was un-approved - revoke points
-            $this->revoke_points($post->ID, $user_id, $new_status);
+        if (get_post_status($post_id) !== 'publish') {
+            return;
         }
+
+        $user_id = (int)get_post_field('post_author', $post_id);
+        if (!$user_id || !get_userdata($user_id)) {
+            return;
+        }
+
+        // By this point, get_field() is guaranteed to return the correct, final value from the editor.
+        $points_to_award = $this->get_points_to_award($post_id);
+        
+        // If the field was empty, populate with default.
+        if ($points_to_award <= 0) {
+            $points_to_award = $this->getDefaultPoints($post_id);
+            $this->set_points($post_id, $points_to_award);
+            
+            error_log("[{$this->getPostType()}:EDITOR] Auto-populated default points: {$points_to_award} for post {$post_id}");
+        }
+
+        error_log("[{$this->getPostType()}:EDITOR] Processing post editor save for post {$post_id} with {$points_to_award} points");
+        
+        $this->award_points($post_id, $user_id, $points_to_award);
     }
 
     /**
-     * Process point changes with automatic default population
+     * The PUBLIC service for awarding points - used by both pathways.
+     * Handles point differences and audit trail updates.
      */
-    protected function process_point_change(int $post_id, int $user_id, string $context): void {
-        // Check if myCred is available
+    public function award_points(int $post_id, int $user_id, int $points_to_award): bool {
         if (!function_exists('mycred_add')) {
             error_log("[{$this->getPostType()}:ERROR] myCred not available for points processing");
-            return;
+            return false;
         }
 
-        // Get points to award - ensure default is set if empty
-        $points_to_award = $this->get_points_to_award($post_id);
-        
-        // If no points set, populate with default
-        if ($points_to_award === 0) {
-            $default_points = $this->getDefaultPoints($post_id);
-            if ($default_points > 0) {
-                $this->set_points($post_id, $default_points);
-                $points_to_award = $default_points;
-                
-                error_log("[{$this->getPostType()}:INFO] Auto-populated default points: {$default_points} for post {$post_id}");
-            }
-        }
-        
-        // Validate points value
         if (!$this->validate_points_value($points_to_award)) {
             error_log("[{$this->getPostType()}:ERROR] Invalid points value '{$points_to_award}' for post {$post_id}");
-            return;
+            return false;
         }
-        
-        // Get points already awarded (audit trail)
+
         $points_already_awarded = (int)get_post_meta($post_id, "_{$this->getPostType()}_points_awarded", true);
-        
-        // Calculate the difference
         $point_difference = $points_to_award - $points_already_awarded;
-        
+
         // Only process if there's a change
         if ($point_difference !== 0) {
-            $log_message = $this->get_log_message($post_id, $context, $point_difference);
+            $log_message = $this->get_log_message($post_id, 'award', $point_difference);
             
-            // Award or deduct points via myCred
-            $result = mycred_add(
-                $this->getMyCredReference(),
-                $user_id,
-                $point_difference,
-                $log_message,
-                $post_id
-            );
-            
-            if ($result) {
-                // Update audit trail
+            if (mycred_add($this->getMyCredReference(), $user_id, $point_difference, $log_message, $post_id)) {
                 update_post_meta($post_id, "_{$this->getPostType()}_points_awarded", $points_to_award);
                 
                 error_log(sprintf(
-                    '[%s:INFO] Points processed for post %d: %+d points (total: %d) - %s',
+                    '[%s:INFO] Points awarded for post %d: %+d points (total: %d)',
                     strtoupper($this->getPostType()),
                     $post_id,
                     $point_difference,
-                    $points_to_award,
-                    $context
+                    $points_to_award
                 ));
+                return true;
             } else {
                 error_log(sprintf(
-                    '[%s:ERROR] Failed to process points for post %d: %+d points - %s',
+                    '[%s:ERROR] Failed to award points for post %d: %+d points',
                     strtoupper($this->getPostType()),
                     $post_id,
-                    $point_difference,
-                    $context
+                    $point_difference
                 ));
+                return false;
+            }
+        }
+        
+        return true; // No change needed
+    }
+
+    /**
+     * Handles REVOKING points when posts leave published status.
+     * Works for both AJAX and Editor workflows.
+     */
+    public function handle_points_revocation(string $new_status, string $old_status, \WP_Post $post): void {
+        if ($post->post_type !== $this->getPostType()) {
+            return;
+        }
+        
+        // Only handle revocation when leaving 'publish' status
+        if ($old_status === 'publish' && $new_status !== 'publish') {
+            $user_id = (int)$post->post_author;
+            if ($user_id && get_userdata($user_id)) {
+                $this->revoke_points($post->ID, $user_id, $new_status);
             }
         }
     }
@@ -211,10 +233,11 @@ abstract class PointsHandlerBase {
     }
 
     /**
-     * Get points to award with ACF fallback and default population
+     * Get points to award with ACF fallback
+     * This is now called from appropriate hooks for each context
      */
     protected function get_points_to_award(int $post_id): int {
-        // SINGLE SOURCE OF TRUTH: Use abstract method for all domains
+        // Use field selector for reliable ACF access
         if (function_exists('get_field')) {
             $acf_points = get_field($this->getPointsFieldSelector(), $post_id);
             if (is_numeric($acf_points)) {
@@ -231,7 +254,6 @@ abstract class PointsHandlerBase {
      * Set points value for a post
      */
     protected function set_points(int $post_id, int $points): bool {
-        // SINGLE SOURCE OF TRUTH: Use abstract method for all domains
         if (function_exists('update_field')) {
             $result = update_field($this->getPointsFieldSelector(), $points, $post_id);
             return $result !== false;
@@ -254,7 +276,7 @@ abstract class PointsHandlerBase {
         $post_title = get_the_title($post_id) ?: "{$this->getDomainDisplayName()} #{$post_id}";
         
         return match ($context) {
-            'approve' => $point_difference > 0 
+            'award' => $point_difference > 0 
                 ? sprintf('Udělení bodů za schválenou %s: %s', strtolower($this->getDomainDisplayName()), $post_title)
                 : sprintf('Úprava bodů za %s: %s', strtolower($this->getDomainDisplayName()), $post_title),
             'save' => sprintf('Úprava bodů za %s: %s', strtolower($this->getDomainDisplayName()), $post_title),

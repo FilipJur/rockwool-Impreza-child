@@ -47,6 +47,26 @@ abstract class AdminControllerBase {
     abstract protected function getRejectionReasonFieldSelector(): string;
 
     /**
+     * Get the gallery field selector for this domain
+     */
+    abstract protected function getGalleryFieldSelector(): string;
+
+    /**
+     * Get the area/size field selector for this domain
+     */
+    abstract protected function getAreaFieldSelector(): string;
+
+    /**
+     * Get the construction type field selector for this domain
+     */
+    abstract protected function getConstructionTypeFieldSelector(): string;
+
+    /**
+     * Get the materials field selector for this domain
+     */
+    abstract protected function getMaterialsFieldSelector(): string;
+
+    /**
      * Render domain-specific user profile card
      */
     abstract protected function render_user_profile_card(\WP_User $user): void;

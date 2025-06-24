@@ -199,7 +199,7 @@ class AdminController extends AdminControllerBase {
         // Insert the "Pending Realizace" column before the "Posts" column if it exists,
         // otherwise before the "Date" column
         $insert_before = isset($columns['posts']) ? 'posts' : 'date';
-        
+
         // Find the position to insert the new column
         $position = array_search($insert_before, array_keys($columns));
         if ($position !== false) {
@@ -230,7 +230,7 @@ class AdminController extends AdminControllerBase {
     private function render_pending_realizace_column(int $user_id): string {
         // Get pending realizace count for this user
         $pending_count = $this->get_user_pending_realizace_count($user_id);
-        
+
         if ($pending_count === 0) {
             return '<span style="color: #999;">0</span>';
         }
@@ -255,14 +255,14 @@ class AdminController extends AdminControllerBase {
      */
     private function get_user_pending_realizace_count(int $user_id): int {
         static $cache = [];
-        
+
         // Use static cache to avoid multiple queries for the same user during page load
         if (isset($cache[$user_id])) {
             return $cache[$user_id];
         }
 
         global $wpdb;
-        
+
         $count = (int) $wpdb->get_var($wpdb->prepare("
             SELECT COUNT(*)
             FROM {$wpdb->posts}
@@ -390,10 +390,10 @@ class AdminController extends AdminControllerBase {
         // Show cards if user has realizace or is eligible to submit them
         if ($has_realizace || $is_pending || in_array('full_member', $user->roles)) {
             echo '<div class="realizace-management-modern">';
-            
+
             // Consolidated dashboard replacing the dual-card layout
             $this->card_renderer->render_consolidated_realizace_dashboard($user);
-            
+
             echo '</div>';
         }
     }
@@ -429,62 +429,48 @@ class AdminController extends AdminControllerBase {
 
 
     /**
-     * Process approve action with points validation and default population
+     * Process approve action - AJAX pathway with direct point award
+     * Saves data, publishes post, and directly awards points (bypassing hooks)
      */
     protected function process_approve_action(int $post_id): void {
         error_log("[REALIZACE:AJAX] Processing APPROVE action for post {$post_id}");
 
-        // SINGLE SOURCE OF TRUTH: Check if points are already set manually
-        $existing_points = $this->get_current_points($post_id);
-        
-        if ($existing_points > 0) {
-            // User has manually set points - RESPECT their choice
-            $points_to_award = $existing_points;
-            error_log("[REALIZACE:AJAX] Using manually set points: {$points_to_award} for post {$post_id}");
-        } else {
-            // No points set yet - use default or POST data
-            $points_to_award = isset($_POST['points']) ? (int)$_POST['points'] : $this->getDefaultPoints($post_id);
-            
-            // If still no points, use the fixed default
-            if ($points_to_award <= 0) {
-                $points_to_award = $this->getDefaultPoints($post_id);
-            }
-            error_log("[REALIZACE:AJAX] Using default points: {$points_to_award} for post {$post_id}");
-        }
+        // 1. Determine the points value from the AJAX UI
+        $points_to_award = (isset($_POST['points']) && is_numeric($_POST['points']))
+            ? (int)$_POST['points']
+            : $this->get_current_points($post_id);
 
-        // Final validation
         if ($points_to_award <= 0) {
-            throw new \Exception('Počet bodů musí být kladné číslo.');
+            $points_to_award = $this->getDefaultPoints($post_id);
         }
 
-        // Save points using single source of truth method
-        $set_result = $this->set_points($post_id, $points_to_award);
-        
-        if (!$set_result) {
-            error_log("[REALIZACE:AJAX] Warning: Failed to set points for post {$post_id}");
-        }
-        
-        error_log("[REALIZACE:AJAX] Set points to {$points_to_award} for post {$post_id}");
+        error_log("[REALIZACE:AJAX] Setting points value: {$points_to_award} for post {$post_id}");
 
-        // Clear rejection reason when approving (clean slate for approved realizace)
-        if (function_exists('update_field')) {
-            /** @var callable $update_field */
-            $update_field = 'update_field';
-            $update_field($this->getRejectionReasonFieldSelector(), '', $post_id);
-            error_log("[REALIZACE:AJAX] Cleared rejection reason for post {$post_id}");
-        } else {
-            update_post_meta($post_id, $this->getRejectionReasonFieldSelector(), '');
-        }
+        // 2. SAVE this value
+        $this->set_points($post_id, $points_to_award);
 
-        // Now update post status - this will trigger the points award via PointsHandler
-        $result = wp_update_post([
-            'ID' => $post_id,
-            'post_status' => 'publish'
-        ]);
+        // 3. Clear rejection reason
+        RealizaceFieldService::setRejectionReason($post_id, '');
 
-        // Check for wp_update_post errors
+        // 4. Publish the post
+        $result = wp_update_post(['ID' => $post_id, 'post_status' => 'publish']);
+
         if (is_wp_error($result)) {
             throw new \Exception('Failed to update post status: ' . $result->get_error_message());
+        }
+
+        // 5. AJAX pathway: Award points directly using PointsHandler public method
+        $user_id = (int)get_post_field('post_author', $post_id);
+        if ($user_id) {
+            // Get PointsHandler instance to award points directly
+            $points_handler = new \MistrFachman\Realizace\PointsHandler();
+            $success = $points_handler->award_points($post_id, $user_id, $points_to_award);
+
+            if ($success) {
+                error_log("[REALIZACE:AJAX] Successfully awarded {$points_to_award} points for post {$post_id} via direct method");
+            } else {
+                error_log("[REALIZACE:AJAX] Failed to award points for post {$post_id}");
+            }
         }
     }
 
@@ -523,13 +509,13 @@ class AdminController extends AdminControllerBase {
 
         // Set rejection reason from user input or use default
         if (!empty($rejection_reason)) {
-            update_field($this->getRejectionReasonFieldSelector(), $rejection_reason, $post_id);
+            RealizaceFieldService::setRejectionReason($post_id, $rejection_reason);
             error_log("[REALIZACE:AJAX] Set user-provided rejection reason: {$rejection_reason}");
         } else {
             // Only set default if no existing reason and no user input
-            $existing_reason = get_field($this->getRejectionReasonFieldSelector(), $post_id);
+            $existing_reason = RealizaceFieldService::getRejectionReason($post_id);
             if (empty($existing_reason)) {
-                update_field($this->getRejectionReasonFieldSelector(), 'Rychle odmítnuto administrátorem', $post_id);
+                RealizaceFieldService::setRejectionReason($post_id, 'Rychle odmítnuto administrátorem');
                 error_log("[REALIZACE:AJAX] Added default rejection reason");
             }
         }
@@ -575,12 +561,12 @@ class AdminController extends AdminControllerBase {
     }
 
     /**
-     * Process bulk approve operation with default points population
+     * Process bulk approve operation - AJAX pathway with direct point awards
+     * Business Rule: Bulk approve always uses the fixed default value (2500)
      */
     protected function process_bulk_approve(int $user_id): int {
-        // Get all pending realizace for user
         $pending_posts = get_posts([
-            'post_type' => 'realizace',
+            'post_type' => $this->getPostType(),
             'author' => $user_id,
             'post_status' => 'pending',
             'posts_per_page' => -1,
@@ -590,36 +576,32 @@ class AdminController extends AdminControllerBase {
         error_log("[REALIZACE:AJAX] Found " . count($pending_posts) . " pending posts for user {$user_id}");
 
         $approved_count = 0;
+        $points_handler = new \MistrFachman\Realizace\PointsHandler();
+
         foreach ($pending_posts as $post_id) {
-            // Ensure default points are set using single source of truth
-            $current_points = $this->get_current_points($post_id);
-            if ($current_points === 0) {
-                $default_points = $this->getDefaultPoints($post_id);
-                $this->set_points($post_id, $default_points);
-                error_log("[REALIZACE:AJAX] Set default points {$default_points} for post {$post_id}");
-            } else {
-                error_log("[REALIZACE:AJAX] Using existing points {$current_points} for post {$post_id}");
-            }
+            // Business Rule: Bulk approve always uses the default value.
+            $default_points = $this->getDefaultPoints($post_id);
+            $this->set_points($post_id, $default_points);
 
-            // Clear rejection reason when approving (clean slate for approved realizace)
-            if (function_exists('update_field')) {
-                /** @var callable $update_field */
-                $update_field = 'update_field';
-                $update_field($this->getRejectionReasonFieldSelector(), '', $post_id);
-            } else {
-                update_post_meta($post_id, $this->getRejectionReasonFieldSelector(), '');
-            }
+            // Clear rejection reason
+            RealizaceFieldService::setRejectionReason($post_id, '');
 
-            // Now update status - this will trigger the points award via PointsHandler
+            // Publish the post
             $result = wp_update_post([
                 'ID' => $post_id,
                 'post_status' => 'publish'
             ]);
 
             if (!is_wp_error($result)) {
-                $final_points = $this->get_current_points($post_id);
-                error_log("[REALIZACE:AJAX] Bulk approved post {$post_id} with {$final_points} points");
-                $approved_count++;
+                // AJAX pathway: Award points directly
+                $success = $points_handler->award_points($post_id, $user_id, $default_points);
+
+                if ($success) {
+                    $approved_count++;
+                    error_log("[REALIZACE:AJAX] Bulk approved post {$post_id} with {$default_points} points via direct method");
+                } else {
+                    error_log("[REALIZACE:AJAX] Failed to award points for bulk approved post {$post_id}");
+                }
             } else {
                 error_log("[REALIZACE:AJAX] Failed to bulk approve post {$post_id}: " . $result->get_error_message());
             }
@@ -726,18 +708,50 @@ class AdminController extends AdminControllerBase {
 
     /**
      * Get the points field selector
-     * Using sub-field within ACF group field 'sprava_a_hodnoceni'
+     * Delegates to centralized field service
      */
     protected function getPointsFieldSelector(): string {
-        return 'sprava_a_hodnoceni_realizace_pridelene_body';
+        return RealizaceFieldService::getPointsFieldSelector();
     }
 
     /**
      * Get the rejection reason field selector
-     * Using sub-field within ACF group field 'sprava_a_hodnoceni'
+     * Delegates to centralized field service
      */
     protected function getRejectionReasonFieldSelector(): string {
-        return 'sprava_a_hodnoceni_realizace_duvod_zamitnuti';
+        return RealizaceFieldService::getRejectionReasonFieldSelector();
+    }
+
+    /**
+     * Get the gallery field selector for realizace
+     * Delegates to centralized field service
+     */
+    protected function getGalleryFieldSelector(): string {
+        return RealizaceFieldService::getGalleryFieldSelector();
+    }
+
+    /**
+     * Get the area/size field selector for realizace
+     * Delegates to centralized field service
+     */
+    protected function getAreaFieldSelector(): string {
+        return RealizaceFieldService::getAreaFieldSelector();
+    }
+
+    /**
+     * Get the construction type field selector for realizace
+     * Delegates to centralized field service
+     */
+    protected function getConstructionTypeFieldSelector(): string {
+        return RealizaceFieldService::getConstructionTypeFieldSelector();
+    }
+
+    /**
+     * Get the materials field selector for realizace
+     * Delegates to centralized field service
+     */
+    protected function getMaterialsFieldSelector(): string {
+        return RealizaceFieldService::getMaterialsFieldSelector();
     }
 
     /**
@@ -750,3 +764,4 @@ class AdminController extends AdminControllerBase {
     }
 
 }
+

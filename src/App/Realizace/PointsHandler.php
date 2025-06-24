@@ -48,10 +48,10 @@ class PointsHandler extends PointsHandlerBase {
 
     /**
      * Get the ACF field selector that stores points
-     * Using sub-field within ACF group field 'sprava_a_hodnoceni'
+     * Delegates to centralized field service
      */
     protected function getPointsFieldSelector(): string {
-        return 'sprava_a_hodnoceni_realizace_pridelene_body';
+        return RealizaceFieldService::getPointsFieldSelector();
     }
 
     /**

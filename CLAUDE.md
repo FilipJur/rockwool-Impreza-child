@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. **REALIZACE SYSTEM FULLY STABILIZED & SINGLE SOURCE OF TRUTH IMPLEMENTED** - Critical synchronization bug eliminated by removing conflicting save_post hook and implementing unified field access patterns. All hardcoded ACF field names replaced with abstract methods. Base classes are now truly reusable for Faktury domain. System is production-ready with consistent data flow across AJAX UI and post editor.
+WordPress child theme development with enterprise-grade architecture. **DUAL-PATHWAY ARCHITECTURE - FINAL RACE CONDITION SOLUTION** - Implemented context-aware point awarding using appropriate hooks for each execution context: acf/save_post for post editor (guaranteed after ACF saves) + direct award_points() calls for AJAX admin UI (immediate transaction). wp_doing_ajax() guard prevents pathway conflicts. Eliminates all timing issues while maintaining unified transaction logic. Ready for both manual admin edits and calculation-based Faktury domain.
 
 ## Build & Development Commands
 
@@ -69,7 +69,7 @@ WordPress child theme development with enterprise-grade architecture. **REALIZAC
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
-- **2025-06-24**: [fix] Critical Single Source of Truth implementation - Eliminated all hardcoded ACF field names across base classes and AdminController. Replaced with abstract methods: getPointsFieldName() and getRejectionReasonFieldName(). Removed conflicting save_post hook from PointsHandlerBase that was overwriting editor data. Fixed synchronization between AJAX UI and post editor - manual point edits now persist correctly.
+- **2025-06-24**: [fix] Dual-pathway architecture - FINAL solution using context-aware point awarding. Post editor flow uses acf/save_post hook (guaranteed after ACF saves). AJAX admin flow uses direct award_points() method calls (immediate transaction). wp_doing_ajax() guard prevents conflicts. Eliminates ALL race conditions by using appropriate execution pattern for each context. Unified transaction logic via public award_points() method. Both manual admin edits and AJAX approvals work perfectly with correct point values. Ready for Faktury calculation-based logic.
 - **2025-06-23**: [refactor] Create domain abstraction architecture with fixed points - Created base classes (PostTypeManagerBase, AdminControllerBase, PointsHandlerBase, FormHandlerBase) and refactored Realizace domain to use them. Implemented fixed 2500 points default for realizace with admin override capability. Simplified bulk approval workflow by removing UI points collection since defaults are automatically applied.
 - **2025-06-23**: [update] Improve admin interface enhancements - Added pending realizace column to wp-admin/users.php table, improved MyCred notices to show realizace titles instead of IDs, implemented dynamic grid layout for realizace cards (1 item = full width, 2 items = 50% each, 3+ items = standard grid)
 - **2025-06-23**: [fix] Add permanent deletion handler with No Debt policy - Complete point revocation system now handles permanent deletion while preventing negative balances

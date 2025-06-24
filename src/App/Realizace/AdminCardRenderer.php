@@ -31,22 +31,16 @@ class AdminCardRenderer {
     }
 
     /**
-     * Get points value for a realizace post using consistent field access
+     * Get points value for a realizace post using centralized field access
      */
     private function get_realizace_points(int $post_id): int {
-        // Use admin controller's abstract method if available, fallback to direct access
+        // Use admin controller's abstract method if available, fallback to field service
         if ($this->admin_controller) {
             return $this->admin_controller->get_current_points($post_id);
         }
         
-        // Fallback for backward compatibility
-        if (function_exists('get_field')) {
-            $points = get_field('sprava_a_hodnoceni_realizace_pridelene_body', $post_id);
-        } else {
-            $points = get_post_meta($post_id, 'sprava_a_hodnoceni_realizace_pridelene_body', true);
-        }
-        
-        return is_numeric($points) ? (int)$points : 0;
+        // Use centralized field service
+        return RealizaceFieldService::getPoints($post_id);
     }
 
     /**
@@ -259,21 +253,11 @@ class AdminCardRenderer {
         // Get all the data needed for rendering
         $assigned_points = $this->get_realizace_points($post->ID);
         $awarded_points = (int)get_post_meta($post->ID, '_realizace_points_awarded', true);
-        $rejection_reason = function_exists('get_field')
-            ? get_field('sprava_a_hodnoceni_realizace_duvod_zamitnuti', $post->ID)
-            : get_post_meta($post->ID, 'sprava_a_hodnoceni_realizace_duvod_zamitnuti', true);
-        $gallery_images = function_exists('get_field')
-            ? get_field('fotky_realizace', $post->ID)
-            : get_post_meta($post->ID, 'fotky_realizace', true);
-        $pocet_m2 = function_exists('get_field')
-            ? get_field('pocet_m2', $post->ID)
-            : get_post_meta($post->ID, 'pocet_m2', true);
-        $typ_konstrukce = function_exists('get_field')
-            ? get_field('typ_konstrukce', $post->ID)
-            : get_post_meta($post->ID, 'typ_konstrukce', true);
-        $pouzite_materialy = function_exists('get_field')
-            ? get_field('pouzite_materialy', $post->ID)
-            : get_post_meta($post->ID, 'pouzite_materialy', true);
+        $rejection_reason = RealizaceFieldService::getRejectionReason($post->ID);
+        $gallery_images = RealizaceFieldService::getGallery($post->ID);
+        $pocet_m2 = RealizaceFieldService::getArea($post->ID);
+        $typ_konstrukce = RealizaceFieldService::getConstructionType($post->ID);
+        $pouzite_materialy = RealizaceFieldService::getMaterials($post->ID);
         
         ?>
         <div class="realizace-item" data-post-id="<?php echo esc_attr((string)$post->ID); ?>" data-status="<?php echo esc_attr($post->post_status); ?>">
@@ -304,7 +288,7 @@ class AdminCardRenderer {
                     <?php if ($pocet_m2): ?>
                         <div class="detail-item">
                             <span class="detail-label">Plocha:</span>
-                            <span class="detail-value"><?php echo esc_html($pocet_m2); ?> m²</span>
+                            <span class="detail-value"><?php echo esc_html((string)$pocet_m2); ?> m²</span>
                         </div>
                     <?php endif; ?>
                     <?php if ($typ_konstrukce): ?>

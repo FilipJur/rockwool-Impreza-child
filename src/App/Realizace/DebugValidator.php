@@ -116,7 +116,7 @@ class DebugValidator {
                 error_log("[REALIZACE:VALIDATE] Post {$post_id} has rejected status correctly");
                 
                 // Check for rejection reason
-                $rejection_reason = get_post_meta($post_id, 'duvod_zamitnuti', true);
+                $rejection_reason = RealizaceFieldService::getRejectionReason($post_id);
                 $validation['rejection_reason'] = $rejection_reason ?: null;
                 
                 if (empty($rejection_reason)) {
