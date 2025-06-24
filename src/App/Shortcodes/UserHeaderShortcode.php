@@ -51,7 +51,7 @@ class UserHeaderShortcode extends ShortcodeBase
             'registration_url' => '/registrace',
             'account_url' => '/muj-ucet',
             'add_realization_url' => '/pridat-realizaci',
-            'add_invoice_url' => '#'
+            'add_invoice_url' => '/pridat-fakturu'
         ], $attributes);
 
         $user_id = get_current_user_id();

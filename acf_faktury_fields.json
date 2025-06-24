@@ -1,0 +1,167 @@
+[
+  {
+      "key": "group_668d4f7c1a2b3",
+      "title": "Detaily Faktury",
+      "fields": [
+          {
+              "key": "field_668d4f7c1a2b4",
+              "label": "Správa a hodnocení",
+              "name": "sprava_a_hodnoceni",
+              "aria-label": "",
+              "type": "group",
+              "instructions": "Tato sekce je určena pouze pro administrátory.",
+              "required": 0,
+              "conditional_logic": 0,
+              "wrapper": {
+                  "width": "",
+                  "class": "acf-group-admin-section",
+                  "id": ""
+              },
+              "layout": "block",
+              "sub_fields": [
+                  {
+                      "key": "field_668d4f7c1a2b5",
+                      "label": "Přidělené body (vypočítané)",
+                      "name": "faktura_pridelene_body",
+                      "aria-label": "",
+                      "type": "number",
+                      "instructions": "Body se vypočítají automaticky z hodnoty faktury. Toto pole je pouze pro audit.",
+                      "required": 0,
+                      "conditional_logic": 0,
+                      "wrapper": {
+                          "width": "50",
+                          "class": "",
+                          "id": ""
+                      },
+                      "default_value": "",
+                      "min": "",
+                      "max": "",
+                      "placeholder": "",
+                      "step": "",
+                      "prepend": "",
+                      "append": "",
+                      "readonly": 1
+                  },
+                  {
+                      "key": "field_668d4f7c1a2b6",
+                      "label": "Důvod zamítnutí",
+                      "name": "faktura_duvod_zamitnuti",
+                      "aria-label": "",
+                      "type": "textarea",
+                      "instructions": "Pokud fakturu zamítáte, uveďte zde stručný důvod pro uživatele.",
+                      "required": 0,
+                      "conditional_logic": 0,
+                      "wrapper": {
+                          "width": "",
+                          "class": "",
+                          "id": ""
+                      },
+                      "default_value": "",
+                      "maxlength": "",
+                      "rows": 3,
+                      "placeholder": "",
+                      "new_lines": ""
+                  }
+              ]
+          },
+          {
+              "key": "field_668d4f7c1a2b7",
+              "label": "Hodnota faktury (CZK)",
+              "name": "hodnota_faktury",
+              "aria-label": "",
+              "type": "number",
+              "instructions": "Uživatelem zadaná hodnota faktury v CZK.",
+              "required": 1,
+              "conditional_logic": 0,
+              "wrapper": {
+                  "width": "50",
+                  "class": "",
+                  "id": ""
+              },
+              "default_value": "",
+              "min": 1,
+              "max": "",
+              "placeholder": "",
+              "step": "1",
+              "prepend": "",
+              "append": "Kč"
+          },
+          {
+              "key": "field_668d4f7c1a2b8",
+              "label": "Naskenovaná faktura",
+              "name": "faktura_soubor",
+              "aria-label": "",
+              "type": "file",
+              "instructions": "Soubor faktury nahraný uživatelem.",
+              "required": 1,
+              "conditional_logic": 0,
+              "wrapper": {
+                  "width": "",
+                  "class": "",
+                  "id": ""
+              },
+              "return_format": "id",
+              "library": "all",
+              "min_size": "",
+              "max_size": "10MB",
+              "mime_types": "pdf, jpg, jpeg, png"
+          },
+          {
+              "key": "field_668d4f7c1a2b9",
+              "label": "Číslo faktury (Admin)",
+              "name": "cislo_faktury",
+              "aria-label": "",
+              "type": "text",
+              "instructions": "Vyplní administrátor pro kontrolu duplicity.",
+              "required": 0,
+              "conditional_logic": 0,
+              "wrapper": {
+                  "width": "50",
+                  "class": "",
+                  "id": ""
+              },
+              "default_value": "",
+              "placeholder": "",
+              "prepend": "",
+              "append": "",
+              "maxlength": ""
+          },
+          {
+              "key": "field_668d4f7c1a2ba",
+              "label": "Datum faktury (Admin)",
+              "name": "datum_faktury",
+              "aria-label": "",
+              "type": "date_picker",
+              "instructions": "Vyplní administrátor pro kontrolu platnosti.",
+              "required": 0,
+              "conditional_logic": 0,
+              "wrapper": {
+                  "width": "50",
+                  "class": "",
+                  "id": ""
+              },
+              "display_format": "d/m/Y",
+              "return_format": "Ymd",
+              "first_day": 1
+          }
+      ],
+      "location": [
+          [
+              {
+                  "param": "post_type",
+                  "operator": "==",
+                  "value": "faktura"
+              }
+          ]
+      ],
+      "menu_order": 0,
+      "position": "normal",
+      "style": "default",
+      "label_placement": "top",
+      "instruction_placement": "label",
+      "hide_on_screen": "",
+      "active": true,
+      "description": "",
+      "show_in_rest": 0
+  }
+]
