@@ -35,9 +35,9 @@ abstract class PostTypeManagerBase {
     abstract protected function getDefaultPoints(int $post_id = 0): int;
 
     /**
-     * Get the ACF field name that stores points for this domain
+     * Get the ACF field selector that stores points for this domain (including group field prefix if applicable)
      */
-    abstract protected function getPointsFieldName(): string;
+    abstract protected function getPointsFieldSelector(): string;
 
     /**
      * Get the display name for this domain (e.g., "Realizace", "Faktury")
@@ -85,14 +85,14 @@ abstract class PostTypeManagerBase {
     /**
      * Populate default points after post insertion
      */
-    public function populate_default_points(\WP_Post $post, bool $update): void {
+    public function populate_default_points(int $post_id, \WP_Post $post, bool $update = false): void {
         if ($post->post_type !== $this->getPostType()) {
             return;
         }
 
         // Only set defaults for new posts or posts without points
-        if (!$update || $this->get_current_points($post->ID) === 0) {
-            $this->ensure_default_points($post->ID);
+        if (!$update || $this->get_current_points($post_id) === 0) {
+            $this->ensure_default_points($post_id);
         }
     }
 
@@ -100,6 +100,7 @@ abstract class PostTypeManagerBase {
      * Ensure post has default points if none are set
      */
     protected function ensure_default_points(int $post_id): void {
+        // SINGLE SOURCE OF TRUTH: Use abstract methods for all domains
         $current_points = $this->get_current_points($post_id);
         
         if ($current_points === 0) {
@@ -109,7 +110,7 @@ abstract class PostTypeManagerBase {
                 $this->set_points($post_id, $default_points);
                 
                 error_log(sprintf(
-                    '[%s:MANAGER] Set default points: %d for post #%d',
+                    '[%s:MANAGER] Auto-populated default points: %d for post #%d',
                     strtoupper($this->getPostType()),
                     $default_points,
                     $post_id
@@ -120,12 +121,13 @@ abstract class PostTypeManagerBase {
 
     /**
      * Get current points value for a post
+     * SINGLE SOURCE OF TRUTH: Always use the same field selector
      */
     protected function get_current_points(int $post_id): int {
         if (function_exists('get_field')) {
-            $points = get_field($this->getPointsFieldName(), $post_id);
+            $points = get_field($this->getPointsFieldSelector(), $post_id);
         } else {
-            $points = get_post_meta($post_id, $this->getPointsFieldName(), true);
+            $points = get_post_meta($post_id, $this->getPointsFieldSelector(), true);
         }
 
         return is_numeric($points) ? (int)$points : 0;
@@ -133,13 +135,14 @@ abstract class PostTypeManagerBase {
 
     /**
      * Set points value for a post
+     * SINGLE SOURCE OF TRUTH: Always use the same field selector
      */
     protected function set_points(int $post_id, int $points): bool {
         if (function_exists('update_field')) {
-            $result = update_field($this->getPointsFieldName(), $points, $post_id);
+            $result = update_field($this->getPointsFieldSelector(), $points, $post_id);
             return $result !== false;
         } else {
-            return update_post_meta($post_id, $this->getPointsFieldName(), $points) !== false;
+            return update_post_meta($post_id, $this->getPointsFieldSelector(), $points) !== false;
         }
     }
 
@@ -165,7 +168,7 @@ abstract class PostTypeManagerBase {
             'post_type' => $this->getPostType(),
             'display_name' => $this->getDomainDisplayName(),
             'default_points' => $this->getDefaultPoints(),
-            'points_field' => $this->getPointsFieldName()
+            'points_field' => $this->getPointsFieldSelector()
         ];
     }
 }

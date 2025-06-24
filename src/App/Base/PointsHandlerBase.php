@@ -37,9 +37,9 @@ abstract class PointsHandlerBase {
     abstract protected function getDefaultPoints(int $post_id = 0): int;
 
     /**
-     * Get the ACF field name that stores points
+     * Get the ACF field selector that stores points (including group field prefix if applicable)
      */
-    abstract protected function getPointsFieldName(): string;
+    abstract protected function getPointsFieldSelector(): string;
 
     /**
      * Get the myCred reference type for this domain
@@ -50,43 +50,10 @@ abstract class PointsHandlerBase {
      * Initialize points handling hooks
      */
     public function init_hooks(): void {
-        add_action('save_post_' . $this->getPostType(), [$this, 'handle_points_on_save'], 20, 2);
         add_action('transition_post_status', [$this, 'handle_status_change_points'], 15, 3);
         add_action('before_delete_post', [$this, 'handle_permanent_deletion'], 5);
     }
 
-    /**
-     * Handle point awards and corrections when a post is saved
-     */
-    public function handle_points_on_save(int $post_id, \WP_Post $post): void {
-        // Skip autosaves and revisions
-        if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
-            return;
-        }
-
-        // Skip if user doesn't have permission to edit this post
-        if (!current_user_can('edit_post', $post_id)) {
-            return;
-        }
-
-        // Only award points for published (approved) posts
-        if ($post->post_status !== 'publish') {
-            return;
-        }
-
-        // Prevent running if this is a status transition
-        if (isset($_POST['post_status']) && $_POST['post_status'] !== 'publish') {
-            return;
-        }
-
-        $user_id = (int)$post->post_author;
-        if (!get_userdata($user_id)) {
-            error_log("[{$this->getPostType()}:ERROR] Invalid user ID {$user_id} for post {$post_id}");
-            return;
-        }
-
-        $this->process_point_change($post_id, $user_id, 'save');
-    }
 
     /**
      * Handle points when post status changes
@@ -247,16 +214,16 @@ abstract class PointsHandlerBase {
      * Get points to award with ACF fallback and default population
      */
     protected function get_points_to_award(int $post_id): int {
-        // Try ACF first
+        // SINGLE SOURCE OF TRUTH: Use abstract method for all domains
         if (function_exists('get_field')) {
-            $acf_points = get_field($this->getPointsFieldName(), $post_id);
+            $acf_points = get_field($this->getPointsFieldSelector(), $post_id);
             if (is_numeric($acf_points)) {
                 return (int)$acf_points;
             }
         }
         
         // Fallback to post meta
-        $meta_points = get_post_meta($post_id, $this->getPointsFieldName(), true);
+        $meta_points = get_post_meta($post_id, $this->getPointsFieldSelector(), true);
         return is_numeric($meta_points) ? (int)$meta_points : 0;
     }
 
@@ -264,11 +231,12 @@ abstract class PointsHandlerBase {
      * Set points value for a post
      */
     protected function set_points(int $post_id, int $points): bool {
+        // SINGLE SOURCE OF TRUTH: Use abstract method for all domains
         if (function_exists('update_field')) {
-            $result = update_field($this->getPointsFieldName(), $points, $post_id);
+            $result = update_field($this->getPointsFieldSelector(), $points, $post_id);
             return $result !== false;
         } else {
-            return update_post_meta($post_id, $this->getPointsFieldName(), $points) !== false;
+            return update_post_meta($post_id, $this->getPointsFieldSelector(), $points) !== false;
         }
     }
 

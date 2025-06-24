@@ -137,15 +137,13 @@ class AdminController extends AdminControllerBase {
      * Render points column content
      */
     protected function render_points_column(int $post_id): void {
-        $points_assigned = function_exists('get_field')
-            ? get_field('pridelene_body', $post_id)
-            : get_post_meta($post_id, 'pridelene_body', true);
-
+        // SINGLE SOURCE OF TRUTH: Use base class method
+        $points_assigned = $this->get_current_points($post_id);
         $points_awarded = (int)get_post_meta($post_id, '_realizace_points_awarded', true);
 
-        if ($points_assigned) {
+        if ($points_assigned > 0) {
             echo '<strong>' . esc_html((string)$points_assigned) . '</strong>';
-            if ($points_awarded && $points_awarded !== (int)$points_assigned) {
+            if ($points_awarded && $points_awarded !== $points_assigned) {
                 echo '<br><small>Uděleno: ' . esc_html((string)$points_awarded) . '</small>';
             }
         } else {
@@ -298,6 +296,8 @@ class AdminController extends AdminControllerBase {
                     console.log('[REALIZACE:UI] Added rejected option to status dropdown');
                 }
 
+                // ACF field refresh no longer needed - points populated on creation
+
                 // Set current status if rejected
                 <?php if ($post->post_status === 'rejected'): ?>
                 console.log('[REALIZACE:UI] Setting current status to rejected');
@@ -362,8 +362,8 @@ class AdminController extends AdminControllerBase {
         // Validate rejection reason when moving to rejected status
         if ($new_status === 'rejected' && $old_status !== 'rejected') {
             $rejection_reason = function_exists('get_field')
-                ? get_field('duvod_zamitnuti', $post->ID)
-                : get_post_meta($post->ID, 'duvod_zamitnuti', true);
+                ? get_field($this->getRejectionReasonFieldSelector(), $post->ID)
+                : get_post_meta($post->ID, $this->getRejectionReasonFieldSelector(), true);
 
             if (empty($rejection_reason)) {
                 error_log("[REALIZACE:UI] Warning: Post #{$post->ID} rejected without reason");
@@ -427,52 +427,6 @@ class AdminController extends AdminControllerBase {
         add_action('wp_ajax_mistr_fachman_update_acf_field', [$this, 'handle_update_acf_field_ajax']);
     }
 
-    /**
-     * Handle AJAX quick actions for realizace (approve/reject)
-     */
-    public function handle_quick_action_ajax(): void {
-        error_log('[REALIZACE:AJAX] Quick action called');
-        error_log('[REALIZACE:AJAX] POST data: ' . json_encode($_POST));
-
-        try {
-            // Verify nonce and permissions
-            check_ajax_referer('mistr_fachman_realizace_action', 'nonce');
-            error_log('[REALIZACE:AJAX] Nonce verified');
-
-            if (!current_user_can('edit_posts')) {
-                error_log('[REALIZACE:AJAX] User lacks edit_posts capability');
-                wp_send_json_error(['message' => 'Insufficient permissions']);
-            }
-
-            $post_id = (int)($_POST['post_id'] ?? 0);
-            $action = sanitize_text_field($_POST['realizace_action'] ?? '');
-
-            error_log("[REALIZACE:AJAX] Parameters: post_id={$post_id}, action={$action}");
-
-            if (!$post_id || !in_array($action, ['approve', 'reject'])) {
-                error_log('[REALIZACE:AJAX] Invalid parameters');
-                wp_send_json_error(['message' => 'Invalid parameters']);
-            }
-
-            $post = get_post($post_id);
-            if (!$post || $post->post_type !== 'realizace') {
-                error_log('[REALIZACE:AJAX] Invalid post');
-                wp_send_json_error(['message' => 'Invalid post']);
-            }
-
-            if ($action === 'approve') {
-                $this->process_approve_action($post_id);
-            } else {
-                // Get rejection reason from request
-                $rejection_reason = sanitize_textarea_field($_POST['rejection_reason'] ?? '');
-                $this->process_reject_action($post_id, $post, $rejection_reason);
-            }
-
-        } catch (\Exception $e) {
-            error_log('[REALIZACE:AJAX] Exception in quick action: ' . $e->getMessage());
-            wp_send_json_error(['message' => 'Chyba při zpracování: ' . $e->getMessage()]);
-        }
-    }
 
     /**
      * Process approve action with points validation and default population
@@ -480,38 +434,46 @@ class AdminController extends AdminControllerBase {
     protected function process_approve_action(int $post_id): void {
         error_log("[REALIZACE:AJAX] Processing APPROVE action for post {$post_id}");
 
-        // Get points to award from POST data or use default
-        $points_to_award = isset($_POST['points']) ? (int)$_POST['points'] : $this->getDefaultPoints($post_id);
-
-        // If still no points, use the fixed default
-        if ($points_to_award <= 0) {
-            $points_to_award = $this->getDefaultPoints($post_id);
+        // SINGLE SOURCE OF TRUTH: Check if points are already set manually
+        $existing_points = $this->get_current_points($post_id);
+        
+        if ($existing_points > 0) {
+            // User has manually set points - RESPECT their choice
+            $points_to_award = $existing_points;
+            error_log("[REALIZACE:AJAX] Using manually set points: {$points_to_award} for post {$post_id}");
+        } else {
+            // No points set yet - use default or POST data
+            $points_to_award = isset($_POST['points']) ? (int)$_POST['points'] : $this->getDefaultPoints($post_id);
+            
+            // If still no points, use the fixed default
+            if ($points_to_award <= 0) {
+                $points_to_award = $this->getDefaultPoints($post_id);
+            }
+            error_log("[REALIZACE:AJAX] Using default points: {$points_to_award} for post {$post_id}");
         }
 
         // Final validation
         if ($points_to_award <= 0) {
-            wp_send_json_error(['message' => 'Počet bodů musí být kladné číslo.']);
+            throw new \Exception('Počet bodů musí být kladné číslo.');
         }
 
-        // Save points to ACF field before updating status
-        if (function_exists('update_field')) {
-            /** @var callable $update_field */
-            $update_field = 'update_field';
-            $update_field('pridelene_body', $points_to_award, $post_id);
-        } else {
-            update_post_meta($post_id, 'pridelene_body', $points_to_award);
+        // Save points using single source of truth method
+        $set_result = $this->set_points($post_id, $points_to_award);
+        
+        if (!$set_result) {
+            error_log("[REALIZACE:AJAX] Warning: Failed to set points for post {$post_id}");
         }
-
+        
         error_log("[REALIZACE:AJAX] Set points to {$points_to_award} for post {$post_id}");
 
         // Clear rejection reason when approving (clean slate for approved realizace)
         if (function_exists('update_field')) {
             /** @var callable $update_field */
             $update_field = 'update_field';
-            $update_field('duvod_zamitnuti', '', $post_id);
+            $update_field($this->getRejectionReasonFieldSelector(), '', $post_id);
             error_log("[REALIZACE:AJAX] Cleared rejection reason for post {$post_id}");
         } else {
-            update_post_meta($post_id, 'duvod_zamitnuti', '');
+            update_post_meta($post_id, $this->getRejectionReasonFieldSelector(), '');
         }
 
         // Now update post status - this will trigger the points award via PointsHandler
@@ -520,7 +482,10 @@ class AdminController extends AdminControllerBase {
             'post_status' => 'publish'
         ]);
 
-        $this->handle_update_result($result, $post_id, 'approve');
+        // Check for wp_update_post errors
+        if (is_wp_error($result)) {
+            throw new \Exception('Failed to update post status: ' . $result->get_error_message());
+        }
     }
 
     /**
@@ -535,7 +500,7 @@ class AdminController extends AdminControllerBase {
             error_log("[REALIZACE:AJAX] Rejected status not available - attempting emergency registration");
 
             if (!$this->status_manager->emergency_register_rejected_status()) {
-                wp_send_json_error(['message' => 'Chyba: Status "odmítnuto" není dostupný. Kontaktujte administrátora.']);
+                throw new \Exception('Chyba: Status "odmítnuto" není dostupný. Kontaktujte administrátora.');
             }
         }
 
@@ -558,44 +523,23 @@ class AdminController extends AdminControllerBase {
 
         // Set rejection reason from user input or use default
         if (!empty($rejection_reason)) {
-            update_post_meta($post_id, 'duvod_zamitnuti', $rejection_reason);
+            update_field($this->getRejectionReasonFieldSelector(), $rejection_reason, $post_id);
             error_log("[REALIZACE:AJAX] Set user-provided rejection reason: {$rejection_reason}");
         } else {
             // Only set default if no existing reason and no user input
-            $existing_reason = get_post_meta($post_id, 'duvod_zamitnuti', true);
+            $existing_reason = get_field($this->getRejectionReasonFieldSelector(), $post_id);
             if (empty($existing_reason)) {
-                update_post_meta($post_id, 'duvod_zamitnuti', 'Rychle odmítnuto administrátorem');
+                update_field($this->getRejectionReasonFieldSelector(), 'Rychle odmítnuto administrátorem', $post_id);
                 error_log("[REALIZACE:AJAX] Added default rejection reason");
             }
         }
 
-        $this->handle_update_result($result, $post_id, 'reject');
-    }
-
-    /**
-     * Handle the result of wp_update_post and send appropriate response
-     */
-    private function handle_update_result($result, int $post_id, string $action): void {
+        // Check for wp_update_post errors
         if (is_wp_error($result)) {
-            error_log('[REALIZACE:AJAX] wp_update_post failed: ' . $result->get_error_message());
-            wp_send_json_error(['message' => $result->get_error_message()]);
+            throw new \Exception('Failed to update post status: ' . $result->get_error_message());
         }
-
-        // CRITICAL: Verify the post still exists and wasn't deleted
-        $final_check_post = get_post($post_id);
-        if (!$final_check_post) {
-            error_log("[REALIZACE:AJAX] CRITICAL: Post {$post_id} was DELETED during status update!");
-            wp_send_json_error(['message' => 'Chyba: Příspěvek byl neočekávaně smazán.']);
-        } else {
-            error_log("[REALIZACE:AJAX] Post {$post_id} still exists with status: {$final_check_post->post_status}");
-        }
-
-        error_log("[REALIZACE:AJAX] Post {$post_id} successfully updated to {$action}");
-        wp_send_json_success([
-            'message' => $action === 'approve' ? 'Realizace byla schválena' : 'Realizace byla odmítnuta',
-            'new_status' => $action === 'approve' ? 'publish' : 'rejected'
-        ]);
     }
+
 
     /**
      * Handle bulk approve AJAX action with improved points collection
@@ -647,7 +591,7 @@ class AdminController extends AdminControllerBase {
 
         $approved_count = 0;
         foreach ($pending_posts as $post_id) {
-            // Ensure default points are set (2500 for realizace)
+            // Ensure default points are set using single source of truth
             $current_points = $this->get_current_points($post_id);
             if ($current_points === 0) {
                 $default_points = $this->getDefaultPoints($post_id);
@@ -661,9 +605,9 @@ class AdminController extends AdminControllerBase {
             if (function_exists('update_field')) {
                 /** @var callable $update_field */
                 $update_field = 'update_field';
-                $update_field('duvod_zamitnuti', '', $post_id);
+                $update_field($this->getRejectionReasonFieldSelector(), '', $post_id);
             } else {
-                update_post_meta($post_id, 'duvod_zamitnuti', '');
+                update_post_meta($post_id, $this->getRejectionReasonFieldSelector(), '');
             }
 
             // Now update status - this will trigger the points award via PointsHandler
@@ -781,10 +725,19 @@ class AdminController extends AdminControllerBase {
     }
 
     /**
-     * Get the points field name
+     * Get the points field selector
+     * Using sub-field within ACF group field 'sprava_a_hodnoceni'
      */
-    protected function getPointsFieldName(): string {
-        return 'pridelene_body';
+    protected function getPointsFieldSelector(): string {
+        return 'sprava_a_hodnoceni_realizace_pridelene_body';
+    }
+
+    /**
+     * Get the rejection reason field selector
+     * Using sub-field within ACF group field 'sprava_a_hodnoceni'
+     */
+    protected function getRejectionReasonFieldSelector(): string {
+        return 'sprava_a_hodnoceni_realizace_duvod_zamitnuti';
     }
 
     /**
@@ -795,4 +748,5 @@ class AdminController extends AdminControllerBase {
         $this->card_renderer->render_consolidated_realizace_dashboard($user);
         echo '</div>';
     }
+
 }

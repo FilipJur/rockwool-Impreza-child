@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. **REALIZACE SYSTEM FULLY STABILIZED** - All critical bugs resolved: status revert bug eliminated, bulk approval properly processes UI points data, and "No Debt" policy implemented to prevent negative balances. Architecture consolidated into cohesive AdminController. System is production-ready and follows controlled complexity patterns.
+WordPress child theme development with enterprise-grade architecture. **REALIZACE SYSTEM FULLY STABILIZED & SINGLE SOURCE OF TRUTH IMPLEMENTED** - Critical synchronization bug eliminated by removing conflicting save_post hook and implementing unified field access patterns. All hardcoded ACF field names replaced with abstract methods. Base classes are now truly reusable for Faktury domain. System is production-ready with consistent data flow across AJAX UI and post editor.
 
 ## Build & Development Commands
 
@@ -69,6 +69,7 @@ WordPress child theme development with enterprise-grade architecture. **REALIZAC
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
+- **2025-06-24**: [fix] Critical Single Source of Truth implementation - Eliminated all hardcoded ACF field names across base classes and AdminController. Replaced with abstract methods: getPointsFieldName() and getRejectionReasonFieldName(). Removed conflicting save_post hook from PointsHandlerBase that was overwriting editor data. Fixed synchronization between AJAX UI and post editor - manual point edits now persist correctly.
 - **2025-06-23**: [refactor] Create domain abstraction architecture with fixed points - Created base classes (PostTypeManagerBase, AdminControllerBase, PointsHandlerBase, FormHandlerBase) and refactored Realizace domain to use them. Implemented fixed 2500 points default for realizace with admin override capability. Simplified bulk approval workflow by removing UI points collection since defaults are automatically applied.
 - **2025-06-23**: [update] Improve admin interface enhancements - Added pending realizace column to wp-admin/users.php table, improved MyCred notices to show realizace titles instead of IDs, implemented dynamic grid layout for realizace cards (1 item = full width, 2 items = 50% each, 3+ items = standard grid)
 - **2025-06-23**: [fix] Add permanent deletion handler with No Debt policy - Complete point revocation system now handles permanent deletion while preventing negative balances
@@ -121,6 +122,7 @@ WordPress child theme development with enterprise-grade architecture. **REALIZAC
 - **Cohesive controllers over fragmentation** (2025-06-23): Single AdminController with clear responsibility sections instead of over-decomposed classes - line count is secondary to preventing mixed responsibilities and tight coupling
 - **"No Debt" business policy** (2025-06-23): Point revocation never creates negative balances - revoke only up to current user balance to maintain financial integrity
 - **Frontend-only Tailwind CSS** (2025-06-23): Tailwind CSS only loaded on frontend via wp_enqueue_scripts to prevent admin class conflicts with WordPress core
+- **Single Source of Truth field access** (2025-06-24): All ACF field access through abstract methods (getPointsFieldName(), getRejectionReasonFieldName()) - no hardcoded field names in controllers or base classes. Enables true domain abstraction and eliminates synchronization bugs between AJAX UI and WordPress editor
 
 ## Known Issues
 *No current known issues. System is production-ready with complete No Debt policy.*

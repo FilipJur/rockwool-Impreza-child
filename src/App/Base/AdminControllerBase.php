@@ -37,9 +37,14 @@ abstract class AdminControllerBase {
     abstract protected function getDefaultPoints(int $post_id = 0): int;
 
     /**
-     * Get the points field name
+     * Get the points field selector (including group field prefix if applicable)
      */
-    abstract protected function getPointsFieldName(): string;
+    abstract protected function getPointsFieldSelector(): string;
+
+    /**
+     * Get the rejection reason field selector (including group field prefix if applicable)
+     */
+    abstract protected function getRejectionReasonFieldSelector(): string;
 
     /**
      * Render domain-specific user profile card
@@ -230,27 +235,35 @@ abstract class AdminControllerBase {
             check_ajax_referer("mistr_fachman_{$this->getPostType()}_action", 'nonce');
 
             if (!current_user_can('edit_posts')) {
-                wp_send_json_error(['message' => 'Insufficient permissions']);
+                throw new \Exception('Insufficient permissions');
             }
 
             $post_id = (int)($_POST['post_id'] ?? 0);
-            $action = sanitize_text_field($_POST['action_type'] ?? '');
+            // Support both legacy and new parameter names
+            $action = sanitize_text_field($_POST['action_type'] ?? $_POST['realizace_action'] ?? '');
 
             if (!$post_id || !in_array($action, ['approve', 'reject'])) {
-                wp_send_json_error(['message' => 'Invalid parameters']);
+                throw new \Exception('Invalid parameters');
             }
 
             $post = get_post($post_id);
             if (!$post || $post->post_type !== $this->getPostType()) {
-                wp_send_json_error(['message' => 'Invalid post']);
+                throw new \Exception('Invalid post');
             }
 
+            // Delegate domain-specific logic to child class
             if ($action === 'approve') {
                 $this->process_approve_action($post_id);
             } else {
                 $rejection_reason = sanitize_textarea_field($_POST['rejection_reason'] ?? '');
                 $this->process_reject_action($post_id, $post, $rejection_reason);
             }
+
+            // Send success response from base class
+            wp_send_json_success([
+                'message' => $action === 'approve' ? 'Akce byla úspěšně provedena.' : 'Položka byla zamítnuta.',
+                'new_status' => $action === 'approve' ? 'publish' : 'rejected'
+            ]);
 
         } catch (\Exception $e) {
             error_log('[' . strtoupper($this->getPostType()) . ':AJAX] Exception: ' . $e->getMessage());
@@ -302,10 +315,15 @@ abstract class AdminControllerBase {
 
         $approved_count = 0;
         foreach ($pending_posts as $post_id) {
-            // Ensure default points are set
+            // SINGLE SOURCE OF TRUTH: Use abstract methods for all domains
             $current_points = $this->get_current_points($post_id);
             if ($current_points === 0) {
-                $this->set_points($post_id, $this->getDefaultPoints($post_id));
+                $default_points = $this->getDefaultPoints($post_id);
+                $this->set_points($post_id, $default_points);
+                error_log("[BULK_APPROVE] Set default {$default_points} points for {$this->getPostType()} post {$post_id}");
+            } else {
+                // Points already set manually - respect the existing value
+                error_log("[BULK_APPROVE] Respecting manually set points ({$current_points}) for {$this->getPostType()} post {$post_id}");
             }
 
             // Approve the post
@@ -371,11 +389,11 @@ abstract class AdminControllerBase {
     /**
      * Get current points value for a post
      */
-    protected function get_current_points(int $post_id): int {
+    public function get_current_points(int $post_id): int {
         if (function_exists('get_field')) {
-            $points = get_field($this->getPointsFieldName(), $post_id);
+            $points = get_field($this->getPointsFieldSelector(), $post_id);
         } else {
-            $points = get_post_meta($post_id, $this->getPointsFieldName(), true);
+            $points = get_post_meta($post_id, $this->getPointsFieldSelector(), true);
         }
 
         return is_numeric($points) ? (int)$points : 0;
@@ -386,10 +404,10 @@ abstract class AdminControllerBase {
      */
     protected function set_points(int $post_id, int $points): bool {
         if (function_exists('update_field')) {
-            $result = update_field($this->getPointsFieldName(), $points, $post_id);
+            $result = update_field($this->getPointsFieldSelector(), $points, $post_id);
             return $result !== false;
         } else {
-            return update_post_meta($post_id, $this->getPointsFieldName(), $points) !== false;
+            return update_post_meta($post_id, $this->getPointsFieldSelector(), $points) !== false;
         }
     }
 

@@ -49,7 +49,7 @@ class Manager extends PostTypeManagerBase {
         $user_detection_service = new UserDetectionService($role_manager);
         
         // Initialize form handler with dependencies
-        $this->form_handler = new RealizaceFormHandler($user_detection_service);
+        $this->form_handler = new RealizaceFormHandler($user_detection_service, $this);
         
         // Initialize admin components with consolidated architecture
         $card_renderer = new AdminCardRenderer();
@@ -58,6 +58,10 @@ class Manager extends PostTypeManagerBase {
         
         // Create consolidated admin controller
         $admin_controller = new AdminController($status_manager, $card_renderer, $asset_manager);
+        
+        // Wire up card renderer to use admin controller's abstract methods
+        $card_renderer->setAdminController($admin_controller);
+        
         $admin_controller->init_hooks();
         
         // Initialize points handler for myCred integration
@@ -206,15 +210,16 @@ class Manager extends PostTypeManagerBase {
     /**
      * Get the default points value for realizace (fixed 2500)
      */
-    protected function getDefaultPoints(int $post_id = 0): int {
+    public function getDefaultPoints(int $post_id = 0): int {
         return 2500;
     }
 
     /**
-     * Get the ACF field name that stores points
+     * Get the ACF field selector that stores points
+     * Using sub-field within ACF group field 'sprava_a_hodnoceni'
      */
-    protected function getPointsFieldName(): string {
-        return 'pridelene_body';
+    public function getPointsFieldSelector(): string {
+        return 'sprava_a_hodnoceni_realizace_pridelene_body';
     }
 
     /**

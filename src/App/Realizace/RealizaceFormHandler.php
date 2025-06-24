@@ -7,7 +7,8 @@ use MistrFachman\Services\UserDetectionService;
 class RealizaceFormHandler {
 
     public function __construct(
-        private UserDetectionService $user_detection_service
+        private UserDetectionService $user_detection_service,
+        private Manager $manager
     ) {}
 
     /**
@@ -181,7 +182,7 @@ class RealizaceFormHandler {
             error_log('[REALIZACE:DEBUG] Gallery field update result: ' . ($result ? 'success' : 'failed') . ' with ' . count($gallery_ids) . ' images');
         }
         
-        error_log('[REALIZACE:SUCCESS] Form processing complete for post ID: ' . $post_id);
+        error_log('[REALIZACE:SUCCESS] Form processing complete for post ID: ' . $post_id . ' - Default points will be auto-populated by PostTypeManagerBase hook');
     }
 
     /**

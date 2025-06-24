@@ -47,10 +47,11 @@ class PointsHandler extends PointsHandlerBase {
     }
 
     /**
-     * Get the ACF field name that stores points
+     * Get the ACF field selector that stores points
+     * Using sub-field within ACF group field 'sprava_a_hodnoceni'
      */
-    protected function getPointsFieldName(): string {
-        return 'pridelene_body';
+    protected function getPointsFieldSelector(): string {
+        return 'sprava_a_hodnoceni_realizace_pridelene_body';
     }
 
     /**

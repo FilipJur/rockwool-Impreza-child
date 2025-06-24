@@ -21,6 +21,34 @@ if (!defined('ABSPATH')) {
 
 class AdminCardRenderer {
 
+    private ?AdminController $admin_controller = null;
+
+    /**
+     * Set the admin controller for field access
+     */
+    public function setAdminController(AdminController $admin_controller): void {
+        $this->admin_controller = $admin_controller;
+    }
+
+    /**
+     * Get points value for a realizace post using consistent field access
+     */
+    private function get_realizace_points(int $post_id): int {
+        // Use admin controller's abstract method if available, fallback to direct access
+        if ($this->admin_controller) {
+            return $this->admin_controller->get_current_points($post_id);
+        }
+        
+        // Fallback for backward compatibility
+        if (function_exists('get_field')) {
+            $points = get_field('sprava_a_hodnoceni_realizace_pridelene_body', $post_id);
+        } else {
+            $points = get_post_meta($post_id, 'sprava_a_hodnoceni_realizace_pridelene_body', true);
+        }
+        
+        return is_numeric($points) ? (int)$points : 0;
+    }
+
     /**
      * Render realizace overview card for user profile
      *
@@ -229,13 +257,11 @@ class AdminCardRenderer {
      */
     private function render_realizace_card(\WP_Post $post): void {
         // Get all the data needed for rendering
-        $assigned_points = function_exists('get_field')
-            ? get_field('pridelene_body', $post->ID)
-            : get_post_meta($post->ID, 'pridelene_body', true);
+        $assigned_points = $this->get_realizace_points($post->ID);
         $awarded_points = (int)get_post_meta($post->ID, '_realizace_points_awarded', true);
         $rejection_reason = function_exists('get_field')
-            ? get_field('duvod_zamitnuti', $post->ID)
-            : get_post_meta($post->ID, 'duvod_zamitnuti', true);
+            ? get_field('sprava_a_hodnoceni_realizace_duvod_zamitnuti', $post->ID)
+            : get_post_meta($post->ID, 'sprava_a_hodnoceni_realizace_duvod_zamitnuti', true);
         $gallery_images = function_exists('get_field')
             ? get_field('fotky_realizace', $post->ID)
             : get_post_meta($post->ID, 'fotky_realizace', true);
