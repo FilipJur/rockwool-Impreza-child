@@ -387,56 +387,6 @@ class AdminController extends AdminControllerBase {
         return $approved_count;
     }
 
-    /**
-     * Handle ACF field update AJAX action
-     */
-    public function handle_update_acf_field_ajax(): void {
-        error_log('[REALIZACE:AJAX] Update ACF field called');
-        error_log('[REALIZACE:AJAX] POST data: ' . json_encode($_POST));
-
-        try {
-            // Verify nonce and permissions
-            check_ajax_referer('mistr_fachman_realizace_action', 'nonce');
-
-            if (!current_user_can('edit_posts')) {
-                wp_send_json_error(['message' => 'Insufficient permissions']);
-            }
-
-            $post_id = (int)($_POST['post_id'] ?? 0);
-            $field_name = sanitize_text_field($_POST['field_name'] ?? '');
-            $field_value = sanitize_textarea_field($_POST['field_value'] ?? '');
-
-            if (!$post_id || !$field_name) {
-                wp_send_json_error(['message' => 'Invalid parameters']);
-            }
-
-            $post = get_post($post_id);
-            if (!$post || $post->post_type !== 'realizace') {
-                wp_send_json_error(['message' => 'Invalid post']);
-            }
-
-            // Update the ACF field
-            /** @var callable $update_field */
-            $update_field = 'update_field';
-            $result = $update_field($field_name, $field_value, $post_id);
-
-            if ($result !== false) {
-                error_log("[REALIZACE:AJAX] Updated ACF field '{$field_name}' for post {$post_id}");
-                wp_send_json_success([
-                    'message' => 'Field updated successfully',
-                    'field_name' => $field_name,
-                    'field_value' => $field_value
-                ]);
-            } else {
-                error_log("[REALIZACE:AJAX] Failed to update ACF field '{$field_name}' for post {$post_id}");
-                wp_send_json_error(['message' => 'Failed to update field']);
-            }
-
-        } catch (\Exception $e) {
-            error_log('[REALIZACE:AJAX] Exception in update ACF field: ' . $e->getMessage());
-            wp_send_json_error(['message' => 'Error updating field: ' . $e->getMessage()]);
-        }
-    }
 
     // ===========================================
     // UTILITY AND ACCESSOR METHODS
@@ -466,6 +416,13 @@ class AdminController extends AdminControllerBase {
      * Get the post type slug for this domain
      */
     protected function getPostType(): string {
+        return 'realizace';
+    }
+
+    /**
+     * Get the domain key for DomainRegistry usage
+     */
+    protected function getDomainKey(): string {
         return 'realizace';
     }
 
@@ -566,6 +523,43 @@ class AdminController extends AdminControllerBase {
         ]);
 
         return !empty($posts);
+    }
+
+    // ===========================================
+    // WORDPRESS HOOK DELEGATION METHODS
+    // Required for proper callback resolution
+    // ===========================================
+
+    /**
+     * Handle pre-publish validation for realizace posts
+     * Delegates to parent class implementation
+     */
+    public function handle_pre_publish_validation(string $new_status, string $old_status, \WP_Post $post): void {
+        parent::handle_pre_publish_validation($new_status, $old_status, $post);
+    }
+
+    /**
+     * Display validation admin notices
+     * Delegates to parent class implementation
+     */
+    public function display_validation_admin_notices(): void {
+        parent::display_validation_admin_notices();
+    }
+
+    /**
+     * Add pending column to users table
+     * Delegates to parent class implementation
+     */
+    public function add_pending_column_to_users_table(array $columns): array {
+        return parent::add_pending_column_to_users_table($columns);
+    }
+
+    /**
+     * Render pending column content for users table
+     * Delegates to parent class implementation
+     */
+    public function render_pending_column_for_users_table(string $output, string $column_name, int $user_id): string {
+        return parent::render_pending_column_for_users_table($output, $column_name, $user_id);
     }
 
 }

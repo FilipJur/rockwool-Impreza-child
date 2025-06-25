@@ -44,6 +44,13 @@ class AdminAssetManager extends AdminAssetManagerBase {
         return ['user-edit', 'profile', 'users', 'post', 'realizace'];
     }
 
+    /**
+     * Get the domain registry key for this domain
+     */
+    protected function getDomainKey(): string {
+        return 'realizace';
+    }
+
 
 
 

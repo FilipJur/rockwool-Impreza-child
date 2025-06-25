@@ -149,6 +149,15 @@ add_action('init', function () {
         mycred_debug('Realizace Manager class not found or UserDetectionService unavailable.', null, 'bootstrap', 'error');
     }
 
+    // 1.6. Initialize the Faktury System with injected dependencies
+    $FakturyManager = \MistrFachman\Faktury\Manager::class;
+    if (class_exists($FakturyManager) && $user_detection_service) {
+        $FakturyManager::get_instance($user_detection_service);
+        mycred_debug('Faktury Manager initialized with injected UserDetectionService', null, 'bootstrap', 'info');
+    } else {
+        mycred_debug('Faktury Manager class not found or UserDetectionService unavailable.', null, 'bootstrap', 'error');
+    }
+
     // 2. Initialize the E-Commerce System
     $ecommerce_manager = $ECommerceManager::get_instance();
 
@@ -166,7 +175,7 @@ add_action('init', function () {
 
     mycred_log_architecture_event('PSR-4 Application Initialized with Service Layer', [
         'autoloader' => 'composer',
-        'domains' => ['Users', 'Realizace', 'ECommerce', 'Shortcodes', 'Services'],
+        'domains' => ['Users', 'Realizace', 'Faktury', 'ECommerce', 'Shortcodes', 'Services'],
         'pattern' => 'decoupled with service injection'
     ]);
 }, 20); // Later priority to ensure plugins are loaded

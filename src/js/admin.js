@@ -6,6 +6,7 @@
 import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAresForm } from './features/ares/handler.js';
 import { setupRealizaceManagement } from './features/admin/RealizaceManagement.js';
+import { setupFakturyManagement } from './features/admin/FakturyManagement.js';
 import { StatusDropdownManager } from './features/admin/StatusDropdownManager.js';
 
 /**
@@ -18,6 +19,7 @@ class AdminApp {
       businessModal: null,
       aresHandler: null,
       realizaceManagement: null,
+      fakturyManagement: null,
       statusDropdown: null
     };
     this.isInitialized = false;
@@ -74,6 +76,16 @@ class AdminApp {
         console.log('[Admin] Realizace management initialized for admin');
       } catch (error) {
         console.error('[Admin] Failed to initialize realizace management for admin:', error);
+      }
+    }
+
+    // Faktury management for user admin interface
+    if (document.querySelector('.faktury-management-modern')) {
+      try {
+        this.modules.fakturyManagement = setupFakturyManagement('.faktury-management-modern');
+        console.log('[Admin] Faktury management initialized for admin');
+      } catch (error) {
+        console.error('[Admin] Failed to initialize faktury management for admin:', error);
       }
     }
 

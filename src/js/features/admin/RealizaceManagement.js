@@ -52,6 +52,15 @@ export class RealizaceManagement extends AdminManagementBase {
   }
 
   /**
+   * Get WordPress post type for this domain
+   * 
+   * @returns {string} Post type (used for AJAX actions)
+   */
+  getPostType() {
+    return 'realizace';
+  }
+
+  /**
    * Get field names mapping from centralized config
    * 
    * @returns {Object} Field names object
@@ -108,23 +117,6 @@ export class RealizaceManagement extends AdminManagementBase {
     };
   }
 
-  /**
-   * Get quick action AJAX endpoint
-   * 
-   * @returns {string} AJAX action name
-   */
-  getQuickActionEndpoint() {
-    return 'mistr_fachman_realizace_quick_action';
-  }
-
-  /**
-   * Get bulk action AJAX endpoint
-   * 
-   * @returns {string} AJAX action name
-   */
-  getBulkActionEndpoint() {
-    return 'mistr_fachman_bulk_approve_realizace';
-  }
 
   /**
    * Realizace-specific notification handling

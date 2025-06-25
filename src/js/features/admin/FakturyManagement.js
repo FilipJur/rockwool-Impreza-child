@@ -11,7 +11,6 @@
 
 import { AdminManagementBase } from './base/AdminManagementBase.js';
 import { AdminConfig } from './base/AdminConfig.js';
-import { fakturyLogger } from '../../utils/logger.js';
 import initManager from '../../utils/initialization-manager.js';
 
 export class FakturyManagement extends AdminManagementBase {
@@ -51,6 +50,15 @@ export class FakturyManagement extends AdminManagementBase {
    */
   getDomainSlug() {
     return 'faktury';
+  }
+
+  /**
+   * Get WordPress post type for this domain
+   * 
+   * @returns {string} Post type (used for AJAX actions)
+   */
+  getPostType() {
+    return 'faktura';
   }
 
   /**
@@ -111,23 +119,6 @@ export class FakturyManagement extends AdminManagementBase {
     };
   }
 
-  /**
-   * Get quick action AJAX endpoint for Faktury
-   * 
-   * @returns {string} AJAX action name
-   */
-  getQuickActionEndpoint() {
-    return 'mistr_fachman_faktury_quick_action';
-  }
-
-  /**
-   * Get bulk action AJAX endpoint for Faktury
-   * 
-   * @returns {string} AJAX action name
-   */
-  getBulkActionEndpoint() {
-    return 'mistr_fachman_bulk_approve_faktury';
-  }
 
   /**
    * Faktury-specific notification handling
@@ -182,7 +173,7 @@ export class FakturyManagement extends AdminManagementBase {
   init() {
     // Prevent double initialization using centralized manager
     if (initManager.isInitialized('faktury-management')) {
-      fakturyLogger.warn('Faktury management already initialized elsewhere');
+      console.warn('[Faktury] Management already initialized elsewhere');
       return;
     }
     
@@ -250,7 +241,7 @@ export class FakturyManagement extends AdminManagementBase {
       }
     });
     
-    fakturyLogger.info('Faktury-specific events initialized');
+    console.log('[Faktury] Specific events initialized');
   }
 
   /**

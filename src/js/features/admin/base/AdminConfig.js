@@ -3,9 +3,12 @@
  * 
  * Centralized configuration management for admin domains.
  * Provides type-safe configuration objects with validation.
+ * Uses DomainRegistry for consistent AJAX endpoint naming.
  * 
  * @since 1.0.0
  */
+
+import { DomainRegistry } from '../../../utils/domain-registry.js';
 
 export class AdminConfig {
   /**
@@ -150,14 +153,16 @@ export class AdminConfig {
 
   /**
    * Validate and normalize endpoints
+   * Uses DomainRegistry to ensure consistent naming with PHP backend
    * 
    * @param {Object} endpoints - Endpoints to validate
    * @returns {Object} Validated endpoints
    */
   validateEndpoints(endpoints) {
+    // Use DomainRegistry for consistent AJAX action naming
     const defaults = {
-      quickAction: `mistr_fachman_${this.domain}_quick_action`,
-      bulkAction: `mistr_fachman_bulk_approve_${this.domain}`,
+      quickAction: DomainRegistry.getAjaxAction(this.domain, 'quick_action'),
+      bulkAction: DomainRegistry.getAjaxAction(this.domain, 'bulk_approve'),
       updateField: 'mistr_fachman_update_acf_field'
     };
 
@@ -258,23 +263,31 @@ export class AdminConfig {
 
   /**
    * Create configuration for specific domain
+   * Uses DomainRegistry for consistent endpoint generation
    * 
    * @param {string} domain - Domain name
    * @param {Object} globalData - WordPress localized data
    * @returns {AdminConfig} Configured instance
    */
   static createForDomain(domain, globalData = {}) {
+    // Validate domain exists in registry
+    if (!DomainRegistry.isDomainRegistered(domain)) {
+      throw new Error(`Domain '${domain}' not found in DomainRegistry. Available domains: ${Object.keys(DomainRegistry.getAllDomains()).join(', ')}`);
+    }
+
+    const jsSlug = DomainRegistry.getJsSlug(domain);
+    
     const options = {
       globalData,
       fieldNames: globalData.field_names || {},
       messages: globalData.messages || {},
       defaultValues: globalData.default_values || {},
       selectors: {
-        container: `.${domain}-management-modern`
+        container: `.${jsSlug}-management-modern`
       },
       endpoints: {
-        quickAction: `mistr_fachman_${domain}_quick_action`,
-        bulkAction: `mistr_fachman_bulk_approve_${domain}`
+        quickAction: DomainRegistry.getAjaxAction(domain, 'quick_action'),
+        bulkAction: DomainRegistry.getAjaxAction(domain, 'bulk_approve')
       }
     };
 

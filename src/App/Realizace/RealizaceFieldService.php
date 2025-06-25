@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Realizace;
 
+use MistrFachman\Base\FieldServiceBase;
+
 /**
  * Realizace Field Service - Centralized Field Access
  *
@@ -24,7 +26,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class RealizaceFieldService {
+class RealizaceFieldService extends FieldServiceBase {
 
     /**
      * Field selector constants - Single source of truth
@@ -151,49 +153,6 @@ class RealizaceFieldService {
         return self::MATERIALS_FIELD;
     }
 
-    /**
-     * Private helper: Get field value with ACF fallback
-     *
-     * @param string $field_selector Field selector
-     * @param int $post_id Post ID
-     * @return mixed Field value
-     */
-    private static function getFieldValue(string $field_selector, int $post_id) {
-        if (function_exists('get_field')) {
-            return get_field($field_selector, $post_id);
-        }
-        
-        return get_post_meta($post_id, $field_selector, true);
-    }
-
-    /**
-     * Public helper: Set any field value with ACF fallback
-     *
-     * @param string $field_selector Field selector
-     * @param int $post_id Post ID
-     * @param mixed $value Value to set
-     * @return bool Success status
-     */
-    public static function setFieldValue(string $field_selector, int $post_id, $value): bool {
-        return self::setFieldValueInternal($field_selector, $post_id, $value);
-    }
-
-    /**
-     * Private helper: Set field value with ACF fallback
-     *
-     * @param string $field_selector Field selector
-     * @param int $post_id Post ID
-     * @param mixed $value Value to set
-     * @return bool Success status
-     */
-    private static function setFieldValueInternal(string $field_selector, int $post_id, $value): bool {
-        if (function_exists('update_field')) {
-            $result = update_field($field_selector, $value, $post_id);
-            return $result !== false;
-        }
-        
-        return update_post_meta($post_id, $field_selector, $value) !== false;
-    }
 
     /**
      * Get all realizace data for a post in one call

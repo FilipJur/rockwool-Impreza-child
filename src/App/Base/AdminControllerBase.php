@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Base;
 
+use MistrFachman\Services\DomainRegistry;
+
 /**
  * Base Admin Controller - Abstract Foundation
  *
@@ -25,6 +27,12 @@ abstract class AdminControllerBase {
      * Get the post type slug for this domain
      */
     abstract protected function getPostType(): string;
+
+    /**
+     * Get the domain key for DomainRegistry usage
+     * Used for consistent AJAX action and nonce naming
+     */
+    abstract protected function getDomainKey(): string;
 
     /**
      * Get the display name for this domain
@@ -49,23 +57,35 @@ abstract class AdminControllerBase {
 
     /**
      * Get the gallery field selector for this domain
+     * Override in child classes if needed
      */
-    abstract protected function getGalleryFieldSelector(): string;
+    protected function getGalleryFieldSelector(): string {
+        return '';
+    }
 
     /**
      * Get the area/size field selector for this domain
+     * Override in child classes if needed
      */
-    abstract protected function getAreaFieldSelector(): string;
+    protected function getAreaFieldSelector(): string {
+        return '';
+    }
 
     /**
      * Get the construction type field selector for this domain
+     * Override in child classes if needed
      */
-    abstract protected function getConstructionTypeFieldSelector(): string;
+    protected function getConstructionTypeFieldSelector(): string {
+        return '';
+    }
 
     /**
      * Get the materials field selector for this domain
+     * Override in child classes if needed
      */
-    abstract protected function getMaterialsFieldSelector(): string;
+    protected function getMaterialsFieldSelector(): string {
+        return '';
+    }
 
     /**
      * Runs domain-specific validation checks before a post is published.
@@ -142,12 +162,21 @@ abstract class AdminControllerBase {
 
     /**
      * Initialize AJAX hooks
+     * Uses DomainRegistry for consistent action naming
      */
     protected function init_ajax_hooks(): void {
+        $domain_key = $this->getDomainKey();
         $post_type = $this->getPostType();
+        $domain_debug = strtoupper($post_type);
         
-        add_action("wp_ajax_mistr_fachman_{$post_type}_quick_action", [$this, 'handle_quick_action_ajax']);
-        add_action("wp_ajax_mistr_fachman_bulk_approve_{$post_type}", [$this, 'handle_bulk_approve_ajax']);
+        $quick_action = DomainRegistry::getAjaxAction($domain_key, 'quick_action');
+        $bulk_action = DomainRegistry::getAjaxAction($domain_key, 'bulk_approve');
+        
+        error_log("[{$domain_debug}:AJAX] Registering AJAX action: wp_ajax_{$quick_action}");
+        error_log("[{$domain_debug}:AJAX] Registering AJAX action: wp_ajax_{$bulk_action}");
+        
+        add_action("wp_ajax_{$quick_action}", [$this, 'handle_quick_action_ajax']);
+        add_action("wp_ajax_{$bulk_action}", [$this, 'handle_bulk_approve_ajax']);
         add_action("wp_ajax_mistr_fachman_update_acf_field", [$this, 'handle_update_acf_field_ajax']);
     }
 
@@ -423,20 +452,71 @@ abstract class AdminControllerBase {
     }
 
     /**
+     * Validate domain configuration using DomainRegistry
+     * Logs warnings for any domain configuration issues
+     */
+    protected function validateDomainConfiguration(): void {
+        // Try to find the domain key for this post type
+        $post_type = $this->getPostType();
+        $domain_key = DomainRegistry::getDomainByPostType($post_type);
+        
+        if ($domain_key === null) {
+            error_log("WARNING: Post type '{$post_type}' not found in DomainRegistry. Consider registering it.");
+            return;
+        }
+        
+        // Validate the domain configuration
+        $validation = DomainRegistry::validateDomain($domain_key);
+        if (!$validation['valid']) {
+            error_log("ERROR: Domain '{$domain_key}' has configuration issues: " . implode(', ', $validation['warnings']));
+        } elseif (!empty($validation['warnings'])) {
+            error_log("WARNING: Domain '{$domain_key}' has warnings: " . implode(', ', $validation['warnings']));
+        }
+    }
+
+    /**
+     * Get nonce action using DomainRegistry if available, fallback to manual construction
+     */
+    protected function getNonceAction(string $action_type = 'quick_action'): string {
+        $post_type = $this->getPostType();
+        $domain_key = DomainRegistry::getDomainByPostType($post_type);
+        
+        if ($domain_key !== null) {
+            // Use DomainRegistry for consistent nonce generation
+            return DomainRegistry::getNonceAction($domain_key, $action_type);
+        }
+        
+        // Fallback to manual construction for domains not yet in registry
+        switch ($action_type) {
+            case 'quick_action':
+                return "mistr_fachman_{$post_type}_action";
+            case 'bulk_approve':
+                return "mistr_fachman_bulk_approve_{$post_type}";
+            default:
+                return "mistr_fachman_{$post_type}_{$action_type}";
+        }
+    }
+
+    /**
      * Handle AJAX quick actions
      */
     public function handle_quick_action_ajax(): void {
         try {
-            // Verify nonce and permissions
-            check_ajax_referer("mistr_fachman_{$this->getPostType()}_action", 'nonce');
+            // Validate domain configuration
+            $this->validateDomainConfiguration();
+            
+            // Verify nonce and permissions using DomainRegistry
+            $nonce_action = $this->getNonceAction('quick_action');
+            check_ajax_referer($nonce_action, 'nonce');
 
             if (!current_user_can('edit_posts')) {
                 throw new \Exception('Insufficient permissions');
             }
 
             $post_id = (int)($_POST['post_id'] ?? 0);
-            // Support both legacy and new parameter names
-            $action = sanitize_text_field($_POST['action_type'] ?? $_POST['realizace_action'] ?? '');
+            // Support both legacy and new parameter names (domain-specific action parameters)
+            $post_type = $this->getPostType();
+            $action = sanitize_text_field($_POST['action_type'] ?? $_POST['realizace_action'] ?? $_POST["{$post_type}_action"] ?? '');
 
             if (!$post_id || !in_array($action, ['approve', 'reject'])) {
                 throw new \Exception('Invalid parameters');
@@ -471,8 +551,9 @@ abstract class AdminControllerBase {
      * Handle bulk approve AJAX action
      */
     public function handle_bulk_approve_ajax(): void {
-        // Verify nonce and permissions
-        $nonce_action = "mistr_fachman_bulk_approve_{$this->getPostType()}";
+        // Validate domain configuration and verify nonce using DomainRegistry
+        $this->validateDomainConfiguration();
+        $nonce_action = $this->getNonceAction('bulk_approve');
         $nonce_value = $_POST['nonce'] ?? '';
         
         if (!wp_verify_nonce($nonce_value, $nonce_action)) {
@@ -543,7 +624,10 @@ abstract class AdminControllerBase {
      */
     public function handle_update_acf_field_ajax(): void {
         try {
-            check_ajax_referer("mistr_fachman_{$this->getPostType()}_action", 'nonce');
+            // Validate domain configuration and use DomainRegistry for nonce
+            $this->validateDomainConfiguration();
+            $nonce_action = $this->getNonceAction('quick_action');
+            check_ajax_referer($nonce_action, 'nonce');
 
             if (!current_user_can('edit_posts')) {
                 wp_send_json_error(['message' => 'Insufficient permissions']);

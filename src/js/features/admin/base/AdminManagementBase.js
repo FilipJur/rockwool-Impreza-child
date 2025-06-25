@@ -69,20 +69,24 @@ export class AdminManagementBase {
   setupEventListeners() {
     console.log(`[${this.getDomainName()}] Setting up event listeners...`);
     
-    // Quick action buttons (approve/reject)
-    document.addEventListener('click', this.handleQuickAction);
+    // Scope event listeners to this domain's containers only
+    this.state.containers.forEach(container => {
+      // Quick action buttons (approve/reject)
+      container.addEventListener('click', this.handleQuickAction);
+      
+      // Bulk actions
+      container.addEventListener('click', this.handleBulkAction);
+      
+      // Save rejection reason
+      container.addEventListener('click', this.handleSaveRejection);
+      
+      // Section toggle (collapsible sections)
+      container.addEventListener('click', this.handleSectionToggle);
+    });
+    
     console.log(`[${this.getDomainName()}] ✅ Quick action event listener added`);
-    
-    // Bulk actions
-    document.addEventListener('click', this.handleBulkAction);
     console.log(`[${this.getDomainName()}] ✅ Bulk action event listener added`);
-    
-    // Save rejection reason
-    document.addEventListener('click', this.handleSaveRejection);
     console.log(`[${this.getDomainName()}] ✅ Save rejection event listener added`);
-    
-    // Section toggle (collapsible sections)
-    document.addEventListener('click', this.handleSectionToggle);
     console.log(`[${this.getDomainName()}] ✅ Section toggle event listener added`);
     
     console.log(`[${this.getDomainName()}] All event listeners registered successfully`);
@@ -145,9 +149,9 @@ export class AdminManagementBase {
     button.textContent = messages.processing || 'Zpracovává se...';
 
     try {
-      const response = await this.makeAjaxRequest(this.getQuickActionEndpoint(), {
+      const response = await this.makeAjaxRequest(this.config.getEndpoint('quickAction'), {
         post_id: postId,
-        [`${this.getDomainSlug()}_action`]: action,
+        [`${this.getPostType()}_action`]: action,
         points: points,
         nonce: this.getNonce('quick_action')
       });
@@ -211,9 +215,9 @@ export class AdminManagementBase {
       };
       
       console.log('[AdminManagementBase] Bulk action request data:', requestData);
-      console.log('[AdminManagementBase] Endpoint:', this.getBulkActionEndpoint());
+      console.log('[AdminManagementBase] Endpoint:', this.config.getEndpoint('bulkAction'));
       
-      const response = await this.makeAjaxRequest(this.getBulkActionEndpoint(), requestData);
+      const response = await this.makeAjaxRequest(this.config.getEndpoint('bulkAction'), requestData);
 
       if (response.success) {
         this.showNotification(response.data.message, 'success');
@@ -455,6 +459,16 @@ export class AdminManagementBase {
   }
 
   /**
+   * Get WordPress post type for this domain
+   * 
+   * @abstract
+   * @returns {string} Post type (used for AJAX actions)
+   */
+  getPostType() {
+    throw new Error('getPostType() must be implemented by subclass');
+  }
+
+  /**
    * Get field names mapping
    * 
    * @abstract
@@ -484,23 +498,4 @@ export class AdminManagementBase {
     throw new Error('getMessages() must be implemented by subclass');
   }
 
-  /**
-   * Get quick action AJAX endpoint
-   * 
-   * @abstract
-   * @returns {string} AJAX action name
-   */
-  getQuickActionEndpoint() {
-    throw new Error('getQuickActionEndpoint() must be implemented by subclass');
-  }
-
-  /**
-   * Get bulk action AJAX endpoint
-   * 
-   * @abstract
-   * @returns {string} AJAX action name
-   */
-  getBulkActionEndpoint() {
-    throw new Error('getBulkActionEndpoint() must be implemented by subclass');
-  }
 }
