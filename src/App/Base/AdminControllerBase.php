@@ -85,8 +85,6 @@ abstract class AdminControllerBase {
      * Initialize common admin hooks
      */
     public function init_common_hooks(): void {
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] init_common_hooks() called');
-        
         // Common UI customization hooks (generic across all domains)
         $this->init_common_ui_hooks();
         
@@ -94,9 +92,7 @@ abstract class AdminControllerBase {
         $this->init_ui_hooks();
         
         // AJAX endpoint hooks
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] About to call init_ajax_hooks()');
         $this->init_ajax_hooks();
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] init_ajax_hooks() completed');
     }
 
     /**
@@ -130,72 +126,11 @@ abstract class AdminControllerBase {
      * Initialize AJAX hooks
      */
     protected function init_ajax_hooks(): void {
-        error_log('[AJAX] === STARTING AJAX HOOKS REGISTRATION ===');
-        
         $post_type = $this->getPostType();
-        error_log('[AJAX] Post type retrieved: ' . $post_type);
         
-        $quick_action = "wp_ajax_mistr_fachman_{$post_type}_quick_action";
-        $bulk_action = "wp_ajax_mistr_fachman_bulk_approve_{$post_type}";
-        $update_field = "wp_ajax_mistr_fachman_update_acf_field";
-        
-        error_log('[AJAX] Actions defined:');
-        error_log('[AJAX] - Quick: ' . $quick_action);
-        error_log('[AJAX] - Bulk: ' . $bulk_action);
-        error_log('[AJAX] - Update: ' . $update_field);
-        
-        error_log('[' . strtoupper($post_type) . ':AJAX] Registering AJAX hooks:');
-        error_log('[' . strtoupper($post_type) . ':AJAX] - ' . $quick_action);
-        error_log('[' . strtoupper($post_type) . ':AJAX] - ' . $bulk_action);
-        error_log('[' . strtoupper($post_type) . ':AJAX] - ' . $update_field);
-        
-        add_action($quick_action, [$this, 'handle_quick_action_ajax']);
-        error_log('[' . strtoupper($post_type) . ':AJAX] Added quick action hook: ' . $quick_action);
-        
-        add_action($bulk_action, [$this, 'handle_bulk_approve_ajax']);
-        error_log('[' . strtoupper($post_type) . ':AJAX] Added bulk action hook: ' . $bulk_action);
-        
-        // Also add a test hook to catch ALL bulk approve requests
-        add_action('wp_ajax_mistr_fachman_bulk_approve_realizace', function() {
-            error_log('[AJAX:DEBUG] Direct bulk approve hook called - this should fire!');
-        }, 1);
-        
-        // Add an early wp_loaded hook to catch if WordPress receives the request
-        add_action('wp_loaded', function() {
-            if (defined('DOING_AJAX') && DOING_AJAX && isset($_POST['action']) && $_POST['action'] === 'mistr_fachman_bulk_approve_realizace') {
-                error_log('[AJAX:DEBUG] WordPress RECEIVED bulk approve AJAX request!');
-                error_log('[AJAX:DEBUG] POST action: ' . ($_POST['action'] ?? 'not set'));
-                error_log('[AJAX:DEBUG] Nonce received: ' . ($_POST['nonce'] ?? 'not set'));
-                error_log('[AJAX:DEBUG] User ID param: ' . ($_POST['user_id'] ?? 'not set'));
-                error_log('[AJAX:DEBUG] Current user: ' . get_current_user_id());
-                error_log('[AJAX:DEBUG] User can edit posts: ' . (current_user_can('edit_posts') ? 'YES' : 'NO'));
-            }
-        }, 1);
-        
-        // Add a catch-all hook to see if WordPress receives ANY AJAX requests
-        add_action('wp_ajax_test_ajax_connectivity', function() {
-            error_log('[AJAX:TEST] Test AJAX endpoint called successfully!');
-            wp_send_json_success(['message' => 'AJAX connectivity working']);
-        });
-        
-        // Global AJAX catcher for debugging
-        add_action('init', function() {
-            if (defined('DOING_AJAX') && DOING_AJAX) {
-                error_log('[AJAX:GLOBAL] WordPress is handling an AJAX request. Action: ' . ($_POST['action'] ?? 'UNKNOWN'));
-                error_log('[AJAX:GLOBAL] Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'UNKNOWN'));
-                error_log('[AJAX:GLOBAL] HTTP Method: ' . ($_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'));
-            }
-        }, 1);
-        
-        add_action($update_field, [$this, 'handle_update_acf_field_ajax']);
-        error_log('[' . strtoupper($post_type) . ':AJAX] Added update field hook: ' . $update_field);
-        
-        // Also register for non-logged-in users (even though this is admin-only)
-        add_action("wp_ajax_nopriv_mistr_fachman_{$post_type}_quick_action", [$this, 'handle_quick_action_ajax']);
-        add_action("wp_ajax_nopriv_mistr_fachman_bulk_approve_{$post_type}", [$this, 'handle_bulk_approve_ajax']);
-        add_action("wp_ajax_nopriv_mistr_fachman_update_acf_field", [$this, 'handle_update_acf_field_ajax']);
-        
-        error_log('[' . strtoupper($post_type) . ':AJAX] AJAX hooks registered successfully');
+        add_action("wp_ajax_mistr_fachman_{$post_type}_quick_action", [$this, 'handle_quick_action_ajax']);
+        add_action("wp_ajax_mistr_fachman_bulk_approve_{$post_type}", [$this, 'handle_bulk_approve_ajax']);
+        add_action("wp_ajax_mistr_fachman_update_acf_field", [$this, 'handle_update_acf_field_ajax']);
     }
 
     /**
@@ -325,9 +260,6 @@ abstract class AdminControllerBase {
      * Handle AJAX quick actions
      */
     public function handle_quick_action_ajax(): void {
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] ========== QUICK ACTION AJAX HANDLER CALLED (WORKING) ==========');
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] POST data: ' . print_r($_POST, true));
-
         try {
             // Verify nonce and permissions
             check_ajax_referer("mistr_fachman_{$this->getPostType()}_action", 'nonce');
@@ -373,40 +305,23 @@ abstract class AdminControllerBase {
      * Handle bulk approve AJAX action
      */
     public function handle_bulk_approve_ajax(): void {
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] ========== BULK APPROVE AJAX HANDLER CALLED ==========');
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] Class: ' . get_class($this));
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] Method: handle_bulk_approve_ajax');
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] POST data: ' . print_r($_POST, true));
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] REQUEST_METHOD: ' . $_SERVER['REQUEST_METHOD']);
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] HTTP_USER_AGENT: ' . ($_SERVER['HTTP_USER_AGENT'] ?? 'not set'));
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] Expected nonce action: mistr_fachman_bulk_approve_' . $this->getPostType());
-
-        // Verify nonce manually to avoid wp_die()
+        // Verify nonce and permissions
         $nonce_action = "mistr_fachman_bulk_approve_{$this->getPostType()}";
         $nonce_value = $_POST['nonce'] ?? '';
         
         if (!wp_verify_nonce($nonce_value, $nonce_action)) {
-            error_log('[' . strtoupper($this->getPostType()) . ':AJAX] Nonce verification failed');
-            error_log('[' . strtoupper($this->getPostType()) . ':AJAX] Expected action: ' . $nonce_action);
-            error_log('[' . strtoupper($this->getPostType()) . ':AJAX] Received nonce: ' . $nonce_value);
             wp_send_json_error(['message' => 'Invalid nonce']);
             return;
         }
-        
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] Nonce verification passed');
 
         if (!current_user_can('edit_posts')) {
             wp_send_json_error(['message' => 'Insufficient permissions']);
         }
 
         $user_id = (int)($_POST['user_id'] ?? 0);
-        $bulk_action = sanitize_text_field($_POST['bulk_action'] ?? 'approve');
-        
         if (!$user_id || !get_userdata($user_id)) {
             wp_send_json_error(['message' => 'Invalid user']);
         }
-        
-        error_log('[' . strtoupper($this->getPostType()) . ':AJAX] Bulk action type: ' . $bulk_action);
 
         try {
             $approved_count = $this->process_bulk_approve($user_id);
@@ -439,10 +354,8 @@ abstract class AdminControllerBase {
             if ($current_points === 0) {
                 $default_points = $this->getDefaultPoints($post_id);
                 $this->set_points($post_id, $default_points);
-                error_log("[BULK_APPROVE] Set default {$default_points} points for {$this->getPostType()} post {$post_id}");
             } else {
                 // Points already set manually - respect the existing value
-                error_log("[BULK_APPROVE] Respecting manually set points ({$current_points}) for {$this->getPostType()} post {$post_id}");
             }
 
             // Approve the post
