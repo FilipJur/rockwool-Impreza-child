@@ -700,6 +700,17 @@ class AdminController extends AdminControllerBase {
     }
 
     /**
+     * {@inheritdoc}
+     * Runs pre-publish validation for the Realizace domain.
+     * Currently, there are no specific pre-publish rules for Realizace.
+     */
+    protected function run_pre_publish_validation(\WP_Post $post): array {
+        // No specific validation rules for Realizace at this time
+        // Always return success to allow publishing
+        return ['success' => true];
+    }
+
+    /**
      * Render realizace-specific user profile card
      */
     protected function render_user_profile_card(\WP_User $user): void {
