@@ -185,9 +185,14 @@ class AdminInterface {
             }
 
             // All checks passed. Return success.
+            $destructured_address = $this->extract_destructured_address_from_result($ares_result['data']);
+            
             wp_send_json_success([
                 'company_name' => $ares_result['data']['obchodniJmeno'],
                 'address'      => $this->extract_ares_address_from_result($ares_result['data']),
+                'street_address' => $destructured_address['street_address'],
+                'city'           => $destructured_address['city'],
+                'postal_code'    => $destructured_address['postal_code'],
             ]);
 
         } catch (\Exception $e) {
@@ -238,5 +243,48 @@ class AdminInterface {
         }
 
         return implode(', ', $address_parts);
+    }
+
+    /**
+     * Extract destructured address components from ARES result
+     * @param array $ares_data ARES API response data
+     * @return array Address components: street_address, city, postal_code
+     */
+    private function extract_destructured_address_from_result(array $ares_data): array {
+        $result = [
+            'street_address' => '',
+            'city' => '',
+            'postal_code' => ''
+        ];
+
+        if (!isset($ares_data['sidlo'])) {
+            return $result;
+        }
+
+        $sidlo = $ares_data['sidlo'];
+
+        // Extract street address (ulice + číslo popisné/orientační)
+        if (isset($sidlo['nazevUlice'])) {
+            $street = $sidlo['nazevUlice'];
+            if (isset($sidlo['cisloDomovni'])) {
+                $street .= ' ' . $sidlo['cisloDomovni'];
+                if (isset($sidlo['cisloOrientacni'])) {
+                    $street .= '/' . $sidlo['cisloOrientacni'];
+                }
+            }
+            $result['street_address'] = $street;
+        }
+
+        // Extract city
+        if (isset($sidlo['nazevObce'])) {
+            $result['city'] = $sidlo['nazevObce'];
+        }
+
+        // Extract postal code
+        if (isset($sidlo['psc'])) {
+            $result['postal_code'] = $sidlo['psc'];
+        }
+
+        return $result;
     }
 }

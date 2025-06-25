@@ -48,10 +48,30 @@ class BusinessDataModalRenderer {
                         <label><?php esc_html_e('Název společnosti:', 'mistr-fachman'); ?></label>
                         <span><?php echo esc_html($business_data['company_name']); ?></span>
                     </div>
-                    <div class="mistr-data-row">
-                        <label><?php esc_html_e('Sídlo:', 'mistr-fachman'); ?></label>
-                        <span><?php echo esc_html($business_data['address']); ?></span>
-                    </div>
+                    <?php 
+                    // Check if we have destructured address components
+                    $has_destructured_address = !empty($business_data['street_address']) || !empty($business_data['city']) || !empty($business_data['postal_code']);
+                    ?>
+                    
+                    <?php if ($has_destructured_address): ?>
+                        <div class="mistr-data-row">
+                            <label><?php esc_html_e('Ulice a číslo:', 'mistr-fachman'); ?></label>
+                            <span><?php echo esc_html($business_data['street_address'] ?? ''); ?></span>
+                        </div>
+                        <div class="mistr-data-row">
+                            <label><?php esc_html_e('Město:', 'mistr-fachman'); ?></label>
+                            <span><?php echo esc_html($business_data['city'] ?? ''); ?></span>
+                        </div>
+                        <div class="mistr-data-row">
+                            <label><?php esc_html_e('PSČ:', 'mistr-fachman'); ?></label>
+                            <span><?php echo esc_html($business_data['postal_code'] ?? ''); ?></span>
+                        </div>
+                    <?php else: ?>
+                        <div class="mistr-data-row">
+                            <label><?php esc_html_e('Sídlo:', 'mistr-fachman'); ?></label>
+                            <span><?php echo esc_html($business_data['address']); ?></span>
+                        </div>
+                    <?php endif; ?>
                     
                     <?php if (isset($business_data['validation']['ares_data']['obchodniJmeno'])): ?>
                     <div class="mistr-data-row">

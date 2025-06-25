@@ -41,7 +41,16 @@ class BusinessDataProcessor {
         // Extract and sanitize fields
         $ico = sanitize_text_field($posted_data['ico'] ?? '');
         $company_name = sanitize_text_field($posted_data['company-name'] ?? '');
+        
+        // Handle both single and destructured address formats
         $address = sanitize_text_field($posted_data['address'] ?? '');
+        $street_address = sanitize_text_field($posted_data['street-address'] ?? '');
+        $city = sanitize_text_field($posted_data['city'] ?? '');
+        $postal_code = sanitize_text_field($posted_data['postal-code'] ?? '');
+        
+        // Determine if we have destructured address data
+        $has_destructured_address = !empty($street_address) || !empty($city) || !empty($postal_code);
+        
         $first_name = sanitize_text_field($posted_data['first-name'] ?? '');
         $last_name = sanitize_text_field($posted_data['last-name'] ?? '');
         
@@ -84,11 +93,17 @@ class BusinessDataProcessor {
         // STRICT ARES ENFORCEMENT: Force exact ARES data when validation succeeds
         $enforced_company_name = $ares_data['data']['obchodniJmeno'];
         $enforced_address = $this->ares_client->extract_ares_address($ares_data['data']);
+        $enforced_destructured_address = $this->ares_client->extract_destructured_address($ares_data['data']);
+        
+        // Prepare submitted address for comparison based on form format
+        $submitted_address_for_comparison = $has_destructured_address 
+            ? trim($street_address . ' ' . $city . ' ' . $postal_code)
+            : $address;
         
         // Log any discrepancies between submitted and ARES data
         $discrepancies = $this->ares_client->log_ares_discrepancies($ico, [
             'submitted_company_name' => $company_name,
-            'submitted_address' => $address,
+            'submitted_address' => $submitted_address_for_comparison,
             'ares_company_name' => $enforced_company_name,
             'ares_address' => $enforced_address
         ]);
@@ -97,7 +112,11 @@ class BusinessDataProcessor {
         return [
             'ico' => $ico,
             'company_name' => $enforced_company_name, // ENFORCED: Use ARES data
-            'address' => $enforced_address, // ENFORCED: Use ARES data
+            'address' => $enforced_address, // ENFORCED: Use ARES data (backward compatibility)
+            // Include destructured address components
+            'street_address' => $enforced_destructured_address['street_address'],
+            'city' => $enforced_destructured_address['city'],
+            'postal_code' => $enforced_destructured_address['postal_code'],
             'representative' => [
                 'first_name' => $first_name,
                 'last_name' => $last_name,
@@ -115,7 +134,8 @@ class BusinessDataProcessor {
                 'ares_enforced' => true,
                 'discrepancies_found' => count($discrepancies) > 0,
                 'discrepancies' => $discrepancies,
-                'verified_at' => current_time('mysql')
+                'verified_at' => current_time('mysql'),
+                'has_destructured_address' => $has_destructured_address
             ],
             'submitted_at' => current_time('mysql')
         ];

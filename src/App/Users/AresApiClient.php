@@ -129,6 +129,50 @@ class AresApiClient {
     }
 
     /**
+     * Extract destructured address components from ARES data
+     *
+     * @param array $ares_data ARES API response data
+     * @return array Address components: street_address, city, postal_code
+     */
+    public function extract_destructured_address(array $ares_data): array {
+        $result = [
+            'street_address' => '',
+            'city' => '',
+            'postal_code' => ''
+        ];
+
+        if (!isset($ares_data['sidlo'])) {
+            return $result;
+        }
+
+        $sidlo = $ares_data['sidlo'];
+
+        // Extract street address (ulice + číslo popisné/orientační)
+        if (isset($sidlo['nazevUlice'])) {
+            $street = $sidlo['nazevUlice'];
+            if (isset($sidlo['cisloDomovni'])) {
+                $street .= ' ' . $sidlo['cisloDomovni'];
+                if (isset($sidlo['cisloOrientacni'])) {
+                    $street .= '/' . $sidlo['cisloOrientacni'];
+                }
+            }
+            $result['street_address'] = $street;
+        }
+
+        // Extract city
+        if (isset($sidlo['nazevObce'])) {
+            $result['city'] = $sidlo['nazevObce'];
+        }
+
+        // Extract postal code
+        if (isset($sidlo['psc'])) {
+            $result['postal_code'] = $sidlo['psc'];
+        }
+
+        return $result;
+    }
+
+    /**
      * Log discrepancies between submitted data and ARES data
      *
      * @param string $ico IČO being validated

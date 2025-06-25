@@ -21,13 +21,27 @@ export function setupAresForm(formSelector = '.registration-form') {
   const fields = {
     ico: form.querySelector('[name="ico"]'),
     companyName: form.querySelector('[name="company-name"]'),
+    // Single address field (backward compatibility)
     address: form.querySelector('[name="address"]'),
+    // Destructured address fields
+    streetAddress: form.querySelector('[name="street-address"]'),
+    city: form.querySelector('[name="city"]'),
+    postalCode: form.querySelector('[name="postal-code"]'),
     status: form.querySelector('#aresStatus'),
     loadButton: form.querySelector('#loadAresData')
   };
 
-  // Validate required fields
-  const requiredFields = ['ico', 'companyName', 'address', 'status', 'loadButton'];
+  // Determine address mode: destructured vs single
+  const hasDestructuredAddress = fields.streetAddress && fields.city && fields.postalCode;
+  const hasSingleAddress = fields.address;
+  
+  if (!hasDestructuredAddress && !hasSingleAddress) {
+    console.warn('ARES Handler: No address fields found (neither single nor destructured)');
+    return null;
+  }
+
+  // Validate required fields (address validation depends on mode)
+  const requiredFields = ['ico', 'companyName', 'status', 'loadButton'];
   const missingFields = requiredFields.filter(field => !fields[field]);
 
   if (missingFields.length > 0) {
@@ -115,9 +129,19 @@ export function setupAresForm(formSelector = '.registration-form') {
    */
   function handleAresSuccess(data, ico) {
     if (data && data.company_name) {
-      // Populate fields with ARES data from WordPress endpoint
+      // Populate company name
       fields.companyName.value = data.company_name;
-      fields.address.value = data.address;
+
+      // Populate address fields based on form structure
+      if (hasDestructuredAddress) {
+        // Populate destructured address fields
+        fields.streetAddress.value = data.street_address || '';
+        fields.city.value = data.city || '';
+        fields.postalCode.value = data.postal_code || '';
+      } else if (hasSingleAddress) {
+        // Populate single address field (backward compatibility)
+        fields.address.value = data.address || '';
+      }
 
       // Lock fields after successful ARES validation
       lockAresFields();
@@ -146,7 +170,14 @@ export function setupAresForm(formSelector = '.registration-form') {
    */
   function handleIcoChange() {
     const currentIco = fields.ico.value.trim();
-    const hasCompanyData = fields.companyName.value !== '' || fields.address.value !== '';
+    
+    // Check if we have company data in any address format
+    let hasCompanyData = fields.companyName.value !== '';
+    if (hasDestructuredAddress) {
+      hasCompanyData = hasCompanyData || fields.streetAddress.value !== '' || fields.city.value !== '' || fields.postalCode.value !== '';
+    } else if (hasSingleAddress) {
+      hasCompanyData = hasCompanyData || fields.address.value !== '';
+    }
 
     if (lastFetchedIco && currentIco !== lastFetchedIco && hasCompanyData) {
       showStatus('IČO bylo změněno. Klikněte na "Načíst údaje" pro aktualizaci', 'warning');
@@ -200,7 +231,16 @@ export function setupAresForm(formSelector = '.registration-form') {
    */
   function clearFields() {
     fields.companyName.value = '';
-    fields.address.value = '';
+    
+    // Clear address fields based on form structure
+    if (hasDestructuredAddress) {
+      fields.streetAddress.value = '';
+      fields.city.value = '';
+      fields.postalCode.value = '';
+    } else if (hasSingleAddress) {
+      fields.address.value = '';
+    }
+    
     // Also unlock fields when clearing
     unlockAresFields();
   }
@@ -209,12 +249,21 @@ export function setupAresForm(formSelector = '.registration-form') {
    * Lock ARES-fetched fields to prevent editing
    */
   function lockAresFields() {
-    const fieldsToLock = [fields.companyName, fields.address];
+    const fieldsToLock = [fields.companyName];
+    
+    // Add address fields based on form structure
+    if (hasDestructuredAddress) {
+      fieldsToLock.push(fields.streetAddress, fields.city, fields.postalCode);
+    } else if (hasSingleAddress) {
+      fieldsToLock.push(fields.address);
+    }
 
     fieldsToLock.forEach(field => {
-      field.readOnly = true;
-      field.classList.add('ares-verified');
-      field.setAttribute('title', 'Údaj ověřen přes ARES - bude použit přesně při registraci. Pro úpravu změňte IČO.');
+      if (field) {
+        field.readOnly = true;
+        field.classList.add('ares-verified');
+        field.setAttribute('title', 'Údaj ověřen přes ARES - bude použit přesně při registraci. Pro úpravu změňte IČO.');
+      }
     });
   }
 
@@ -222,12 +271,21 @@ export function setupAresForm(formSelector = '.registration-form') {
    * Unlock ARES fields for manual editing
    */
   function unlockAresFields() {
-    const fieldsToUnlock = [fields.companyName, fields.address];
+    const fieldsToUnlock = [fields.companyName];
+    
+    // Add address fields based on form structure
+    if (hasDestructuredAddress) {
+      fieldsToUnlock.push(fields.streetAddress, fields.city, fields.postalCode);
+    } else if (hasSingleAddress) {
+      fieldsToUnlock.push(fields.address);
+    }
 
     fieldsToUnlock.forEach(field => {
-      field.readOnly = false;
-      field.classList.remove('ares-verified');
-      field.removeAttribute('title');
+      if (field) {
+        field.readOnly = false;
+        field.classList.remove('ares-verified');
+        field.removeAttribute('title');
+      }
     });
   }
 

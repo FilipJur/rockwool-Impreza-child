@@ -1,3 +1,27 @@
+.half-inputs p {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 30px;
+}
+.half-inputs p span {
+	flex: 1 1 200px;
+	flex-grow:1;
+	    box-sizing: border-box;
+    min-width: 0;
+}
+p:has(input[for="fotky-realizace"]){
+	margin-bottom: 0;
+}
+form[data-status="init"]:has(.registration-form) .wpcf7-not-valid-tip{
+	display: none;
+}
+.ares-input-wrapper-submit .wpcf7-not-valid-tip{
+	display:none;
+}
+#page-content .lp-form .wpcf7-response-output{
+	display:none !important;
+}
 #page-content input:not([type="submit"]),
 #page-content textarea,
 #page-content select {

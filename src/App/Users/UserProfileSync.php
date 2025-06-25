@@ -119,15 +119,27 @@ class UserProfileSync {
      */
     private function sync_billing_fields(int $user_id, array $business_data): void
     {
+        // Check if we have destructured address components
+        $has_destructured_address = !empty($business_data['street_address']) || !empty($business_data['city']) || !empty($business_data['postal_code']);
+        
         // Update WooCommerce billing fields
         $billing_updates = [
             'billing_first_name' => $business_data['representative']['first_name'],
             'billing_last_name' => $business_data['representative']['last_name'],
             'billing_company' => $business_data['company_name'],
             'billing_email' => $business_data['representative']['email'],
-            'billing_address_1' => $business_data['address'],
             'billing_country' => 'CZ', // Czech Republic
         ];
+
+        // Use destructured address fields if available, otherwise fallback to single address
+        if ($has_destructured_address) {
+            $billing_updates['billing_address_1'] = $business_data['street_address'] ?? '';
+            $billing_updates['billing_city'] = $business_data['city'] ?? '';
+            $billing_updates['billing_postcode'] = $business_data['postal_code'] ?? '';
+        } else {
+            // Backward compatibility: use single address field
+            $billing_updates['billing_address_1'] = $business_data['address'] ?? '';
+        }
 
         // Add phone if available in business data
         if (isset($business_data['representative']['phone'])) {
@@ -136,7 +148,8 @@ class UserProfileSync {
 
         mycred_debug('SYNC FUNCTION: About to update billing meta fields', [
             'user_id' => $user_id,
-            'billing_updates' => $billing_updates
+            'billing_updates' => $billing_updates,
+            'has_destructured_address' => $has_destructured_address
         ], 'users', 'info');
 
         // Update billing meta fields
