@@ -41,7 +41,7 @@ class AdminAssetManager extends AdminAssetManagerBase {
      * Get domain-specific admin screen IDs where assets should load
      */
     protected function getAdminScreenIds(): array {
-        return ['user-edit', 'profile', 'users'];
+        return ['user-edit', 'profile', 'users', 'post', 'realizace'];
     }
 
 
@@ -76,6 +76,8 @@ class AdminAssetManager extends AdminAssetManagerBase {
      * Enqueue status dropdown for realizace post edit pages
      */
     public function enqueue_realizace_status_dropdown(): void {
+        error_log('[REALIZACE:ASSET] enqueue_realizace_status_dropdown called');
+        
         $this->enqueue_status_dropdown_script([
             'domain' => 'Realizace',
             'postType' => 'realizace',
@@ -84,6 +86,8 @@ class AdminAssetManager extends AdminAssetManagerBase {
             'currentStatus' => get_post()->post_status ?? '',
             'debugPrefix' => 'REALIZACE'
         ]);
+        
+        error_log('[REALIZACE:ASSET] enqueue_realizace_status_dropdown completed');
     }
 
     /**

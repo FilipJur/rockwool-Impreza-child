@@ -114,7 +114,7 @@ function impreza_child_enqueue_admin_assets()
 	$admin_js_asset_file = get_stylesheet_directory() . '/build/js/admin.asset.php';
 	$admin_js_asset = file_exists($admin_js_asset_file) ? include $admin_js_asset_file : array('dependencies' => array(), 'version' => '1.0.0');
 
-	wp_register_script(
+	wp_enqueue_script(
 		'theme-admin-js',
 		get_stylesheet_directory_uri() . '/build/js/admin.js',
 		$admin_js_asset['dependencies'],

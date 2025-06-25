@@ -123,6 +123,11 @@ class AdminApp {
   }
 }
 
+// Debug: Confirm script is loading
+console.log('[Admin] admin.js script is executing');
+console.log('[Admin] Current URL:', window.location.href);
+console.log('[Admin] Document ready state:', document.readyState);
+
 // Initialize the admin application
 const adminApp = new AdminApp();
 

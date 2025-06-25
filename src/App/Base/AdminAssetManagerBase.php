@@ -45,12 +45,10 @@ abstract class AdminAssetManagerBase {
      * Enqueue admin assets
      */
     public function enqueue_admin_assets(): void {
-        if (!$this->is_admin_screen()) {
-            return;
-        }
-
+        // Since admin.js is now globally enqueued in functions.php,
+        // we just need to localize scripts when this method is called
+        
         $this->enqueue_admin_styles();
-        $this->enqueue_admin_scripts();
         $this->localize_admin_scripts();
     }
 
@@ -116,6 +114,7 @@ abstract class AdminAssetManagerBase {
      * Get the active script handle to localize to
      */
     protected function getActiveScriptHandle(): ?string {
+        // Check for the main theme admin script first (enqueued in functions.php)
         $handles = ['theme-admin-js', 'mistr-admin-js', $this->getScriptHandlePrefix() . '-admin-js'];
         
         foreach ($handles as $handle) {
@@ -132,7 +131,26 @@ abstract class AdminAssetManagerBase {
      */
     protected function is_admin_screen(): bool {
         $screen = get_current_screen();
-        return $screen && in_array($screen->id, $this->getAdminScreenIds());
+        $admin_screens = $this->getAdminScreenIds();
+        
+        
+        if (!$screen) {
+            return false;
+        }
+        
+        // Check direct screen ID match
+        if (in_array($screen->id, $admin_screens)) {
+            return true;
+        }
+        
+        // Check for post edit pages
+        if ($screen->base === 'post' && isset($screen->post_type)) {
+            if (in_array($screen->post_type, $admin_screens) || in_array('post', $admin_screens)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**
@@ -184,18 +202,23 @@ abstract class AdminAssetManagerBase {
     public function enqueue_status_dropdown_script(array $config): void {
         global $post;
 
+
         if (!$post || $post->post_type !== $config['postType']) {
             return;
         }
 
+
         // Ensure admin.js is loaded (contains StatusDropdownManager)
         $this->enqueue_admin_scripts();
 
+        $script_handle = $this->getActiveScriptHandle() ?? 'theme-admin-js';
+
         // Localize status dropdown configuration
         wp_localize_script(
-            $this->getActiveScriptHandle() ?? 'mistr-admin-js',
+            $script_handle,
             'mistrFachmanStatusDropdown',
             $config
         );
+        
     }
 }

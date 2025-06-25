@@ -74,6 +74,9 @@ class AdminController extends AdminControllerBase {
         // Asset management hooks
         add_action('admin_enqueue_scripts', [$this->asset_manager, 'enqueue_admin_assets']);
 
+        // UI customization hooks (status dropdown, etc.)
+        $this->init_ui_hooks();
+
         error_log('[REALIZACE:ADMIN] All admin hooks initialized');
     }
 
@@ -86,9 +89,8 @@ class AdminController extends AdminControllerBase {
      * Initialize realizace-specific UI customization hooks
      */
     protected function init_ui_hooks(): void {
-        // Status dropdown for post edit pages
-        add_action('admin_footer-post.php', [$this, 'enqueue_status_dropdown']);
-        add_action('admin_footer-post-new.php', [$this, 'enqueue_status_dropdown']);
+        // Status dropdown for post edit pages - use admin_enqueue_scripts hook for proper timing
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_status_dropdown'], 20);
     }
 
     /**
@@ -189,6 +191,12 @@ class AdminController extends AdminControllerBase {
      */
     public function enqueue_status_dropdown(): void {
         global $post;
+
+        // Only run on post edit pages
+        $screen = get_current_screen();
+        if (!$screen || $screen->base !== 'post') {
+            return;
+        }
 
         if ($post && $post->post_type === $this->getPostType()) {
             $this->asset_manager->enqueue_realizace_status_dropdown();
