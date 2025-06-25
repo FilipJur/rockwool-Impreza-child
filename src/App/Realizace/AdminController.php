@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Realizace;
 
 use MistrFachman\Base\AdminControllerBase;
+use MistrFachman\Base\AdminCardRendererBase;
 
 /**
  * Realizace Admin Controller - Unified Admin Interface Controller
@@ -43,7 +44,7 @@ class AdminController extends AdminControllerBase {
 
     public function __construct(
         private StatusManager $status_manager,
-        private AdminCardRenderer $card_renderer,
+        private AdminCardRendererBase $card_renderer,
         private AdminAssetManager $asset_manager
     ) {
         error_log('[REALIZACE:ADMIN] AdminController initialized with unified architecture');
@@ -82,26 +83,12 @@ class AdminController extends AdminControllerBase {
     // ===========================================
 
     /**
-     * Initialize UI customization hooks
+     * Initialize realizace-specific UI customization hooks
      */
     protected function init_ui_hooks(): void {
-        // Admin list view customization
-        add_filter('manage_realizace_posts_columns', [$this, 'add_admin_columns']);
-        add_action('manage_realizace_posts_custom_column', [$this, 'render_custom_columns'], 10, 2);
-
-        // Users table customization
+        // Users table customization - realizace-specific
         add_filter('manage_users_columns', [$this, 'add_users_columns']);
         add_action('manage_users_custom_column', [$this, 'render_users_custom_column'], 10, 3);
-
-        // Post editor form customization
-        add_action('admin_footer-post.php', [$this, 'add_rejected_status_to_dropdown']);
-        add_action('admin_footer-post-new.php', [$this, 'add_rejected_status_to_dropdown']);
-
-        // Status transition handling (NO save_post hook - this was the bug!)
-        add_action('transition_post_status', [$this, 'handle_status_transition'], 10, 3);
-
-        // User profile integration
-        add_action('mistr_fachman_user_profile_cards', [$this, 'add_realizace_cards_to_user_profile'], 10, 2);
     }
 
     /**
@@ -281,11 +268,12 @@ class AdminController extends AdminControllerBase {
     public function add_rejected_status_to_dropdown(): void {
         global $post;
 
-        if ($post && $post->post_type === 'realizace') {
+        if ($post && $post->post_type === $this->getPostType()) {
+            $domain_debug = strtoupper($this->getPostType());
             ?>
             <script type="text/javascript">
             jQuery(document).ready(function($) {
-                console.log('[REALIZACE:UI] Initializing rejected status dropdown support');
+                console.log('[<?php echo esc_js($domain_debug); ?>:UI] Initializing rejected status dropdown support');
 
                 // Add rejected status option
                 var $statusSelect = $('select[name="post_status"]');
@@ -293,27 +281,27 @@ class AdminController extends AdminControllerBase {
 
                 if ($statusSelect.length && !$statusSelect.find('option[value="rejected"]').length) {
                     $statusSelect.append('<option value="rejected">Odmítnuto</option>');
-                    console.log('[REALIZACE:UI] Added rejected option to status dropdown');
+                    console.log('[<?php echo esc_js($domain_debug); ?>:UI] Added rejected option to status dropdown');
                 }
 
                 // ACF field refresh no longer needed - points populated on creation
 
                 // Set current status if rejected
                 <?php if ($post->post_status === 'rejected'): ?>
-                console.log('[REALIZACE:UI] Setting current status to rejected');
+                console.log('[<?php echo esc_js($domain_debug); ?>:UI] Setting current status to rejected');
                 $statusSelect.val('rejected');
                 $('#post-status-display').text('Odmítnuto');
 
                 // Also update any hidden inputs
                 $('input[name="_status"]').val('rejected');
-                console.log('[REALIZACE:UI] Updated hidden status input to rejected');
+                console.log('[<?php echo esc_js($domain_debug); ?>:UI] Updated hidden status input to rejected');
                 <?php endif; ?>
 
                 // Handle status change display
                 $statusSelect.on('change', function() {
                     var selectedStatus = $(this).val();
                     var displayText = $(this).find('option:selected').text();
-                    console.log('[REALIZACE:UI] Status changed to:', selectedStatus);
+                    console.log('[<?php echo esc_js($domain_debug); ?>:UI] Status changed to:', selectedStatus);
                     $('#post-status-display').text(displayText);
 
                     // Ensure hidden input is also updated
@@ -323,23 +311,23 @@ class AdminController extends AdminControllerBase {
                 // Fix for Gutenberg editor
                 if (window.wp && window.wp.data && window.wp.data.select('core/editor')) {
                     var postStatus = window.wp.data.select('core/editor').getEditedPostAttribute('status');
-                    console.log('[REALIZACE:UI] Gutenberg editor detected, current status:', postStatus);
+                    console.log('[<?php echo esc_js($domain_debug); ?>:UI] Gutenberg editor detected, current status:', postStatus);
                     if (postStatus === 'rejected') {
                         $('.editor-post-status .components-select-control__input').val('rejected');
-                        console.log('[REALIZACE:UI] Updated Gutenberg status to rejected');
+                        console.log('[<?php echo esc_js($domain_debug); ?>:UI] Updated Gutenberg status to rejected');
                     }
                 }
 
                 // Intercept form submission to ensure rejected status is preserved
                 $('#post').on('submit', function() {
                     var currentStatus = $statusSelect.val();
-                    console.log('[REALIZACE:UI] Form submitting with status:', currentStatus);
+                    console.log('[<?php echo esc_js($domain_debug); ?>:UI] Form submitting with status:', currentStatus);
 
                     if (currentStatus === 'rejected') {
                         // Ensure the POST data includes the rejected status
                         if (!$('input[name="post_status"][value="rejected"]').length) {
                             $(this).append('<input type="hidden" name="post_status" value="rejected">');
-                            console.log('[REALIZACE:UI] Added hidden input for rejected status');
+                            console.log('[<?php echo esc_js($domain_debug); ?>:UI] Added hidden input for rejected status');
                         }
                     }
                 });
@@ -353,11 +341,12 @@ class AdminController extends AdminControllerBase {
      * Handle status transitions for logging and validation
      */
     public function handle_status_transition(string $new_status, string $old_status, \WP_Post $post): void {
-        if ($post->post_type !== 'realizace') {
+        if ($post->post_type !== $this->getPostType()) {
             return;
         }
 
-        error_log("[REALIZACE:UI] Status transition: {$old_status} → {$new_status} for post #{$post->ID}");
+        $domain_debug = strtoupper($this->getPostType());
+        error_log("[{$domain_debug}:UI] Status transition: {$old_status} → {$new_status} for post #{$post->ID}");
 
         // Validate rejection reason when moving to rejected status
         if ($new_status === 'rejected' && $old_status !== 'rejected') {
@@ -366,51 +355,31 @@ class AdminController extends AdminControllerBase {
                 : get_post_meta($post->ID, $this->getRejectionReasonFieldSelector(), true);
 
             if (empty($rejection_reason)) {
-                error_log("[REALIZACE:UI] Warning: Post #{$post->ID} rejected without reason");
+                error_log("[{$domain_debug}:UI] Warning: Post #{$post->ID} rejected without reason");
             }
         }
 
         // Clear any cached data when status changes
-        wp_cache_delete("realizace_status_{$post->ID}", 'posts');
+        wp_cache_delete("{$this->getPostType()}_status_{$post->ID}", 'posts');
     }
 
     /**
      * Add realizace management cards to user profile
      */
-    public function add_realizace_cards_to_user_profile(\WP_User $user, bool $is_pending): void {
-        // Only show realizace cards for users who can submit realizace
+    public function add_cards_to_user_profile(\WP_User $user, bool $is_pending): void {
+        // Only show cards for users who can submit posts of this type
         // (pending users and full members)
         if (!$is_pending && !in_array('full_member', $user->roles)) {
             return;
         }
 
-        // Check if user has any realizace posts
-        $has_realizace = $this->user_has_realizace($user->ID);
+        // Check if user has any posts of this type
+        $has_posts = $this->user_has_posts($user->ID);
 
-        // Show cards if user has realizace or is eligible to submit them
-        if ($has_realizace || $is_pending || in_array('full_member', $user->roles)) {
-            echo '<div class="realizace-management-modern">';
-
-            // Consolidated dashboard replacing the dual-card layout
-            $this->card_renderer->render_consolidated_realizace_dashboard($user);
-
-            echo '</div>';
+        // Show cards if user has posts or is eligible to submit them
+        if ($has_posts || $is_pending || in_array('full_member', $user->roles)) {
+            $this->render_user_profile_card($user);
         }
-    }
-
-    /**
-     * Check if user has any realizace posts
-     */
-    private function user_has_realizace(int $user_id): bool {
-        $posts = get_posts([
-            'post_type' => 'realizace',
-            'author' => $user_id,
-            'post_status' => 'any',
-            'posts_per_page' => 1,
-            'fields' => 'ids'
-        ]);
-
-        return !empty($posts);
     }
 
     // ===========================================
@@ -759,8 +728,23 @@ class AdminController extends AdminControllerBase {
      */
     protected function render_user_profile_card(\WP_User $user): void {
         echo '<div class="realizace-management-modern">';
-        $this->card_renderer->render_consolidated_realizace_dashboard($user);
+        $this->card_renderer->render_consolidated_dashboard($user);
         echo '</div>';
+    }
+
+    /**
+     * Check if user has posts of this domain type
+     */
+    protected function user_has_posts(int $user_id): bool {
+        $posts = get_posts([
+            'post_type' => $this->getPostType(),
+            'author' => $user_id,
+            'post_status' => 'any',
+            'posts_per_page' => 1,
+            'fields' => 'ids'
+        ]);
+
+        return !empty($posts);
     }
 
 }

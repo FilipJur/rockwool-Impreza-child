@@ -85,7 +85,10 @@ abstract class AdminControllerBase {
      * Initialize common admin hooks
      */
     public function init_common_hooks(): void {
-        // UI customization hooks
+        // Common UI customization hooks (generic across all domains)
+        $this->init_common_ui_hooks();
+        
+        // Domain-specific UI customization hooks
         $this->init_ui_hooks();
         
         // AJAX endpoint hooks
@@ -93,9 +96,9 @@ abstract class AdminControllerBase {
     }
 
     /**
-     * Initialize UI customization hooks
+     * Initialize common UI customization hooks (generic across all domains)
      */
-    protected function init_ui_hooks(): void {
+    protected function init_common_ui_hooks(): void {
         // Admin list view customization
         add_filter('manage_' . $this->getPostType() . '_posts_columns', [$this, 'add_admin_columns']);
         add_action('manage_' . $this->getPostType() . '_posts_custom_column', [$this, 'render_custom_columns'], 10, 2);
@@ -109,6 +112,14 @@ abstract class AdminControllerBase {
 
         // User profile integration
         add_action('mistr_fachman_user_profile_cards', [$this, 'add_cards_to_user_profile'], 10, 2);
+    }
+
+    /**
+     * Initialize domain-specific UI customization hooks
+     * Override in child classes for domain-specific UI customizations
+     */
+    protected function init_ui_hooks(): void {
+        // Override in child classes for domain-specific UI hooks
     }
 
     /**

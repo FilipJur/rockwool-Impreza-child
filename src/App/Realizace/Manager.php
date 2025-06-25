@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Realizace;
 
 use MistrFachman\Base\PostTypeManagerBase;
+use MistrFachman\Base\FormHandlerBase;
 use MistrFachman\Services\UserDetectionService;
 use MistrFachman\Users\RoleManager;
 
@@ -29,30 +30,37 @@ class Manager extends PostTypeManagerBase {
 
     private static ?self $instance = null;
 
-    public RealizaceFormHandler $form_handler;
+    public FormHandlerBase $form_handler;
 
     /**
-     * Get singleton instance
+     * Get singleton instance with dependency injection
      */
-    public static function get_instance(): self {
-        return self::$instance ??= new self();
+    public static function get_instance(?UserDetectionService $user_detection_service = null): self {
+        if (self::$instance === null) {
+            if ($user_detection_service === null) {
+                throw new \InvalidArgumentException('UserDetectionService must be provided on first call');
+            }
+            self::$instance = new self($user_detection_service);
+        }
+        return self::$instance;
     }
 
     /**
      * Private constructor to prevent direct instantiation
+     * Now accepts shared services via dependency injection
      */
-    private function __construct() {
+    private function __construct(
+        private UserDetectionService $user_detection_service
+        // Future shared services will be added here (SMS, leaderboard, etc.)
+    ) {
         // Initialize base class hooks
         $this->init_common_hooks();
-        // Initialize dependencies
-        $role_manager = new RoleManager();
-        $user_detection_service = new UserDetectionService($role_manager);
         
-        // Initialize form handler with dependencies
-        $this->form_handler = new RealizaceFormHandler($user_detection_service, $this);
+        // Initialize form handler with injected dependencies
+        $this->form_handler = new NewRealizaceFormHandler($this->user_detection_service, $this);
         
         // Initialize admin components with consolidated architecture
-        $card_renderer = new AdminCardRenderer();
+        $card_renderer = new RealizaceCardRenderer();
         $asset_manager = new AdminAssetManager();
         $status_manager = new StatusManager();
         

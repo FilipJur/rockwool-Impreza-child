@@ -114,6 +114,22 @@ add_action('init', function () {
         return;
     }
 
+    // === SERVICE LAYER INITIALIZATION (DI-Lite Pattern) ===
+    // Create shared services that will be used across multiple domains
+    
+    // Core user services
+    $RoleManager = \MistrFachman\Users\RoleManager::class;
+    $role_manager = class_exists($RoleManager) ? new $RoleManager() : null;
+    
+    $UserDetectionService = \MistrFachman\Services\UserDetectionService::class;
+    $user_detection_service = (class_exists($UserDetectionService) && $role_manager) 
+        ? new $UserDetectionService($role_manager) 
+        : null;
+    
+    // Future shared services will be created here:
+    // $sms_service = new SmsNotificationService();
+    // $leaderboard_service = new LeaderboardService();
+
     // 1. Initialize the Users System (first, as other domains may depend on it)
     if (class_exists($UsersManager)) {
         $users_manager = $UsersManager::get_instance();
@@ -124,12 +140,13 @@ add_action('init', function () {
         mycred_debug('Users Manager class not found.', null, 'bootstrap', 'error');
     }
 
-    // 1.5. Initialize the Realizace System
+    // 1.5. Initialize the Realizace System with injected dependencies
     $RealizaceManager = \MistrFachman\Realizace\Manager::class;
-    if (class_exists($RealizaceManager)) {
-        $RealizaceManager::get_instance();
+    if (class_exists($RealizaceManager) && $user_detection_service) {
+        $RealizaceManager::get_instance($user_detection_service);
+        mycred_debug('Realizace Manager initialized with injected UserDetectionService', null, 'bootstrap', 'info');
     } else {
-        mycred_debug('Realizace Manager class not found.', null, 'bootstrap', 'error');
+        mycred_debug('Realizace Manager class not found or UserDetectionService unavailable.', null, 'bootstrap', 'error');
     }
 
     // 2. Initialize the E-Commerce System
