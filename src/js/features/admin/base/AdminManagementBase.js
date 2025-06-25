@@ -59,6 +59,7 @@ export class AdminManagementBase {
     
     this.setupEventListeners();
     this.populateDefaultValues();
+    this.makePointsInputReadOnly();
     this.state.isInitialized = true;
   }
 
@@ -107,6 +108,22 @@ export class AdminManagementBase {
         }
       });
     }
+  }
+
+  /**
+   * Make points input fields read-only to prevent admin confusion
+   * Points are calculated automatically and should not be manually edited
+   */
+  makePointsInputReadOnly() {
+    this.state.containers.forEach(container => {
+      const pointsInputs = container.querySelectorAll('.quick-points-input');
+      pointsInputs.forEach(input => {
+        input.setAttribute('readonly', true);
+        input.style.backgroundColor = '#f0f0f1'; // Visual cue for disabled state
+        input.style.cursor = 'not-allowed';
+        input.title = 'Toto pole je pouze pro čtení a je spravováno automaticky.';
+      });
+    });
   }
 
   /**

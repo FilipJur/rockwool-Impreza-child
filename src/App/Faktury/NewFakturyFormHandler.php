@@ -68,14 +68,18 @@ class NewFakturyFormHandler extends FormHandlerBase {
 
     /**
      * Save faktury-specific ACF/meta fields
+     * FormHandler only saves raw user input - calculations happen in ACF hooks
      */
     protected function saveDomainFields(int $post_id, array $posted_data): void {
-        // Save invoice value field
+        // Save invoice value field (raw user input only)
         if (isset($posted_data['hodnota_faktury'])) {
             $value = (int)$posted_data['hodnota_faktury'];
             $result = FakturaFieldService::setValue($post_id, $value);
             error_log('[FAKTURY:DEBUG] hodnota_faktury field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . $value);
         }
+        
+        // Points calculation is handled by PointsHandler ACF hook
+        // This ensures clean separation: FormHandler saves data, ACF hook does calculations
         
         // TODO: Add additional domain fields as needed (invoice number, date, etc.)
         // These would typically be filled by admin during approval process

@@ -109,4 +109,5 @@ class Manager extends PostTypeManagerBase {
     protected function getPointsFieldSelector(): string {
         return FakturaFieldService::getPointsFieldSelector();
     }
+
 }

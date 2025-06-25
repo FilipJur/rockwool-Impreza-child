@@ -97,6 +97,67 @@ class PointsHandler extends PointsHandlerBase {
     }
 
     /**
+     * Override handle_editor_save to support pending posts with ACF fields
+     * 
+     * Faktury form submission creates pending posts, but we still want to populate
+     * the points field when ACF data is saved, even for pending posts.
+     */
+    public function handle_editor_save($post_id): void {
+        $post_id = (int)$post_id;
+
+        // Prevent this from running during an AJAX request, which has its own logic.
+        if (wp_doing_ajax()) {
+            return;
+        }
+
+        // Verify this is the correct post type
+        if (get_post_type($post_id) !== $this->getPostType()) {
+            return;
+        }
+
+        $post_status = get_post_status($post_id);
+        
+        // For Faktury, we allow points calculation for both publish AND pending posts
+        // This enables form submission workflow where posts are created as pending
+        if (!in_array($post_status, ['publish', 'pending'])) {
+            return;
+        }
+
+        $user_id = (int)get_post_field('post_author', $post_id);
+        if (!$user_id || !get_userdata($user_id)) {
+            return;
+        }
+
+        // Get current points - if empty, populate with calculated value
+        $current_points = FakturaFieldService::getPoints($post_id);
+        
+        error_log("[FAKTURY:DEBUG] ACF hook firing for post {$post_id} - current points: {$current_points}, status: {$post_status}");
+        
+        if ($current_points === 0) {
+            $calculated_points = $this->getCalculatedPoints($post_id);
+            
+            if ($calculated_points > 0) {
+                $set_result = FakturaFieldService::setPoints($post_id, $calculated_points);
+                
+                error_log("[FAKTURY:DEBUG] Auto-populated points via ACF hook: {$calculated_points} for post #{$post_id} (result: " . ($set_result ? 'success' : 'failed') . ")");
+                
+                // Verify the value was actually saved
+                $verified_points = FakturaFieldService::getPoints($post_id);
+                error_log("[FAKTURY:DEBUG] Verification: points field now contains: {$verified_points}");
+            }
+        }
+
+        // Only award points if the post is published (not pending)
+        if ($post_status === 'publish') {
+            $points_to_award = FakturaFieldService::getPoints($post_id);
+            
+            if ($points_to_award > 0) {
+                $this->award_points($post_id, $user_id, $points_to_award);
+            }
+        }
+    }
+
+    /**
      * Revoke points with detailed logging for faktury
      * Overrides parent to add domain-specific logging
      * Matches base class signature: (int $post_id, int $user_id, string $new_status): void

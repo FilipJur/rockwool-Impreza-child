@@ -31,7 +31,8 @@ class FakturaFieldService extends FieldServiceBase {
 
     /**
      * Field selector constants - Single source of truth
-     * TODO: Verify these field names match actual ACF field configuration
+     * Following Realizace pattern with domain-specific naming
+     * Uses full group_field pattern to match Realizace architecture
      */
     private const POINTS_FIELD = 'sprava_a_hodnoceni_faktura_pridelene_body';
     private const REJECTION_REASON_FIELD = 'sprava_a_hodnoceni_faktura_duvod_zamitnuti';
