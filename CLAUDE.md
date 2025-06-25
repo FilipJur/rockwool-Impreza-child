@@ -5,7 +5,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. **TEMPLATE SYSTEM ARCHITECTURE COMPLETE** - Implemented true MVC separation with template-based rendering system. AdminCardRendererBase reduced from 600+ lines to 223-line lean data preparation class. All HTML extracted to 8 reusable template files with security checks. RealizaceCardRenderer simplified to 100-line domain-specific data provider. Template loading system enables rapid domain expansion (Faktury, Certifikace) with zero code duplication. Combined with centralized field access and dual-pathway point awarding, creates **production-ready foundation** for any new domain implementation.
+WordPress child theme development with enterprise-grade architecture. **COMPLETE DOMAIN ABSTRACTION ACHIEVED** - Created comprehensive base class system with StatusManagerBase, AdminAssetManagerBase, and enhanced AdminControllerBase. JavaScript integration completed with StatusDropdownManager webpack build. Realizace domain reduced from 1100+ lines to 766 lines (30% reduction) while maintaining full functionality. System now ready for rapid Faktury domain implementation with minimal code duplication. True abstraction patterns established for status management, asset loading, users table integration, and validation gatekeeper.
 
 ## Build & Development Commands
 
@@ -74,6 +74,7 @@ WordPress child theme development with enterprise-grade architecture. **TEMPLATE
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
+- **2025-06-25**: [refactor] COMPLETE DOMAIN ABSTRACTION - Created StatusManagerBase (210 lines) and AdminAssetManagerBase (165 lines) for reusable domain patterns. Refactored Realizace StatusManager from 230→76 lines (67% reduction) and AdminAssetManager from 132→94 lines (29% reduction). Integrated StatusDropdownManager.js into webpack build system. Enhanced AdminControllerBase with users table integration. Removed JavaScript conflicts and achieved clean separation of concerns. Realizace domain reduced from 1100+ to 766 lines (30% total reduction) while establishing patterns for rapid Faktury implementation.
 - **2025-06-25**: [refactor] TEMPLATE SYSTEM IMPLEMENTATION - Complete MVC separation with template-based rendering. Created /templates/admin-cards/ directory with 8 template files: dashboard-wrapper.php, stats-header.php, status-section.php, post-card-full.php, post-card-compact.php, post-gallery.php, post-actions.php, and domain-details/realizace-details.php. Refactored AdminCardRendererBase from 600+ line monolithic renderer to 223-line lean data preparation class with template loading system. Simplified RealizaceCardRenderer to 100-line domain-specific data provider. Achieved 84% code reduction while maintaining full functionality. Zero HTML generation in PHP classes - true separation of concerns.
 - **2025-06-24**: [fix] COMPREHENSIVE CENTRALIZED FIELD ACCESS - Implemented RealizaceFieldService as single source of truth for all ACF field selectors. Fixed frontend synchronization bug where rejection reasons weren't displaying immediately in [my_realizace] shortcode. Created centralized field access API eliminating hardcoded field names across 11+ files. Extended base classes with comprehensive field selector methods. All domain classes now delegate field access to centralized service. Prevents field synchronization issues and provides future-proof architecture for easy field modifications.
 - **2025-06-24**: [fix] Dual-pathway architecture - Context-aware point awarding using appropriate hooks for each execution context: acf/save_post for post editor (guaranteed after ACF saves) + direct award_points() calls for AJAX admin UI (immediate transaction). wp_doing_ajax() guard prevents pathway conflicts. Eliminates all timing issues while maintaining unified transaction logic. Ready for both manual admin edits and calculation-based Faktury domain.
@@ -141,6 +142,7 @@ update_field('realizace_duvod_zamitnuti', $reason, $post_id);
 **Architecture**: Abstract base classes delegate to field service for true abstraction without hardcoded dependencies.
 
 ## Active Decisions
+- **Complete domain abstraction** (2025-06-25): Created StatusManagerBase and AdminAssetManagerBase for true cross-domain reusability. Integrated StatusDropdownManager.js into webpack build system with clean AdminApp module initialization. Enhanced AdminControllerBase with users table integration. Achieved 30% overall code reduction while establishing patterns for rapid Faktury implementation. JavaScript system now fully generic and configuration-driven.
 - **Template system architecture** (2025-06-25): Complete MVC separation with template-based rendering for all admin cards - 84% code reduction with zero HTML in PHP classes. Template loading system enables rapid domain expansion with zero code duplication
 - **Centralized field access**: All ACF field access through RealizaceFieldService - eliminates hardcoded field names and synchronization bugs
 - **Enterprise architecture**: Domain-driven structure with PSR-4 autoloading and single bootstrap
@@ -156,11 +158,9 @@ update_field('realizace_duvod_zamitnuti', $reason, $post_id);
 - **Cohesive controllers over fragmentation** (2025-06-23): Single AdminController with clear responsibility sections instead of over-decomposed classes - line count is secondary to preventing mixed responsibilities and tight coupling
 - **"No Debt" business policy** (2025-06-23): Point revocation never creates negative balances - revoke only up to current user balance to maintain financial integrity
 - **Frontend-only Tailwind CSS** (2025-06-23): Tailwind CSS only loaded on frontend via wp_enqueue_scripts to prevent admin class conflicts with WordPress core
-- **Comprehensive centralized field access** (2025-06-24): Implemented RealizaceFieldService as single source of truth for all ACF field selectors. Eliminated hardcoded field names across 11+ files with centralized API. Abstract base classes delegate to field service for true abstraction. Fixes frontend synchronization bugs and provides future-proof architecture for easy field modifications
-- **Template system implementation** (2025-06-25): Complete MVC separation with template-based rendering. Created /templates/admin-cards/ directory with 8 template files. Refactored AdminCardRendererBase from 600+ line monolithic renderer to 223-line lean data preparation class. Simplified RealizaceCardRenderer to 100-line domain-specific data provider. Zero HTML generation in PHP classes - true separation of concerns
 
 ## Known Issues
-*No current known issues. System is production-ready with comprehensive centralized field access architecture and complete No Debt policy. All base classes are rock solid and ready for Faktury domain implementation.*
+*No current known issues. System is production-ready with complete domain abstraction architecture. StatusManagerBase, AdminAssetManagerBase, and enhanced AdminControllerBase provide comprehensive patterns for rapid domain implementation. JavaScript system fully integrated with webpack build. Ready for Faktury domain implementation.*
 
 ## Archive
 
@@ -188,4 +188,4 @@ update_field('realizace_duvod_zamitnuti', $reason, $post_id);
 
 
 ## Last Updated
-2025-06-25 (bundles updated, memory synchronized with latest template system architecture)
+2025-06-25 (bundles updated, memory synchronized with complete domain abstraction)

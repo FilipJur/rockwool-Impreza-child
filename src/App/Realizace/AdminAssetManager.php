@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace MistrFachman\Realizace;
 
+use MistrFachman\Base\AdminAssetManagerBase;
+
 /**
- * Realizace Admin Asset Manager - Styles & Scripts
+ * Realizace Admin Asset Manager - Domain-Specific Asset Management
  *
- * Manages CSS and JavaScript assets for realizace admin interface.
- * Provides centralized asset management with proper enqueueing and localization.
+ * Extends AdminAssetManagerBase to provide realizace-specific asset management.
+ * Handles CSS, JavaScript, and localization for realizace admin interface.
  *
  * @package mistr-fachman
  * @since 1.0.0
@@ -19,94 +21,38 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class AdminAssetManager {
+class AdminAssetManager extends AdminAssetManagerBase {
 
     /**
-     * Enqueue admin assets for realizace management
+     * Get the domain-specific script handle prefix
      */
-    public function enqueue_admin_assets(): void {
-        // Load on user edit screens and users list page
-        if (!$this->is_realizace_admin_screen()) {
-            return;
-        }
-
-        $this->enqueue_admin_styles();
-        $this->enqueue_admin_scripts();
-        $this->localize_admin_scripts();
+    protected function getScriptHandlePrefix(): string {
+        return 'realizace';
     }
 
     /**
-     * Enqueue admin styles
+     * Get the domain-specific localization object name
      */
-    private function enqueue_admin_styles(): void {
-        // Use main theme CSS which includes admin styles
-        wp_enqueue_style(
-            'mistr-theme-css',
-            get_stylesheet_uri(),
-            ['admin-bar'],
-            wp_get_theme()->get('Version')
-        );
+    protected function getLocalizationObjectName(): string {
+        return 'mistrRealizaceAdmin';
     }
 
     /**
-     * Enqueue admin scripts (only if not already enqueued by Users)
+     * Get domain-specific admin screen IDs where assets should load
      */
-    private function enqueue_admin_scripts(): void {
-        // Check if theme-admin-js is already enqueued by Users domain
-        if (wp_script_is('theme-admin-js', 'enqueued')) {
-            // Script already loaded by Users - just localize our data
-            return;
-        }
-        
-        // Use built admin.js which includes realizace management
-        $main_admin_js = get_stylesheet_directory() . '/build/js/admin.js';
-        $asset_file = get_stylesheet_directory() . '/build/js/admin.asset.php';
-        
-        if (file_exists($main_admin_js) && file_exists($asset_file)) {
-            $asset_data = include $asset_file;
-            
-            wp_enqueue_script(
-                'mistr-admin-js',
-                get_stylesheet_directory_uri() . '/build/js/admin.js',
-                $asset_data['dependencies'] ?? [],
-                $asset_data['version'] ?? filemtime($main_admin_js),
-                true
-            );
-        }
+    protected function getAdminScreenIds(): array {
+        return ['user-edit', 'profile', 'users'];
     }
 
-    /**
-     * Localize admin scripts with AJAX data
-     */
-    private function localize_admin_scripts(): void {
-        // Localize to whichever script handle exists
-        $script_handle = wp_script_is('theme-admin-js', 'enqueued') ? 'theme-admin-js' : 'mistr-admin-js';
-        
-        wp_localize_script(
-            $script_handle,
-            'mistrRealizaceAdmin',
-            $this->get_localized_data()
-        );
-    }
+
+
+
 
     /**
-     * Check if current screen is user edit page
+     * Get domain-specific localized data for scripts
      */
-    private function is_realizace_admin_screen(): bool {
-        $screen = get_current_screen();
-        return $screen && in_array($screen->id, ['user-edit', 'profile', 'users']);
-    }
-
-    /**
-     * Get localized script data for AJAX requests
-     */
-    public function get_localized_data(): array {
+    protected function getDomainLocalizationData(): array {
         return [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonces' => [
-                'quick_action' => wp_create_nonce('mistr_fachman_realizace_action'),
-                'bulk_approve' => wp_create_nonce('mistr_fachman_bulk_approve_realizace')
-            ],
             'field_names' => [
                 'rejection_reason' => RealizaceFieldService::getRejectionReasonFieldSelector(),
                 'points' => RealizaceFieldService::getPointsFieldSelector(),
@@ -118,16 +64,32 @@ class AdminAssetManager {
             'default_values' => [
                 'points' => 2500
             ],
-            'messages' => [
+            'messages' => array_merge($this->getDefaultMessages(), [
                 'confirm_approve' => __('Opravdu chcete schválit tuto realizaci?', 'mistr-fachman'),
                 'confirm_reject' => __('Opravdu chcete odmítnout tuto realizaci?', 'mistr-fachman'),
-                'confirm_bulk_approve' => __('Opravdu chcete hromadně schválit všechny čekající realizace tohoto uživatele?', 'mistr-fachman'),
-                'processing' => __('Zpracovává se...', 'mistr-fachman'),
-                'error_generic' => __('Došlo k chybě při zpracování požadavku.', 'mistr-fachman'),
-                'approve_text' => __('Schválit', 'mistr-fachman'),
-                'reject_text' => __('Odmítnout', 'mistr-fachman'),
-                'bulk_approve_text' => __('Hromadně schválit', 'mistr-fachman')
-            ]
+                'confirm_bulk_approve' => __('Opravdu chcete hromadně schválit všechny čekající realizace tohoto uživatele?', 'mistr-fachman')
+            ])
         ];
+    }
+
+    /**
+     * Enqueue status dropdown for realizace post edit pages
+     */
+    public function enqueue_realizace_status_dropdown(): void {
+        $this->enqueue_status_dropdown_script([
+            'domain' => 'Realizace',
+            'postType' => 'realizace',
+            'customStatus' => 'rejected',
+            'customStatusLabel' => 'Odmítnuto',
+            'currentStatus' => get_post()->post_status ?? '',
+            'debugPrefix' => 'REALIZACE'
+        ]);
+    }
+
+    /**
+     * Get localized script data for AJAX requests (backward compatibility)
+     */
+    public function get_localized_data(): array {
+        return $this->getBaseLocalizationData();
     }
 }

@@ -86,9 +86,9 @@ class AdminController extends AdminControllerBase {
      * Initialize realizace-specific UI customization hooks
      */
     protected function init_ui_hooks(): void {
-        // Users table customization - realizace-specific
-        add_filter('manage_users_columns', [$this, 'add_users_columns']);
-        add_action('manage_users_custom_column', [$this, 'render_users_custom_column'], 10, 3);
+        // Status dropdown for post edit pages
+        add_action('admin_footer-post.php', [$this, 'enqueue_status_dropdown']);
+        add_action('admin_footer-post-new.php', [$this, 'enqueue_status_dropdown']);
     }
 
     /**
@@ -179,161 +179,19 @@ class AdminController extends AdminControllerBase {
         };
     }
 
-    /**
-     * Add custom columns to the users table
-     */
-    public function add_users_columns(array $columns): array {
-        // Insert the "Pending Realizace" column before the "Posts" column if it exists,
-        // otherwise before the "Date" column
-        $insert_before = isset($columns['posts']) ? 'posts' : 'date';
 
-        // Find the position to insert the new column
-        $position = array_search($insert_before, array_keys($columns));
-        if ($position !== false) {
-            $columns = array_slice($columns, 0, $position, true) +
-                      ['pending_realizace' => 'Čekající realizace'] +
-                      array_slice($columns, $position, null, true);
-        } else {
-            // Fallback: add at the end
-            $columns['pending_realizace'] = 'Čekající realizace';
-        }
 
-        return $columns;
-    }
+
 
     /**
-     * Render custom column content for users table
+     * Enqueue status dropdown for realizace post edit pages
+     * Delegates to AdminAssetManager for proper asset management
      */
-    public function render_users_custom_column(string $output, string $column_name, int $user_id): string {
-        if ($column_name === 'pending_realizace') {
-            return $this->render_pending_realizace_column($user_id);
-        }
-        return $output;
-    }
-
-    /**
-     * Render pending realizace column content
-     */
-    private function render_pending_realizace_column(int $user_id): string {
-        // Get pending realizace count for this user
-        $pending_count = $this->get_user_pending_realizace_count($user_id);
-
-        if ($pending_count === 0) {
-            return '<span style="color: #999;">0</span>';
-        }
-
-        // Make the count clickable to filter realizace posts for this user
-        $admin_url = admin_url('edit.php');
-        $filter_url = add_query_arg([
-            'post_type' => 'realizace',
-            'post_status' => 'pending',
-            'author' => $user_id
-        ], $admin_url);
-
-        return sprintf(
-            '<a href="%s" style="color: #d63638; font-weight: 600;" title="Zobrazit čekající realizace tohoto uživatele">%d</a>',
-            esc_url($filter_url),
-            $pending_count
-        );
-    }
-
-    /**
-     * Get pending realizace count for a specific user
-     */
-    private function get_user_pending_realizace_count(int $user_id): int {
-        static $cache = [];
-
-        // Use static cache to avoid multiple queries for the same user during page load
-        if (isset($cache[$user_id])) {
-            return $cache[$user_id];
-        }
-
-        global $wpdb;
-
-        $count = (int) $wpdb->get_var($wpdb->prepare("
-            SELECT COUNT(*)
-            FROM {$wpdb->posts}
-            WHERE post_type = 'realizace'
-            AND post_author = %d
-            AND post_status = 'pending'
-        ", $user_id));
-
-        $cache[$user_id] = $count;
-        return $count;
-    }
-
-    /**
-     * Add rejected status to the post editor's status dropdown
-     */
-    public function add_rejected_status_to_dropdown(): void {
+    public function enqueue_status_dropdown(): void {
         global $post;
 
         if ($post && $post->post_type === $this->getPostType()) {
-            $domain_debug = strtoupper($this->getPostType());
-            ?>
-            <script type="text/javascript">
-            jQuery(document).ready(function($) {
-                console.log('[<?php echo esc_js($domain_debug); ?>:UI] Initializing rejected status dropdown support');
-
-                // Add rejected status option
-                var $statusSelect = $('select[name="post_status"]');
-                console.log('[REALIZACE:UI] Found status select elements:', $statusSelect.length);
-
-                if ($statusSelect.length && !$statusSelect.find('option[value="rejected"]').length) {
-                    $statusSelect.append('<option value="rejected">Odmítnuto</option>');
-                    console.log('[<?php echo esc_js($domain_debug); ?>:UI] Added rejected option to status dropdown');
-                }
-
-                // ACF field refresh no longer needed - points populated on creation
-
-                // Set current status if rejected
-                <?php if ($post->post_status === 'rejected'): ?>
-                console.log('[<?php echo esc_js($domain_debug); ?>:UI] Setting current status to rejected');
-                $statusSelect.val('rejected');
-                $('#post-status-display').text('Odmítnuto');
-
-                // Also update any hidden inputs
-                $('input[name="_status"]').val('rejected');
-                console.log('[<?php echo esc_js($domain_debug); ?>:UI] Updated hidden status input to rejected');
-                <?php endif; ?>
-
-                // Handle status change display
-                $statusSelect.on('change', function() {
-                    var selectedStatus = $(this).val();
-                    var displayText = $(this).find('option:selected').text();
-                    console.log('[<?php echo esc_js($domain_debug); ?>:UI] Status changed to:', selectedStatus);
-                    $('#post-status-display').text(displayText);
-
-                    // Ensure hidden input is also updated
-                    $('input[name="_status"]').val(selectedStatus);
-                });
-
-                // Fix for Gutenberg editor
-                if (window.wp && window.wp.data && window.wp.data.select('core/editor')) {
-                    var postStatus = window.wp.data.select('core/editor').getEditedPostAttribute('status');
-                    console.log('[<?php echo esc_js($domain_debug); ?>:UI] Gutenberg editor detected, current status:', postStatus);
-                    if (postStatus === 'rejected') {
-                        $('.editor-post-status .components-select-control__input').val('rejected');
-                        console.log('[<?php echo esc_js($domain_debug); ?>:UI] Updated Gutenberg status to rejected');
-                    }
-                }
-
-                // Intercept form submission to ensure rejected status is preserved
-                $('#post').on('submit', function() {
-                    var currentStatus = $statusSelect.val();
-                    console.log('[<?php echo esc_js($domain_debug); ?>:UI] Form submitting with status:', currentStatus);
-
-                    if (currentStatus === 'rejected') {
-                        // Ensure the POST data includes the rejected status
-                        if (!$('input[name="post_status"][value="rejected"]').length) {
-                            $(this).append('<input type="hidden" name="post_status" value="rejected">');
-                            console.log('[<?php echo esc_js($domain_debug); ?>:UI] Added hidden input for rejected status');
-                        }
-                    }
-                });
-            });
-            </script>
-            <?php
+            $this->asset_manager->enqueue_realizace_status_dropdown();
         }
     }
 

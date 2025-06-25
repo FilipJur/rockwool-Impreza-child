@@ -6,6 +6,7 @@
 import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAresForm } from './features/ares/handler.js';
 import { setupRealizaceManagement } from './features/admin/RealizaceManagement.js';
+import { StatusDropdownManager } from './features/admin/StatusDropdownManager.js';
 
 /**
  * Admin Application Class
@@ -16,7 +17,8 @@ class AdminApp {
     this.modules = {
       businessModal: null,
       aresHandler: null,
-      realizaceManagement: null
+      realizaceManagement: null,
+      statusDropdown: null
     };
     this.isInitialized = false;
 
@@ -72,6 +74,16 @@ class AdminApp {
         console.log('[Admin] Realizace management initialized for admin');
       } catch (error) {
         console.error('[Admin] Failed to initialize realizace management for admin:', error);
+      }
+    }
+
+    // Status dropdown manager for post edit pages
+    if (window.mistrFachmanStatusDropdown) {
+      try {
+        this.modules.statusDropdown = new StatusDropdownManager(window.mistrFachmanStatusDropdown);
+        console.log('[Admin] Status dropdown manager initialized');
+      } catch (error) {
+        console.error('[Admin] Failed to initialize status dropdown manager:', error);
       }
     }
   }

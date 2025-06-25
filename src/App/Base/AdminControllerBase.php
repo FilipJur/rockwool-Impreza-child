@@ -113,9 +113,7 @@ abstract class AdminControllerBase {
         add_filter('manage_' . $this->getPostType() . '_posts_columns', [$this, 'add_admin_columns']);
         add_action('manage_' . $this->getPostType() . '_posts_custom_column', [$this, 'render_custom_columns'], 10, 2);
 
-        // Post editor form customization
-        add_action('admin_footer-post.php', [$this, 'add_rejected_status_to_dropdown']);
-        add_action('admin_footer-post-new.php', [$this, 'add_rejected_status_to_dropdown']);
+        // Post editor form customization (status dropdown now handled by domain asset managers)
 
         // Status transition handling
         // Priority 5: Run validation gatekeeper BEFORE other transition logic
@@ -127,6 +125,10 @@ abstract class AdminControllerBase {
 
         // User profile integration
         add_action('mistr_fachman_user_profile_cards', [$this, 'add_cards_to_user_profile'], 10, 2);
+        
+        // Users table customization - generic across all domains
+        add_filter('manage_users_columns', [$this, 'add_pending_column_to_users_table']);
+        add_action('manage_users_custom_column', [$this, 'render_pending_column_for_users_table'], 10, 3);
     }
 
     /**
@@ -297,6 +299,96 @@ abstract class AdminControllerBase {
             // Delete the transient so it doesn't show again
             delete_transient($transient_key);
         }
+    }
+
+    /**
+     * Add pending posts column to users table
+     */
+    public function add_pending_column_to_users_table(array $columns): array {
+        // Insert the pending column before the "Posts" column if it exists,
+        // otherwise before the "Date" column
+        $insert_before = isset($columns['posts']) ? 'posts' : 'date';
+        $column_key = 'pending_' . $this->getPostType();
+        $column_label = 'Čekající ' . $this->getDomainDisplayName();
+
+        // Find the position to insert the new column
+        $position = array_search($insert_before, array_keys($columns));
+        if ($position !== false) {
+            $columns = array_slice($columns, 0, $position, true) +
+                      [$column_key => $column_label] +
+                      array_slice($columns, $position, null, true);
+        } else {
+            // Fallback: add at the end
+            $columns[$column_key] = $column_label;
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Render pending posts column content for users table
+     */
+    public function render_pending_column_for_users_table(string $output, string $column_name, int $user_id): string {
+        $expected_column = 'pending_' . $this->getPostType();
+        
+        if ($column_name === $expected_column) {
+            return $this->render_pending_posts_column($user_id);
+        }
+        
+        return $output;
+    }
+
+    /**
+     * Render pending posts column content
+     */
+    protected function render_pending_posts_column(int $user_id): string {
+        // Get pending posts count for this user
+        $pending_count = $this->get_user_pending_posts_count($user_id);
+
+        if ($pending_count === 0) {
+            return '<span style="color: #999;">0</span>';
+        }
+
+        // Make the count clickable to filter posts for this user
+        $admin_url = admin_url('edit.php');
+        $filter_url = add_query_arg([
+            'post_type' => $this->getPostType(),
+            'post_status' => 'pending',
+            'author' => $user_id
+        ], $admin_url);
+
+        return sprintf(
+            '<a href="%s" style="color: #d63638; font-weight: 600;" title="Zobrazit čekající %s tohoto uživatele">%d</a>',
+            esc_url($filter_url),
+            strtolower($this->getDomainDisplayName()),
+            $pending_count
+        );
+    }
+
+    /**
+     * Get pending posts count for a specific user
+     */
+    protected function get_user_pending_posts_count(int $user_id): int {
+        static $cache = [];
+        $cache_key = $this->getPostType() . '_' . $user_id;
+
+        // Use static cache to avoid multiple queries for the same user during page load
+        if (isset($cache[$cache_key])) {
+            return $cache[$cache_key];
+        }
+
+        global $wpdb;
+
+        $count = (int) $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*)
+            FROM {$wpdb->posts}
+            WHERE post_type = %s
+            AND post_author = %d
+            AND post_status = 'pending'
+        ", $this->getPostType(), $user_id));
+
+        $cache[$cache_key] = $count;
+        return $count;
     }
 
     /**
