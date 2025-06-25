@@ -36,6 +36,7 @@ WordPress child theme development with enterprise-grade architecture. **TEMPLATE
 - **[Feature Specifications](docs/features.md)** - Detailed feature implementations and technical specs
 - **[Development Patterns](docs/development.md)** - Coding standards, patterns, and implementation guidelines
 - **[Design System](docs/design/)** - Design tokens, components, and visual specifications
+- **[Template System](templates/admin-cards/)** - MVC separation with reusable template components
 
 **Agent Instructions:** Always consult relevant documentation files based on context:
 
@@ -46,6 +47,7 @@ WordPress child theme development with enterprise-grade architecture. **TEMPLATE
 - **Working in `src/App/Shortcodes/`** → Read `docs/architecture.md` for component patterns + `docs/development.md` for template rendering
 - **Working in `src/js/features/`** → Read `docs/development.md` for JavaScript patterns + `docs/architecture.md` for frontend structure
 - **Working with `.scss` files** → Read `docs/design/` for design tokens + `docs/development.md` for Tailwind integration
+- **Working in `templates/admin-cards/`** → Read `templates/admin-cards/` for MVC patterns + CLAUDE.md Active Decisions for template system architecture
 
 ### **Task-Based Triggers**
 - **User/authentication issues** → Read `docs/features.md` registration specs + `docs/development.md` debugging guide
@@ -54,6 +56,7 @@ WordPress child theme development with enterprise-grade architecture. **TEMPLATE
 - **New feature development** → Read `docs/architecture.md` domain structure + `docs/development.md` patterns + `docs/features.md` integration points
 - **Bug fixing/debugging** → Read `docs/development.md` debugging section + relevant domain docs
 - **Refactoring work** → Read `docs/architecture.md` patterns + `docs/development.md` complexity management
+- **Admin card rendering** → Read `templates/admin-cards/` for template structure + CLAUDE.md Active Decisions for MVC separation patterns
 
 ### **High-Level Context Triggers**
 - **"Registration not working"** → Read `docs/features.md` registration flow + `docs/development.md` user testing + check AJAX session handling
