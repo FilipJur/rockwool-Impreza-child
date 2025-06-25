@@ -5,30 +5,24 @@
 
 @use '../../base/variables' as *;
 
-// Post actions container
-.realizace-actions,
-.faktury-actions {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
-  
+// Post actions container (matching original)
+.realizace-actions {
+  padding-top: $spacing-sm;
+  border-top: 1px solid $border-color;
+
   .points-input {
     display: flex;
     align-items: center;
-    gap: $spacing-sm;
+    gap: 8px;
     margin-bottom: $spacing-sm;
-    
+
     label {
-      font-size: $font-size-sm;
-      color: $color-gray-medium;
-      white-space: nowrap;
+      font-weight: 600;
     }
   }
-  
+
   .rejection-input {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-sm;
+    margin-top: $spacing-sm;
   }
 }
 
@@ -52,48 +46,69 @@
   gap: $spacing-sm;
 }
 
-// Action buttons
+// WordPress Admin Button Styling
 .action-approve,
 .action-reject,
 .save-rejection-btn {
   white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.1;
+  padding: 6px 10px;
+  border-radius: 3px;
+  border: 1px solid;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 1px 0 rgba(120,200,230,.5) inset, 0 1px 0 rgba(0,0,0,.15);
+  transition: background-color 0.1s ease-in-out, border-color 0.1s ease-in-out;
   
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  &:focus {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
   }
 }
 
-// Button state styling
-.action-approve {
-  background-color: $color-success;
-  border-color: $color-success;
+// Primary button (Approve)
+.button-primary.action-approve,
+.action-approve.button-primary {
+  background: #2271b1;
+  border-color: #2271b1;
+  color: #fff;
   
   &:hover:not(:disabled) {
-    background-color: darken($color-success, 10%);
-    border-color: darken($color-success, 10%);
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
+  }
+  
+  &:active:not(:disabled) {
+    background: #135e96;
+    border-color: #135e96;
+    box-shadow: inset 0 2px 5px -3px rgba(0,0,0,.5);
   }
 }
 
-.action-reject {
-  background-color: $color-danger;
-  border-color: $color-danger;
-  color: white;
+// Secondary button (Reject)
+.button.action-reject {
+  background: #f6f7f7;
+  border-color: #dcdcde;
+  color: #2c3338;
   
   &:hover:not(:disabled) {
-    background-color: darken($color-danger, 10%);
-    border-color: darken($color-danger, 10%);
+    background: #f0f0f1;
+    border-color: #8c8f94;
+    color: #1d2327;
   }
-}
-
-.save-rejection-btn {
-  background-color: $color-info;
-  border-color: $color-info;
-  color: white;
   
-  &:hover:not(:disabled) {
-    background-color: darken($color-info, 10%);
-    border-color: darken($color-info, 10%);
+  &:active:not(:disabled) {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+    box-shadow: inset 0 2px 5px -3px rgba(0,0,0,.5);
   }
 }
 

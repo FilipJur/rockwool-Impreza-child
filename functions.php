@@ -108,13 +108,7 @@ function impreza_child_inject_user_data()
 add_action('admin_enqueue_scripts', 'impreza_child_enqueue_admin_assets');
 function impreza_child_enqueue_admin_assets()
 {
-	// Only register child theme custom styles for admin (no Tailwind!)
-	wp_enqueue_style(
-		'impreza-child-admin-style',
-		get_stylesheet_directory_uri() . '/style.css',
-		[],
-		'1.0.0'
-	);
+	// Admin doesn't need frontend styles - only specific admin assets should be loaded here
 
 	// Register built admin JavaScript bundle
 	$admin_js_asset_file = get_stylesheet_directory() . '/build/js/admin.asset.php';

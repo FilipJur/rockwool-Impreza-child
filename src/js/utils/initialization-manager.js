@@ -8,9 +8,7 @@
  * @since 1.0.0
  */
 
-import { createLogger } from './logger.js';
-
-const logger = createLogger('InitManager');
+// Simple console logging
 
 /**
  * Initialization Manager Singleton
@@ -26,7 +24,7 @@ class InitializationManager {
     this.instances = new Map();
     
     InitializationManager.instance = this;
-    logger.debug('Initialization manager created');
+    console.log('[InitManager] Initialization manager created');
   }
 
   /**
@@ -36,7 +34,7 @@ class InitializationManager {
    */
   setInitialized(moduleName, instance = null) {
     if (this.initialized.has(moduleName)) {
-      logger.warn(`Module '${moduleName}' was already initialized`);
+      console.warn(`[InitManager] Module '${moduleName}' was already initialized`);
     }
     
     this.initialized.set(moduleName, true);
@@ -45,7 +43,7 @@ class InitializationManager {
       this.instances.set(moduleName, instance);
     }
     
-    logger.debug(`Module '${moduleName}' marked as initialized`);
+    console.log(`[InitManager] Module '${moduleName}' marked as initialized`);
   }
 
   /**
@@ -73,7 +71,7 @@ class InitializationManager {
   setUninitialized(moduleName) {
     this.initialized.delete(moduleName);
     this.instances.delete(moduleName);
-    logger.debug(`Module '${moduleName}' marked as uninitialized`);
+    console.log(`[InitManager] Module '${moduleName}' marked as uninitialized`);
   }
 
   /**
@@ -94,7 +92,7 @@ class InitializationManager {
     const moduleCount = this.initialized.size;
     this.initialized.clear();
     this.instances.clear();
-    logger.debug(`Reset initialization state for ${moduleCount} modules`);
+    console.log(`[InitManager] Reset initialization state for ${moduleCount} modules`);
   }
 
   /**
@@ -121,11 +119,11 @@ class InitializationManager {
    */
   initializeOnce(moduleName, initCallback) {
     if (this.isInitialized(moduleName)) {
-      logger.warn(`Attempted to re-initialize '${moduleName}' - returning existing instance`);
+      console.warn(`[InitManager] Attempted to re-initialize '${moduleName}' - returning existing instance`);
       return this.getInstance(moduleName);
     }
 
-    logger.debug(`Initializing '${moduleName}' for the first time`);
+    console.log(`[InitManager] Initializing '${moduleName}' for the first time`);
     const instance = initCallback();
     this.setInitialized(moduleName, instance);
     
@@ -147,7 +145,7 @@ class InitializationManager {
     }
     
     this.setUninitialized(moduleName);
-    logger.debug(`Cleaned up module '${moduleName}'`);
+    console.log(`[InitManager] Cleaned up module '${moduleName}'`);
   }
 }
 

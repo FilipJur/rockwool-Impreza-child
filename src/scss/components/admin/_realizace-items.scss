@@ -143,6 +143,67 @@
     border-left: 3px solid $color-danger;
   }
   
+  .realizace-header {
+    margin-bottom: $spacing-sm;
+    
+    .realizace-title {
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+      margin-bottom: 4px;
+      
+      strong a {
+        text-decoration: none;
+        color: #000;
+        font-weight: 600;
+        font-size: $font-size-sm;
+        
+        &:hover {
+          color: $color-primary;
+        }
+      }
+    }
+    
+    .realizace-meta {
+      display: flex;
+      gap: $spacing-sm;
+      font-size: $font-size-xs;
+      color: $gray-500;
+      
+      .points-assigned {
+        font-weight: 600;
+        color: $color-success;
+      }
+    }
+  }
+  
+  .realizace-excerpt {
+    margin-bottom: $spacing-sm;
+    font-size: $font-size-sm;
+    color: #000;
+    line-height: 1.4;
+  }
+  
+  .realizace-details {
+    margin-bottom: $spacing-sm;
+    
+    .detail-item {
+      display: flex;
+      margin-bottom: 4px;
+      font-size: $font-size-xs;
+      
+      .detail-label {
+        font-weight: 600;
+        color: $gray-500;
+        min-width: 80px;
+      }
+      
+      .detail-value {
+        color: #000;
+      }
+    }
+  }
+  
   .item-header {
     display: flex;
     justify-content: space-between;
@@ -179,22 +240,53 @@
   }
   
   .item-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-    gap: 4px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
     margin-bottom: $spacing-sm;
     
-    .gallery-image {
-      aspect-ratio: 1;
-      border-radius: $border-radius;
-      overflow: hidden;
+    .gallery-thumb {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid $border-color;
       background: $color-gray-bg;
-      
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
     }
+    
+    .gallery-more {
+      font-size: $font-size-xs;
+      color: $gray-500;
+      background: $color-gray-bg;
+      padding: 2px 6px;
+      border-radius: 12px;
+      margin-left: 4px;
+    }
+  }
+}
+
+// Gallery component (used in templates)
+.realizace-gallery {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+
+  .gallery-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid $border-color;
+    background: $color-gray-bg;
+  }
+
+  .gallery-more {
+    font-size: $font-size-xs;
+    color: $gray-500;
+    background: $color-gray-bg;
+    padding: 2px 6px;
+    border-radius: 12px;
+    margin-left: 4px;
   }
 }

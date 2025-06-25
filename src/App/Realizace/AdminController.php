@@ -391,9 +391,8 @@ class AdminController extends AdminControllerBase {
      * Initialize AJAX hooks
      */
     protected function init_ajax_hooks(): void {
-        add_action('wp_ajax_mistr_fachman_realizace_quick_action', [$this, 'handle_quick_action_ajax']);
-        add_action('wp_ajax_mistr_fachman_bulk_approve_realizace', [$this, 'handle_bulk_approve_ajax']);
-        add_action('wp_ajax_mistr_fachman_update_acf_field', [$this, 'handle_update_acf_field_ajax']);
+        // Call parent to get proper dynamic hook registration with debugging
+        parent::init_ajax_hooks();
     }
 
 
@@ -500,33 +499,10 @@ class AdminController extends AdminControllerBase {
      * Handle bulk approve AJAX action with improved points collection
      */
     public function handle_bulk_approve_ajax(): void {
-        error_log('[REALIZACE:AJAX] Bulk approve called');
-
-        // Verify nonce and permissions
-        check_ajax_referer('mistr_fachman_bulk_approve', 'nonce');
-
-        if (!current_user_can('edit_posts')) {
-            wp_send_json_error(['message' => 'Insufficient permissions']);
-        }
-
-        $user_id = (int)($_POST['user_id'] ?? 0);
-
-        if (!$user_id || !get_userdata($user_id)) {
-            wp_send_json_error(['message' => 'Invalid user']);
-        }
-
-        try {
-            $approved_count = $this->process_bulk_approve($user_id);
-
-            wp_send_json_success([
-                'message' => sprintf('Schváleno %d realizací', $approved_count),
-                'approved_count' => $approved_count
-            ]);
-
-        } catch (\Exception $e) {
-            error_log('[REALIZACE:AJAX] Bulk approve exception: ' . $e->getMessage());
-            wp_send_json_error(['message' => 'Chyba při hromadném schvalování: ' . $e->getMessage()]);
-        }
+        error_log('[REALIZACE:AJAX] Bulk approve called - delegating to base class');
+        
+        // Delegate to base class which has correct nonce verification
+        parent::handle_bulk_approve_ajax();
     }
 
     /**

@@ -67,17 +67,25 @@ export class AdminManagementBase {
    * Uses event delegation for better performance
    */
   setupEventListeners() {
+    console.log(`[${this.getDomainName()}] Setting up event listeners...`);
+    
     // Quick action buttons (approve/reject)
     document.addEventListener('click', this.handleQuickAction);
+    console.log(`[${this.getDomainName()}] ✅ Quick action event listener added`);
     
     // Bulk actions
     document.addEventListener('click', this.handleBulkAction);
+    console.log(`[${this.getDomainName()}] ✅ Bulk action event listener added`);
     
     // Save rejection reason
     document.addEventListener('click', this.handleSaveRejection);
+    console.log(`[${this.getDomainName()}] ✅ Save rejection event listener added`);
     
     // Section toggle (collapsible sections)
     document.addEventListener('click', this.handleSectionToggle);
+    console.log(`[${this.getDomainName()}] ✅ Section toggle event listener added`);
+    
+    console.log(`[${this.getDomainName()}] All event listeners registered successfully`);
   }
 
   /**
@@ -165,8 +173,13 @@ export class AdminManagementBase {
    * @param {Event} event - Click event
    */
   async handleBulkAction(event) {
+    console.log('[AdminManagementBase] handleBulkAction called, event target:', event.target);
     const button = event.target.closest('.bulk-approve-btn, .bulk-reject-btn');
-    if (!button) return;
+    console.log('[AdminManagementBase] Found button:', button);
+    if (!button) {
+      console.log('[AdminManagementBase] No bulk action button found, ignoring click');
+      return;
+    }
 
     event.preventDefault();
     
@@ -191,11 +204,16 @@ export class AdminManagementBase {
     button.textContent = messages.processing || 'Zpracovává se...';
 
     try {
-      const response = await this.makeAjaxRequest(this.getBulkActionEndpoint(), {
+      const requestData = {
         user_id: userId,
-        action: action,
+        bulk_action: action,
         nonce: this.getNonce('bulk_approve')
-      });
+      };
+      
+      console.log('[AdminManagementBase] Bulk action request data:', requestData);
+      console.log('[AdminManagementBase] Endpoint:', this.getBulkActionEndpoint());
+      
+      const response = await this.makeAjaxRequest(this.getBulkActionEndpoint(), requestData);
 
       if (response.success) {
         this.showNotification(response.data.message, 'success');
@@ -314,6 +332,10 @@ export class AdminManagementBase {
       throw new Error('AJAX URL not available');
     }
 
+    console.log('[AJAX:DEBUG] Making request to:', ajaxUrl);
+    console.log('[AJAX:DEBUG] Action:', action);
+    console.log('[AJAX:DEBUG] Data:', data);
+
     const formData = new FormData();
     formData.append('action', action);
     
@@ -323,17 +345,30 @@ export class AdminManagementBase {
       }
     });
 
+    // Log all FormData entries
+    console.log('[AJAX:DEBUG] FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      console.log(`[AJAX:DEBUG]   ${key}: ${value}`);
+    }
+
     const response = await fetch(ajaxUrl, {
       method: 'POST',
       body: formData,
       credentials: 'same-origin'
     });
 
+    console.log('[AJAX:DEBUG] Response status:', response.status);
+    console.log('[AJAX:DEBUG] Response headers:', [...response.headers.entries()]);
+
     if (!response.ok) {
+      const responseText = await response.text();
+      console.error('[AJAX:DEBUG] Error response body:', responseText);
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    console.log('[AJAX:DEBUG] Response JSON:', result);
+    return result;
   }
 
   /**

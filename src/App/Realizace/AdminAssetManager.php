@@ -49,9 +49,15 @@ class AdminAssetManager {
     }
 
     /**
-     * Enqueue admin scripts
+     * Enqueue admin scripts (only if not already enqueued by Users)
      */
     private function enqueue_admin_scripts(): void {
+        // Check if theme-admin-js is already enqueued by Users domain
+        if (wp_script_is('theme-admin-js', 'enqueued')) {
+            // Script already loaded by Users - just localize our data
+            return;
+        }
+        
         // Use built admin.js which includes realizace management
         $main_admin_js = get_stylesheet_directory() . '/build/js/admin.js';
         $asset_file = get_stylesheet_directory() . '/build/js/admin.asset.php';
@@ -73,8 +79,11 @@ class AdminAssetManager {
      * Localize admin scripts with AJAX data
      */
     private function localize_admin_scripts(): void {
+        // Localize to whichever script handle exists
+        $script_handle = wp_script_is('theme-admin-js', 'enqueued') ? 'theme-admin-js' : 'mistr-admin-js';
+        
         wp_localize_script(
-            'mistr-admin-js',
+            $script_handle,
             'mistrRealizaceAdmin',
             $this->get_localized_data()
         );
@@ -96,7 +105,7 @@ class AdminAssetManager {
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonces' => [
                 'quick_action' => wp_create_nonce('mistr_fachman_realizace_action'),
-                'bulk_approve' => wp_create_nonce('mistr_fachman_bulk_approve')
+                'bulk_approve' => wp_create_nonce('mistr_fachman_bulk_approve_realizace')
             ],
             'field_names' => [
                 'rejection_reason' => RealizaceFieldService::getRejectionReasonFieldSelector(),

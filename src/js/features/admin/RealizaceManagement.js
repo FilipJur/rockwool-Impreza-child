@@ -10,7 +10,6 @@
 
 import { AdminManagementBase } from './base/AdminManagementBase.js';
 import { AdminConfig } from './base/AdminConfig.js';
-import { realizaceLogger } from '../../utils/logger.js';
 import initManager from '../../utils/initialization-manager.js';
 
 export class RealizaceManagement extends AdminManagementBase {
@@ -180,7 +179,7 @@ export class RealizaceManagement extends AdminManagementBase {
   init() {
     // Prevent double initialization using centralized manager
     if (initManager.isInitialized('realizace-management')) {
-      realizaceLogger.warn('Realizace management already initialized elsewhere');
+      console.warn('[Realizace] Management already initialized elsewhere');
       return;
     }
     
@@ -239,7 +238,7 @@ export class RealizaceManagement extends AdminManagementBase {
    */
   setupRealizaceSpecificEvents() {
     // Add any Realizace-specific event handlers here
-    realizaceLogger.info('Realizace-specific events initialized');
+    console.log('[Realizace] Specific events initialized');
   }
 
   /**
@@ -261,7 +260,7 @@ export class RealizaceManagement extends AdminManagementBase {
  * @returns {Object} Management instance with cleanup method
  */
 export function setupRealizaceManagement(containerSelector = '.realizace-management-modern') {
-  console.log('Setting up realizace management...');
+  console.log('[Realizace] Setting up management...');
 
   const config = {
     containerSelector,
