@@ -27,12 +27,13 @@ abstract class PostTypeManagerBase {
     abstract protected function getPostType(): string;
 
     /**
-     * Get the default points value for this domain
+     * Get the calculated points value for this domain
+     * Can be static (like Realizace) or dynamic (like Faktury)
      * 
      * @param int $post_id Optional post ID for dynamic calculations
-     * @return int Default points value
+     * @return int Calculated points value
      */
-    abstract protected function getDefaultPoints(int $post_id = 0): int;
+    abstract protected function getCalculatedPoints(int $post_id = 0): int;
 
     /**
      * Get the ACF field selector that stores points for this domain (including group field prefix if applicable)
@@ -104,15 +105,15 @@ abstract class PostTypeManagerBase {
         $current_points = $this->get_current_points($post_id);
         
         if ($current_points === 0) {
-            $default_points = $this->getDefaultPoints($post_id);
+            $calculated_points = $this->getCalculatedPoints($post_id);
             
-            if ($default_points > 0) {
-                $this->set_points($post_id, $default_points);
+            if ($calculated_points > 0) {
+                $this->set_points($post_id, $calculated_points);
                 
                 error_log(sprintf(
-                    '[%s:MANAGER] Auto-populated default points: %d for post #%d',
+                    '[%s:MANAGER] Auto-populated calculated points: %d for post #%d',
                     strtoupper($this->getPostType()),
-                    $default_points,
+                    $calculated_points,
                     $post_id
                 ));
             }
@@ -167,7 +168,7 @@ abstract class PostTypeManagerBase {
         return [
             'post_type' => $this->getPostType(),
             'display_name' => $this->getDomainDisplayName(),
-            'default_points' => $this->getDefaultPoints(),
+            'default_points' => $this->getCalculatedPoints(),
             'points_field' => $this->getPointsFieldSelector()
         ];
     }

@@ -42,14 +42,30 @@ abstract class AdminAssetManagerBase {
     abstract protected function getDomainLocalizationData(): array;
 
     /**
-     * Enqueue admin assets
+     * Enqueue admin assets with conditional logic
      */
     public function enqueue_admin_assets(): void {
+        // Only enqueue assets on relevant admin screens
+        if (!$this->is_admin_screen()) {
+            return;
+        }
+        
         // Since admin.js is now globally enqueued in functions.php,
         // we just need to localize scripts when this method is called
         
         $this->enqueue_admin_styles();
         $this->localize_admin_scripts();
+        
+        // Handle domain-specific asset requirements
+        $this->handle_domain_specific_assets();
+    }
+
+    /**
+     * Handle domain-specific asset loading (e.g., status dropdowns)
+     * Override in child classes to implement domain-specific logic
+     */
+    protected function handle_domain_specific_assets(): void {
+        // Default implementation - child classes override for specific behavior
     }
 
     /**

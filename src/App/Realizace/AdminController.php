@@ -41,20 +41,18 @@ if (!defined('ABSPATH')) {
 }
 
 class AdminController extends AdminControllerBase {
+    // Implements getCalculatedPoints() method - replaces legacy getDefaultPoints()
 
     public function __construct(
         private StatusManager $status_manager,
         private AdminCardRendererBase $card_renderer,
         private AdminAssetManager $asset_manager
     ) {
-        error_log('[REALIZACE:ADMIN] AdminController initialized with unified architecture');
 
         // Smart status registration based on WordPress lifecycle
         if (did_action('init')) {
-            error_log('[REALIZACE:ADMIN] Init already done - registering status immediately');
             $this->status_manager->register_rejected_status();
         } else {
-            error_log('[REALIZACE:ADMIN] Registering init hook for status');
             add_action('init', [$this->status_manager, 'register_rejected_status'], 1);
         }
     }
@@ -63,35 +61,20 @@ class AdminController extends AdminControllerBase {
      * Initialize all admin hooks with clear responsibility sections
      */
     public function init_hooks(): void {
-        error_log('[REALIZACE:ADMIN] Initializing unified admin hooks');
-
         // Initialize base class hooks
         $this->init_common_hooks();
 
         // Status management hooks
         $this->status_manager->init_hooks();
 
-        // Asset management hooks
+        // Asset management hooks - asset manager handles its own conditional logic
         add_action('admin_enqueue_scripts', [$this->asset_manager, 'enqueue_admin_assets']);
-
-        // UI customization hooks (status dropdown, etc.)
-        $this->init_ui_hooks();
-
-        error_log('[REALIZACE:ADMIN] All admin hooks initialized');
     }
 
     // ===========================================
     // UI MANAGEMENT SECTION
     // Responsibility: Admin interface customizations
     // ===========================================
-
-    /**
-     * Initialize realizace-specific UI customization hooks
-     */
-    protected function init_ui_hooks(): void {
-        // Status dropdown for post edit pages - use admin_enqueue_scripts hook for proper timing
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_status_dropdown'], 20);
-    }
 
     /**
      * Add custom columns to the admin list view
@@ -185,23 +168,6 @@ class AdminController extends AdminControllerBase {
 
 
 
-    /**
-     * Enqueue status dropdown for realizace post edit pages
-     * Delegates to AdminAssetManager for proper asset management
-     */
-    public function enqueue_status_dropdown(): void {
-        global $post;
-
-        // Only run on post edit pages
-        $screen = get_current_screen();
-        if (!$screen || $screen->base !== 'post') {
-            return;
-        }
-
-        if ($post && $post->post_type === $this->getPostType()) {
-            $this->asset_manager->enqueue_realizace_status_dropdown();
-        }
-    }
 
     /**
      * Handle status transitions for logging and validation
@@ -275,7 +241,7 @@ class AdminController extends AdminControllerBase {
             : $this->get_current_points($post_id);
 
         if ($points_to_award <= 0) {
-            $points_to_award = $this->getDefaultPoints($post_id);
+            $points_to_award = $this->getCalculatedPoints($post_id);
         }
 
         error_log("[REALIZACE:AJAX] Setting points value: {$points_to_award} for post {$post_id}");
@@ -390,9 +356,9 @@ class AdminController extends AdminControllerBase {
         $points_handler = new \MistrFachman\Realizace\PointsHandler();
 
         foreach ($pending_posts as $post_id) {
-            // Business Rule: Bulk approve always uses the default value.
-            $default_points = $this->getDefaultPoints($post_id);
-            $this->set_points($post_id, $default_points);
+            // Business Rule: Bulk approve always uses the calculated value.
+            $calculated_points = $this->getCalculatedPoints($post_id);
+            $this->set_points($post_id, $calculated_points);
 
             // Clear rejection reason
             RealizaceFieldService::setRejectionReason($post_id, '');
@@ -405,11 +371,11 @@ class AdminController extends AdminControllerBase {
 
             if (!is_wp_error($result)) {
                 // AJAX pathway: Award points directly
-                $success = $points_handler->award_points($post_id, $user_id, $default_points);
+                $success = $points_handler->award_points($post_id, $user_id, $calculated_points);
 
                 if ($success) {
                     $approved_count++;
-                    error_log("[REALIZACE:AJAX] Bulk approved post {$post_id} with {$default_points} points via direct method");
+                    error_log("[REALIZACE:AJAX] Bulk approved post {$post_id} with {$calculated_points} points via direct method");
                 } else {
                     error_log("[REALIZACE:AJAX] Failed to award points for bulk approved post {$post_id}");
                 }
@@ -511,9 +477,10 @@ class AdminController extends AdminControllerBase {
     }
 
     /**
-     * Get the default points for realizace (fixed 2500)
+     * Get the calculated points for realizace (fixed 2500)
      */
-    protected function getDefaultPoints(int $post_id = 0): int {
+    protected function getCalculatedPoints(int $post_id = 0): int {
+        // Fixed value for Realizace domain - $post_id parameter not used
         return 2500;
     }
 
@@ -572,6 +539,7 @@ class AdminController extends AdminControllerBase {
      */
     protected function run_pre_publish_validation(\WP_Post $post): array {
         // No specific validation rules for Realizace at this time
+        // $post parameter available for future validation logic
         // Always return success to allow publishing
         return ['success' => true];
     }

@@ -32,9 +32,10 @@ abstract class AdminControllerBase {
     abstract protected function getDomainDisplayName(): string;
 
     /**
-     * Get the default points for this domain
+     * Get the calculated points for this domain
+     * Can be static (like Realizace) or dynamic (like Faktury)
      */
-    abstract protected function getDefaultPoints(int $post_id = 0): int;
+    abstract protected function getCalculatedPoints(int $post_id = 0): int;
 
     /**
      * Get the points field selector (including group field prefix if applicable)
@@ -517,8 +518,8 @@ abstract class AdminControllerBase {
             // SINGLE SOURCE OF TRUTH: Use abstract methods for all domains
             $current_points = $this->get_current_points($post_id);
             if ($current_points === 0) {
-                $default_points = $this->getDefaultPoints($post_id);
-                $this->set_points($post_id, $default_points);
+                $calculated_points = $this->getCalculatedPoints($post_id);
+                $this->set_points($post_id, $calculated_points);
             } else {
                 // Points already set manually - respect the existing value
             }
@@ -621,7 +622,7 @@ abstract class AdminControllerBase {
             'domain' => [
                 'post_type' => $this->getPostType(),
                 'display_name' => $this->getDomainDisplayName(),
-                'default_points' => $this->getDefaultPoints()
+                'default_points' => $this->getCalculatedPoints()
             ]
         ];
     }

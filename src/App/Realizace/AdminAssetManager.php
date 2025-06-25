@@ -76,8 +76,6 @@ class AdminAssetManager extends AdminAssetManagerBase {
      * Enqueue status dropdown for realizace post edit pages
      */
     public function enqueue_realizace_status_dropdown(): void {
-        error_log('[REALIZACE:ASSET] enqueue_realizace_status_dropdown called');
-        
         $this->enqueue_status_dropdown_script([
             'domain' => 'Realizace',
             'postType' => 'realizace',
@@ -86,8 +84,19 @@ class AdminAssetManager extends AdminAssetManagerBase {
             'currentStatus' => get_post()->post_status ?? '',
             'debugPrefix' => 'REALIZACE'
         ]);
+    }
+
+    /**
+     * Handle realizace-specific asset loading
+     */
+    protected function handle_domain_specific_assets(): void {
+        // Handle status dropdown for post edit pages
+        global $post;
         
-        error_log('[REALIZACE:ASSET] enqueue_realizace_status_dropdown completed');
+        $screen = get_current_screen();
+        if ($screen && $screen->base === 'post' && $post && $post->post_type === 'realizace') {
+            $this->enqueue_realizace_status_dropdown();
+        }
     }
 
     /**

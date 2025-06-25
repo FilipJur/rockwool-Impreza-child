@@ -38,9 +38,10 @@ abstract class PointsHandlerBase {
     abstract protected function getDomainDisplayName(): string;
 
     /**
-     * Get the default points for this domain
+     * Get the calculated points for this domain
+     * Can be static (like Realizace) or dynamic (like Faktury)
      */
-    abstract protected function getDefaultPoints(int $post_id = 0): int;
+    abstract protected function getCalculatedPoints(int $post_id = 0): int;
 
     /**
      * Get the ACF field selector that stores points (including group field prefix if applicable)
@@ -95,12 +96,12 @@ abstract class PointsHandlerBase {
         // By this point, get_field() is guaranteed to return the correct, final value from the editor.
         $points_to_award = $this->get_points_to_award($post_id);
         
-        // If the field was empty, populate with default.
+        // If the field was empty, populate with calculated value.
         if ($points_to_award <= 0) {
-            $points_to_award = $this->getDefaultPoints($post_id);
+            $points_to_award = $this->getCalculatedPoints($post_id);
             $this->set_points($post_id, $points_to_award);
             
-            error_log("[{$this->getPostType()}:EDITOR] Auto-populated default points: {$points_to_award} for post {$post_id}");
+            error_log("[{$this->getPostType()}:EDITOR] Auto-populated calculated points: {$points_to_award} for post {$post_id}");
         }
 
         error_log("[{$this->getPostType()}:EDITOR] Processing post editor save for post {$post_id} with {$points_to_award} points");

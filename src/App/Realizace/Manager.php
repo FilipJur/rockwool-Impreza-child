@@ -216,9 +216,10 @@ class Manager extends PostTypeManagerBase {
     }
 
     /**
-     * Get the default points value for realizace (fixed 2500)
+     * Get the calculated points value for realizace (fixed 2500)
      */
-    public function getDefaultPoints(int $post_id = 0): int {
+    public function getCalculatedPoints(int $post_id = 0): int {
+        // Fixed value for Realizace domain - $post_id parameter not used
         return 2500;
     }
 

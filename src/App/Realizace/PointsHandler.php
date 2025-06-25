@@ -40,9 +40,10 @@ class PointsHandler extends PointsHandlerBase {
     }
 
     /**
-     * Get the default points for realizace (fixed 2500)
+     * Get the calculated points for realizace (fixed 2500)
      */
-    protected function getDefaultPoints(int $post_id = 0): int {
+    protected function getCalculatedPoints(int $post_id = 0): int {
+        // Fixed value for Realizace domain - $post_id parameter not used
         return 2500;
     }
 
