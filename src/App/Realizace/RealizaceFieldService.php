@@ -31,12 +31,12 @@ class RealizaceFieldService extends FieldServiceBase {
     /**
      * Field selector constants - Single source of truth
      */
-    private const POINTS_FIELD = 'sprava_a_hodnoceni_realizace_pridelene_body';
-    private const REJECTION_REASON_FIELD = 'sprava_a_hodnoceni_realizace_duvod_zamitnuti';
-    private const GALLERY_FIELD = 'fotky_realizace';
-    private const AREA_FIELD = 'pocet_m2';
-    private const CONSTRUCTION_TYPE_FIELD = 'typ_konstrukce';
-    private const MATERIALS_FIELD = 'pouzite_materialy';
+    private const POINTS_FIELD = 'points_assigned';
+    private const REJECTION_REASON_FIELD = 'rejection_reason';
+    private const GALLERY_FIELD = 'realization_gallery';
+    private const AREA_FIELD = 'area_sqm';
+    private const CONSTRUCTION_TYPE_FIELD = 'construction_type';
+    private const MATERIALS_FIELD = 'materials_used';
 
     /**
      * Get points value for a realizace post

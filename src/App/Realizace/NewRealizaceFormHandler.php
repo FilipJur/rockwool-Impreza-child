@@ -42,7 +42,7 @@ class NewRealizaceFormHandler extends FormHandlerBase {
      * Get the post type slug for this domain
      */
     protected function getPostType(): string {
-        return 'realizace';
+        return 'realization';
     }
 
     /**
@@ -68,36 +68,36 @@ class NewRealizaceFormHandler extends FormHandlerBase {
      */
     protected function saveDomainFields(int $post_id, array $posted_data): void {
         // Save area field
-        if (isset($posted_data['pocet_m2'])) {
-            $area_value = (string)(int)$posted_data['pocet_m2'];
+        if (isset($posted_data['area_sqm'])) {
+            $area_value = (string)(int)$posted_data['area_sqm'];
             $result = RealizaceFieldService::setFieldValue(
                 RealizaceFieldService::getAreaFieldSelector(), 
                 $post_id, 
                 $area_value
             );
-            error_log('[REALIZACE:DEBUG] pocet_m2 field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . $area_value);
+            error_log('[REALIZACE:DEBUG] area_sqm field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . $area_value);
         }
         
         // Save construction type field
-        if (isset($posted_data['typ_konstrukce'])) {
-            $construction_value = sanitize_textarea_field($posted_data['typ_konstrukce']);
+        if (isset($posted_data['construction_type'])) {
+            $construction_value = sanitize_textarea_field($posted_data['construction_type']);
             $result = RealizaceFieldService::setFieldValue(
                 RealizaceFieldService::getConstructionTypeFieldSelector(), 
                 $post_id, 
                 $construction_value
             );
-            error_log('[REALIZACE:DEBUG] typ_konstrukce field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . substr($construction_value, 0, 50) . '...');
+            error_log('[REALIZACE:DEBUG] construction_type field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . substr($construction_value, 0, 50) . '...');
         }
         
         // Save materials field
-        if (isset($posted_data['pouzite_materialy'])) {
-            $materials_value = sanitize_textarea_field($posted_data['pouzite_materialy']);
+        if (isset($posted_data['materials_used'])) {
+            $materials_value = sanitize_textarea_field($posted_data['materials_used']);
             $result = RealizaceFieldService::setFieldValue(
                 RealizaceFieldService::getMaterialsFieldSelector(), 
                 $post_id, 
                 $materials_value
             );
-            error_log('[REALIZACE:DEBUG] pouzite_materialy field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . substr($materials_value, 0, 50) . '...');
+            error_log('[REALIZACE:DEBUG] materials_used field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . substr($materials_value, 0, 50) . '...');
         }
     }
 
@@ -105,7 +105,7 @@ class NewRealizaceFormHandler extends FormHandlerBase {
      * Get the gallery field name from form data
      */
     protected function getGalleryFieldName(): string {
-        return 'fotky_realizace';
+        return 'realization_gallery';
     }
 
     /**

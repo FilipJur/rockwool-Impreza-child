@@ -27,7 +27,7 @@ class AdminAssetManager extends AdminAssetManagerBase {
      * Get the domain-specific script handle prefix
      */
     protected function getScriptHandlePrefix(): string {
-        return 'realizace';
+        return 'realization';
     }
 
     /**
@@ -41,14 +41,14 @@ class AdminAssetManager extends AdminAssetManagerBase {
      * Get domain-specific admin screen IDs where assets should load
      */
     protected function getAdminScreenIds(): array {
-        return ['user-edit', 'profile', 'users', 'post', 'realizace'];
+        return ['user-edit', 'profile', 'users', 'post', 'realization'];
     }
 
     /**
      * Get the domain registry key for this domain
      */
-    protected function getDomainKey(): string {
-        return 'realizace';
+    protected function getPostType(): string {
+        return 'realization';
     }
 
 
@@ -85,7 +85,7 @@ class AdminAssetManager extends AdminAssetManagerBase {
     public function enqueue_realizace_status_dropdown(): void {
         $this->enqueue_status_dropdown_script([
             'domain' => 'Realizace',
-            'postType' => 'realizace',
+            'postType' => 'realization',
             'customStatus' => 'rejected',
             'customStatusLabel' => 'Odmítnuto',
             'currentStatus' => get_post()->post_status ?? '',
@@ -101,7 +101,7 @@ class AdminAssetManager extends AdminAssetManagerBase {
         global $post;
         
         $screen = get_current_screen();
-        if ($screen && $screen->base === 'post' && $post && $post->post_type === 'realizace') {
+        if ($screen && $screen->base === 'post' && $post && $post->post_type === 'realization') {
             $this->enqueue_realizace_status_dropdown();
         }
     }

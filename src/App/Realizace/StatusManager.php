@@ -27,7 +27,7 @@ class StatusManager extends StatusManagerBase {
      * Get the post type slug for this domain
      */
     protected function getPostType(): string {
-        return 'realizace';
+        return 'realization';
     }
 
     /**

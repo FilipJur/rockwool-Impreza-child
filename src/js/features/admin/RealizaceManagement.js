@@ -22,7 +22,7 @@ export class RealizaceManagement extends AdminManagementBase {
     // Ensure we have an AdminConfig instance
     if (!(config instanceof AdminConfig)) {
       const globalData = config.globalData || window.mistrRealizaceAdmin || {};
-      config = AdminConfig.createForDomain('realizace', globalData);
+      config = AdminConfig.createForDomain('realization', globalData);
       
       // Override with any custom options from the original config
       if (config.containerSelector) {
@@ -48,7 +48,7 @@ export class RealizaceManagement extends AdminManagementBase {
    * @returns {string} Domain slug
    */
   getDomainSlug() {
-    return 'realizace';
+    return 'realization';
   }
 
   /**
@@ -57,7 +57,7 @@ export class RealizaceManagement extends AdminManagementBase {
    * @returns {string} Post type (used for AJAX actions)
    */
   getPostType() {
-    return 'realizace';
+    return 'realization';
   }
 
   /**
@@ -69,12 +69,12 @@ export class RealizaceManagement extends AdminManagementBase {
     const globalFieldNames = this.config.globalData?.field_names || {};
     
     return {
-      rejection_reason: globalFieldNames.rejection_reason || 'sprava_a_hodnoceni_realizace_duvod_zamitnuti',
-      points: globalFieldNames.points || 'sprava_a_hodnoceni_realizace_pridelene_body',
-      gallery: globalFieldNames.gallery || 'fotky_realizace',
-      area: globalFieldNames.area || 'pocet_m2',
-      construction_type: globalFieldNames.construction_type || 'typ_konstrukce',
-      materials: globalFieldNames.materials || 'pouzite_materialy'
+      rejection_reason: globalFieldNames.rejection_reason || 'rejection_reason',
+      points: globalFieldNames.points || 'points_assigned',
+      gallery: globalFieldNames.gallery || 'realization_gallery',
+      area: globalFieldNames.area || 'area_sqm',
+      construction_type: globalFieldNames.construction_type || 'construction_type',
+      materials: globalFieldNames.materials || 'materials_used'
     };
   }
 
@@ -170,12 +170,12 @@ export class RealizaceManagement extends AdminManagementBase {
    */
   init() {
     // Prevent double initialization using centralized manager
-    if (initManager.isInitialized('realizace-management')) {
+    if (initManager.isInitialized('realization-management')) {
       console.warn('[Realizace] Management already initialized elsewhere');
       return;
     }
     
-    initManager.setInitialized('realizace-management', this);
+    initManager.setInitialized('realization-management', this);
     super.init();
 
     // Realizace-specific initialization
@@ -240,7 +240,7 @@ export class RealizaceManagement extends AdminManagementBase {
     super.cleanup();
     
     // Clean up using centralized manager
-    initManager.setUninitialized('realizace-management');
+    initManager.setUninitialized('realization-management');
   }
 }
 

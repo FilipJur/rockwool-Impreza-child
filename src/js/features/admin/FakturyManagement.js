@@ -23,7 +23,7 @@ export class FakturyManagement extends AdminManagementBase {
     // Ensure we have an AdminConfig instance
     if (!(config instanceof AdminConfig)) {
       const globalData = config.globalData || window.mistrFakturyAdmin || {};
-      config = AdminConfig.createForDomain('faktury', globalData);
+      config = AdminConfig.createForDomain('invoice', globalData);
       
       // Override with any custom options from the original config
       if (config.containerSelector) {
@@ -49,7 +49,7 @@ export class FakturyManagement extends AdminManagementBase {
    * @returns {string} Domain slug
    */
   getDomainSlug() {
-    return 'faktury';
+    return 'invoice';
   }
 
   /**
@@ -58,7 +58,7 @@ export class FakturyManagement extends AdminManagementBase {
    * @returns {string} Post type (used for AJAX actions)
    */
   getPostType() {
-    return 'faktura';
+    return 'invoice';
   }
 
   /**
@@ -70,12 +70,12 @@ export class FakturyManagement extends AdminManagementBase {
     const globalFieldNames = this.config.globalData?.field_names || {};
     
     return {
-      rejection_reason: globalFieldNames.rejection_reason || 'faktury_duvod_zamitnuti',
-      amount: globalFieldNames.amount || 'faktury_castka',
-      due_date: globalFieldNames.due_date || 'faktury_splatnost',
-      supplier: globalFieldNames.supplier || 'faktury_dodavatel',
-      invoice_number: globalFieldNames.invoice_number || 'faktury_cislo',
-      status: globalFieldNames.status || 'faktury_stav'
+      rejection_reason: globalFieldNames.rejection_reason || 'rejection_reason',
+      amount: globalFieldNames.amount || 'invoice_value',
+      due_date: globalFieldNames.due_date || 'invoice_date',
+      supplier: globalFieldNames.supplier || 'invoice_supplier',
+      invoice_number: globalFieldNames.invoice_number || 'invoice_number',
+      status: globalFieldNames.status || 'invoice_status'
     };
   }
 
@@ -172,12 +172,12 @@ export class FakturyManagement extends AdminManagementBase {
    */
   init() {
     // Prevent double initialization using centralized manager
-    if (initManager.isInitialized('faktury-management')) {
+    if (initManager.isInitialized('invoice-management')) {
       console.warn('[Faktury] Management already initialized elsewhere');
       return;
     }
     
-    initManager.setInitialized('faktury-management', this);
+    initManager.setInitialized('invoice-management', this);
     super.init();
 
     // Faktury-specific initialization
@@ -271,7 +271,7 @@ export class FakturyManagement extends AdminManagementBase {
     super.cleanup();
     
     // Clean up using centralized manager
-    initManager.setUninitialized('faktury-management');
+    initManager.setUninitialized('invoice-management');
   }
 }
 

@@ -30,7 +30,7 @@ class AdminAssetManager extends AdminAssetManagerBase {
      * Get the domain-specific script handle prefix
      */
     protected function getScriptHandlePrefix(): string {
-        return 'faktury';
+        return 'invoice';
     }
 
     /**
@@ -44,14 +44,14 @@ class AdminAssetManager extends AdminAssetManagerBase {
      * Get domain-specific admin screen IDs where assets should load
      */
     protected function getAdminScreenIds(): array {
-        return ['user-edit', 'profile', 'users', 'post', 'faktura'];
+        return ['user-edit', 'profile', 'users', 'post', 'invoice'];
     }
 
     /**
      * Get the domain registry key for this domain
      */
-    protected function getDomainKey(): string {
-        return 'faktury';
+    protected function getPostType(): string {
+        return 'invoice';
     }
 
     /**
@@ -86,10 +86,10 @@ class AdminAssetManager extends AdminAssetManagerBase {
         global $post;
         
         $screen = get_current_screen();
-        if ($screen && $screen->base === 'post' && $post && $post->post_type === 'faktura') {
+        if ($screen && $screen->base === 'post' && $post && $post->post_type === 'invoice') {
             $this->enqueue_status_dropdown_script([
                 'domain'            => 'Faktury',
-                'postType'          => 'faktura',
+                'postType'          => 'invoice',
                 'customStatus'      => 'rejected',
                 'customStatusLabel' => __('Odmítnuto', 'mistr-fachman'),
                 'currentStatus'     => $post->post_status ?? '',

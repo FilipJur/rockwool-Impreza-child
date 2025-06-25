@@ -34,12 +34,12 @@ class FakturaFieldService extends FieldServiceBase {
      * Following Realizace pattern with domain-specific naming
      * Uses full group_field pattern to match Realizace architecture
      */
-    private const POINTS_FIELD = 'sprava_a_hodnoceni_faktura_pridelene_body';
-    private const REJECTION_REASON_FIELD = 'sprava_a_hodnoceni_faktura_duvod_zamitnuti';
-    private const VALUE_FIELD = 'hodnota_faktury';
-    private const FILE_FIELD = 'faktura_soubor';
-    private const INVOICE_NUMBER_ADMIN_FIELD = 'cislo_faktury';
-    private const INVOICE_DATE_ADMIN_FIELD = 'datum_faktury';
+    private const POINTS_FIELD = 'points_assigned';
+    private const REJECTION_REASON_FIELD = 'rejection_reason';
+    private const VALUE_FIELD = 'invoice_value';
+    private const FILE_FIELD = 'invoice_file';
+    private const INVOICE_NUMBER_ADMIN_FIELD = 'invoice_number';
+    private const INVOICE_DATE_ADMIN_FIELD = 'invoice_date';
 
     /**
      * Get points value for a faktura post

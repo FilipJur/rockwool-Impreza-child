@@ -416,15 +416,9 @@ class AdminController extends AdminControllerBase {
      * Get the post type slug for this domain
      */
     protected function getPostType(): string {
-        return 'realizace';
+        return 'realization';
     }
 
-    /**
-     * Get the domain key for DomainRegistry usage
-     */
-    protected function getDomainKey(): string {
-        return 'realizace';
-    }
 
     /**
      * Get the display name for this domain

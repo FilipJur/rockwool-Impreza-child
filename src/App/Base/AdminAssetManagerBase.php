@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MistrFachman\Base;
 
-use MistrFachman\Services\DomainRegistry;
 
 /**
  * Base Admin Asset Manager - Abstract Foundation for Asset Management
@@ -39,10 +38,10 @@ abstract class AdminAssetManagerBase {
     abstract protected function getAdminScreenIds(): array;
 
     /**
-     * Get the domain registry key for this domain
-     * Used to look up consistent naming conventions from DomainRegistry
+     * Get the post type slug for this domain
+     * Used for consistent naming conventions
      */
-    abstract protected function getDomainKey(): string;
+    abstract protected function getPostType(): string;
 
     /**
      * Get domain-specific localized data for scripts
@@ -191,16 +190,14 @@ abstract class AdminAssetManagerBase {
     }
 
     /**
-     * Generate domain-specific nonces
-     * Uses DomainRegistry to ensure consistency between PHP and JavaScript
-     * Prevents Czech language singular/plural mismatches
+     * Generate domain-specific nonces using direct string concatenation
      */
     protected function generateNonces(): array {
-        $domain_key = $this->getDomainKey();
+        $post_type = $this->getPostType();
         
         return [
-            'quick_action' => wp_create_nonce(DomainRegistry::getNonceAction($domain_key, 'quick_action')),
-            'bulk_approve' => wp_create_nonce(DomainRegistry::getNonceAction($domain_key, 'bulk_approve'))
+            'quick_action' => wp_create_nonce("mistr_fachman_{$post_type}_action"),
+            'bulk_approve' => wp_create_nonce("mistr_fachman_bulk_approve_{$post_type}")
         ];
     }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MistrFachman\Base;
 
-use MistrFachman\Services\DomainRegistry;
 
 /**
  * Base Admin Controller - Abstract Foundation
@@ -28,11 +27,6 @@ abstract class AdminControllerBase {
      */
     abstract protected function getPostType(): string;
 
-    /**
-     * Get the domain key for DomainRegistry usage
-     * Used for consistent AJAX action and nonce naming
-     */
-    abstract protected function getDomainKey(): string;
 
     /**
      * Get the display name for this domain
@@ -165,12 +159,11 @@ abstract class AdminControllerBase {
      * Uses DomainRegistry for consistent action naming
      */
     protected function init_ajax_hooks(): void {
-        $domain_key = $this->getDomainKey();
         $post_type = $this->getPostType();
         $domain_debug = strtoupper($post_type);
         
-        $quick_action = DomainRegistry::getAjaxAction($domain_key, 'quick_action');
-        $bulk_action = DomainRegistry::getAjaxAction($domain_key, 'bulk_approve');
+        $quick_action = "mistr_fachman_{$post_type}_quick_action";
+        $bulk_action = "mistr_fachman_bulk_approve_{$post_type}";
         
         error_log("[{$domain_debug}:AJAX] Registering AJAX action: wp_ajax_{$quick_action}");
         error_log("[{$domain_debug}:AJAX] Registering AJAX action: wp_ajax_{$bulk_action}");
@@ -452,49 +445,33 @@ abstract class AdminControllerBase {
     }
 
     /**
-     * Validate domain configuration using DomainRegistry
-     * Logs warnings for any domain configuration issues
+     * Validate domain configuration - simplified without DomainRegistry
+     * Basic validation that post type is properly configured
      */
     protected function validateDomainConfiguration(): void {
-        // Try to find the domain key for this post type
         $post_type = $this->getPostType();
-        $domain_key = DomainRegistry::getDomainByPostType($post_type);
         
-        if ($domain_key === null) {
-            error_log("WARNING: Post type '{$post_type}' not found in DomainRegistry. Consider registering it.");
+        if (empty($post_type)) {
+            error_log("ERROR: Post type is empty or not properly configured");
             return;
         }
         
-        // Validate the domain configuration
-        $validation = DomainRegistry::validateDomain($domain_key);
-        if (!$validation['valid']) {
-            error_log("ERROR: Domain '{$domain_key}' has configuration issues: " . implode(', ', $validation['warnings']));
-        } elseif (!empty($validation['warnings'])) {
-            error_log("WARNING: Domain '{$domain_key}' has warnings: " . implode(', ', $validation['warnings']));
-        }
+        // Log successful validation
+        $domain_debug = strtoupper($post_type);
+        error_log("[{$domain_debug}:CONFIG] Domain configuration validated successfully");
     }
 
     /**
-     * Get nonce action using DomainRegistry if available, fallback to manual construction
+     * Get nonce action using direct string concatenation
      */
     protected function getNonceAction(string $action_type = 'quick_action'): string {
         $post_type = $this->getPostType();
-        $domain_key = DomainRegistry::getDomainByPostType($post_type);
         
-        if ($domain_key !== null) {
-            // Use DomainRegistry for consistent nonce generation
-            return DomainRegistry::getNonceAction($domain_key, $action_type);
-        }
-        
-        // Fallback to manual construction for domains not yet in registry
-        switch ($action_type) {
-            case 'quick_action':
-                return "mistr_fachman_{$post_type}_action";
-            case 'bulk_approve':
-                return "mistr_fachman_bulk_approve_{$post_type}";
-            default:
-                return "mistr_fachman_{$post_type}_{$action_type}";
-        }
+        return match ($action_type) {
+            'quick_action' => "mistr_fachman_{$post_type}_action",
+            'bulk_approve' => "mistr_fachman_bulk_approve_{$post_type}",
+            default => "mistr_fachman_{$post_type}_{$action_type}"
+        };
     }
 
     /**

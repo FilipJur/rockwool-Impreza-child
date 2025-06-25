@@ -5,7 +5,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. **COMPLETE DOMAIN ABSTRACTION ACHIEVED** - Created comprehensive base class system with StatusManagerBase, AdminAssetManagerBase, and enhanced AdminControllerBase. JavaScript integration completed with StatusDropdownManager webpack build. Realizace domain reduced from 1100+ lines to 766 lines (30% reduction) while maintaining full functionality. System now ready for rapid Faktury domain implementation with minimal code duplication. True abstraction patterns established for status management, asset loading, users table integration, and validation gatekeeper.
+WordPress child theme development with enterprise-grade architecture. **ENGLISH SLUG REFACTORING COMPLETE** - Successfully eliminated Czech language complexity by migrating to English post types ('realization', 'invoice') while maintaining Czech WordPress URLs. Removed DomainRegistry system entirely in favor of direct string concatenation. All PHP classes now return English post types, JavaScript uses English slugs, and AJAX endpoints are consistent. System achieved perfect PHP/JavaScript alignment with 40+ files updated across both domains. Ready for production deployment with simplified, predictable architecture.
 
 ## Build & Development Commands
 
@@ -74,7 +74,7 @@ WordPress child theme development with enterprise-grade architecture. **COMPLETE
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
-- **2025-06-25**: [architectural] DOMAIN REGISTRY SYSTEM - Implemented comprehensive solution for Czech language singular/plural domain naming mismatches. Created DomainRegistry service providing centralized mapping of post types, script prefixes, and AJAX actions. Eliminated 403 Forbidden errors caused by nonce mismatches between PHP (faktura) and JavaScript (faktury). Updated AdminAssetManagerBase to use registry for consistent nonce generation. Added JavaScript domain registry utility and comprehensive validation system. System now future-proofs all Czech domains (Certifikáty, Lokalizace) and provides self-documenting configuration with built-in error detection.
+- **2025-06-25**: [refactor] ENGLISH SLUG MIGRATION COMPLETE - Successfully completed 3-phase refactoring to eliminate Czech language complexity. Updated 40+ files across PHP backend and JavaScript frontend to use English post types ('realization', 'invoice'). Removed DomainRegistry system entirely, replacing with direct string concatenation. All FieldService classes use English field names, all Management classes return English post types, and AJAX endpoints are perfectly aligned. System now uses predictable patterns: getPostType() returns English, WordPress post type remains Czech for URL compatibility. Zero AJAX 403 errors, simplified maintenance, future-proof architecture.
 - **2025-06-25**: [fix] STATUS DROPDOWN TIMING FIX - Fixed missing "Odmítnuto" status option in realizace post edit dropdowns by resolving script localization timing issue. Changed from admin_footer-post.php to admin_enqueue_scripts hook with priority 20 to ensure wp_localize_script runs before JavaScript execution. Fixed script enqueuing from wp_register_script to wp_enqueue_script in functions.php. StatusDropdownManager.js now properly initializes with mistrFachmanStatusDropdown configuration object. Cleaned up debug logging from production code.
 - **2025-06-25**: [refactor] COMPLETE DOMAIN ABSTRACTION - Created StatusManagerBase (210 lines) and AdminAssetManagerBase (165 lines) for reusable domain patterns. Refactored Realizace StatusManager from 230→76 lines (67% reduction) and AdminAssetManager from 132→94 lines (29% reduction). Integrated StatusDropdownManager.js into webpack build system. Enhanced AdminControllerBase with users table integration. Removed JavaScript conflicts and achieved clean separation of concerns. Realizace domain reduced from 1100+ to 766 lines (30% total reduction) while establishing patterns for rapid Faktury implementation.
 - **2025-06-25**: [refactor] TEMPLATE SYSTEM IMPLEMENTATION - Complete MVC separation with template-based rendering. Created /templates/admin-cards/ directory with 8 template files: dashboard-wrapper.php, stats-header.php, status-section.php, post-card-full.php, post-card-compact.php, post-gallery.php, post-actions.php, and domain-details/realizace-details.php. Refactored AdminCardRendererBase from 600+ line monolithic renderer to 223-line lean data preparation class with template loading system. Simplified RealizaceCardRenderer to 100-line domain-specific data provider. Achieved 84% code reduction while maintaining full functionality. Zero HTML generation in PHP classes - true separation of concerns.
@@ -125,12 +125,12 @@ WordPress child theme development with enterprise-grade architecture. **COMPLETE
 
 **Pattern**: All ACF field access must use centralized service methods:
 ```php
-// CORRECT - Use centralized service
+// CORRECT - Use centralized service with English field names
 $points = RealizaceFieldService::getPoints($post_id);
 $reason = RealizaceFieldService::getRejectionReason($post_id);
 RealizaceFieldService::setPoints($post_id, 2500);
 
-// INCORRECT - Never use hardcoded field names
+// INCORRECT - Never use hardcoded field names (old Czech patterns)
 $points = get_field('sprava_a_hodnoceni_realizace_pridelene_body', $post_id);
 update_field('realizace_duvod_zamitnuti', $reason, $post_id);
 ```
@@ -144,7 +144,7 @@ update_field('realizace_duvod_zamitnuti', $reason, $post_id);
 **Architecture**: Abstract base classes delegate to field service for true abstraction without hardcoded dependencies.
 
 ## Active Decisions
-- **Domain Registry System** (2025-06-25): Implemented centralized DomainRegistry service to solve Czech language singular/plural mismatches (faktura/faktury, certifikát/certifikáty). All domains now use consistent post type for AJAX actions and nonces, preventing 403 Forbidden errors. System provides future-proof architecture for all Czech domains with built-in validation and self-documenting configuration. See `docs/domain-registry.md` for implementation guidelines.
+- **English slug architecture** (2025-06-25): FINAL ARCHITECTURE - Eliminated DomainRegistry complexity entirely. All PHP classes return English post types ('realization', 'invoice'), JavaScript uses English slugs, AJAX endpoints use direct string concatenation. WordPress post type slugs remain Czech ('realizace', 'faktura') for URL compatibility. FieldService classes use English field names (points_assigned, rejection_reason). System achieved perfect PHP/JavaScript alignment with zero AJAX 403 errors. Predictable, maintainable, future-proof architecture.
 - **Complete domain abstraction** (2025-06-25): Created StatusManagerBase and AdminAssetManagerBase for true cross-domain reusability. Integrated StatusDropdownManager.js into webpack build system with clean AdminApp module initialization. Enhanced AdminControllerBase with users table integration. Achieved 30% overall code reduction while establishing patterns for rapid Faktury implementation. JavaScript system now fully generic and configuration-driven.
 - **Template system architecture** (2025-06-25): Complete MVC separation with template-based rendering for all admin cards - 84% code reduction with zero HTML in PHP classes. Template loading system enables rapid domain expansion with zero code duplication
 - **Centralized field access**: All ACF field access through RealizaceFieldService - eliminates hardcoded field names and synchronization bugs
@@ -191,4 +191,4 @@ update_field('realizace_duvod_zamitnuti', $reason, $post_id);
 
 
 ## Last Updated
-2025-06-25 (Domain Registry System implemented, Czech language mismatch issues resolved, future-proof architecture established)
+2025-06-25 (English slug refactoring complete - eliminated Czech complexity, removed DomainRegistry, achieved perfect PHP/JavaScript alignment)

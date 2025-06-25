@@ -36,7 +36,7 @@ class RealizaceCardRenderer extends AdminCardRendererBase {
      * Get the post type slug for this domain
      */
     protected function getPostType(): string {
-        return 'realizace';
+        return 'realization';
     }
 
     /**

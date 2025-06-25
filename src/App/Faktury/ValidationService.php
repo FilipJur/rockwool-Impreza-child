@@ -104,7 +104,7 @@ class ValidationService {
         
         // Check for existing invoices with same number for this user
         $args = [
-            'post_type' => 'faktura',
+            'post_type' => 'invoice',
             'post_status' => ['publish', 'pending', 'rejected'], // Check all statuses
             'author' => $this->user_id,
             'meta_key' => FakturaFieldService::getInvoiceNumberFieldSelector(),
@@ -138,7 +138,7 @@ class ValidationService {
             "SELECT SUM(meta.meta_value) 
              FROM {$wpdb->posts} p
              JOIN {$wpdb->postmeta} meta ON p.ID = meta.post_id
-             WHERE p.post_type = 'faktura'
+             WHERE p.post_type = 'invoice'
              AND p.post_author = %d
              AND p.post_status = 'publish'
              AND meta.meta_key = %s

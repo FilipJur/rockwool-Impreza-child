@@ -470,7 +470,7 @@ class AdminCardRenderer {
                 COALESCE(SUM(CAST(pm.meta_value AS SIGNED)), 0) as total_points
             FROM {$wpdb->posts} p
             LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = '_realizace_points_awarded')
-            WHERE p.post_type = 'realizace'
+            WHERE p.post_type = 'realization'
             AND p.post_author = %d
             AND p.post_status IN ('pending', 'publish', 'rejected')
             GROUP BY post_status
@@ -513,7 +513,7 @@ class AdminCardRenderer {
      */
     private function get_recent_realizace(int $user_id, int $limit = 5): array {
         $query = new \WP_Query([
-            'post_type' => 'realizace',
+            'post_type' => 'realization',
             'author' => $user_id,
             'post_status' => ['pending', 'publish', 'rejected'],
             'posts_per_page' => $limit,
@@ -535,7 +535,7 @@ class AdminCardRenderer {
      */
     private function get_realizace_grouped_by_status(int $user_id): array {
         $query = new \WP_Query([
-            'post_type' => 'realizace',
+            'post_type' => 'realization',
             'author' => $user_id,
             'post_status' => ['pending', 'publish', 'rejected'],
             'posts_per_page' => -1,
@@ -577,7 +577,7 @@ class AdminCardRenderer {
      */
     private function get_pending_realizace_count(int $user_id): int {
         $query = new \WP_Query([
-            'post_type' => 'realizace',
+            'post_type' => 'realization',
             'author' => $user_id,
             'post_status' => 'pending',
             'posts_per_page' => 1,

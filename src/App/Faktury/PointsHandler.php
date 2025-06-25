@@ -30,7 +30,7 @@ class PointsHandler extends PointsHandlerBase {
      * Get the post type slug for this domain
      */
     protected function getPostType(): string {
-        return 'faktura';
+        return 'invoice';
     }
 
     /**

@@ -239,7 +239,7 @@ class AdminCardRenderer {
      */
     private function get_user_realizace_count(int $user_id): int {
         $query = new \WP_Query([
-            'post_type' => 'realizace',
+            'post_type' => 'realization',
             'author' => $user_id,
             'post_status' => ['pending', 'publish', 'rejected'],
             'posts_per_page' => 1,
@@ -258,7 +258,7 @@ class AdminCardRenderer {
      */
     private function get_pending_realizace_count(int $user_id): int {
         $query = new \WP_Query([
-            'post_type' => 'realizace',
+            'post_type' => 'realization',
             'author' => $user_id,
             'post_status' => 'pending',
             'posts_per_page' => 1,

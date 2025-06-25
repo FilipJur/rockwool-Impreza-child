@@ -108,7 +108,7 @@ class DebugValidator {
             $validation['status'] = $post->post_status;
             $validation['type'] = $post->post_type;
             
-            if ($post->post_type !== 'realizace') {
+            if ($post->post_type !== 'realization') {
                 $validation['issues'][] = "Post is not a realizace (type: {$post->post_type})";
             }
             
@@ -145,7 +145,7 @@ class DebugValidator {
             'plugins_loaded' => did_action('plugins_loaded') > 0,
             'admin_context' => is_admin(),
             'current_hook' => current_action() ?: 'none',
-            'realizace_post_type_exists' => post_type_exists('realizace'),
+            'realizace_post_type_exists' => post_type_exists('realization'),
             'available_statuses_count' => count(get_post_stati()),
             'custom_statuses' => []
         ];
@@ -159,8 +159,8 @@ class DebugValidator {
         }
         
         // Check realizace-specific configuration
-        if (post_type_exists('realizace')) {
-            $realizace_object = get_post_type_object('realizace');
+        if (post_type_exists('realization')) {
+            $realizace_object = get_post_type_object('realization');
             $checks['realizace_post_type_config'] = [
                 'public' => $realizace_object->public,
                 'show_ui' => $realizace_object->show_ui,
@@ -221,7 +221,7 @@ class DebugValidator {
         
         // Get all realizace posts
         $posts = get_posts([
-            'post_type' => 'realizace',
+            'post_type' => 'realization',
             'post_status' => 'any',
             'posts_per_page' => -1,
             'fields' => 'all'

@@ -3,12 +3,11 @@
  * 
  * Centralized configuration management for admin domains.
  * Provides type-safe configuration objects with validation.
- * Uses DomainRegistry for consistent AJAX endpoint naming.
+ * Uses direct string concatenation for AJAX endpoint naming.
  * 
  * @since 1.0.0
  */
 
-import { DomainRegistry } from '../../../utils/domain-registry.js';
 
 export class AdminConfig {
   /**
@@ -86,8 +85,8 @@ export class AdminConfig {
   validateFieldNames(fieldNames) {
     const required = ['rejection_reason'];
     const defaults = {
-      rejection_reason: 'duvod_zamitnuti', // Fallback for backward compatibility
-      points: 'pridelene_body',
+      rejection_reason: 'rejection_reason', // English field names
+      points: 'points_assigned',
       status: 'status'
     };
 
@@ -153,16 +152,16 @@ export class AdminConfig {
 
   /**
    * Validate and normalize endpoints
-   * Uses DomainRegistry to ensure consistent naming with PHP backend
+   * Uses direct string concatenation for consistent naming with PHP backend
    * 
    * @param {Object} endpoints - Endpoints to validate
    * @returns {Object} Validated endpoints
    */
   validateEndpoints(endpoints) {
-    // Use DomainRegistry for consistent AJAX action naming
+    // Use direct string concatenation for AJAX action naming
     const defaults = {
-      quickAction: DomainRegistry.getAjaxAction(this.domain, 'quick_action'),
-      bulkAction: DomainRegistry.getAjaxAction(this.domain, 'bulk_approve'),
+      quickAction: `mistr_fachman_${this.domain}_quick_action`,
+      bulkAction: `mistr_fachman_bulk_approve_${this.domain}`,
       updateField: 'mistr_fachman_update_acf_field'
     };
 
@@ -263,31 +262,30 @@ export class AdminConfig {
 
   /**
    * Create configuration for specific domain
-   * Uses DomainRegistry for consistent endpoint generation
+   * Uses direct string concatenation for consistent endpoint generation
    * 
-   * @param {string} domain - Domain name
+   * @param {string} domain - Domain name (post_type slug: 'realization', 'invoice')
    * @param {Object} globalData - WordPress localized data
    * @returns {AdminConfig} Configured instance
    */
   static createForDomain(domain, globalData = {}) {
-    // Validate domain exists in registry
-    if (!DomainRegistry.isDomainRegistered(domain)) {
-      throw new Error(`Domain '${domain}' not found in DomainRegistry. Available domains: ${Object.keys(DomainRegistry.getAllDomains()).join(', ')}`);
+    // Validate domain is a valid post type slug
+    if (!domain || typeof domain !== 'string') {
+      throw new Error(`Domain must be a valid post type slug (e.g., 'realization', 'invoice')`);
     }
 
-    const jsSlug = DomainRegistry.getJsSlug(domain);
-    
+    // Domain is now the post type slug directly
     const options = {
       globalData,
       fieldNames: globalData.field_names || {},
       messages: globalData.messages || {},
       defaultValues: globalData.default_values || {},
       selectors: {
-        container: `.${jsSlug}-management-modern`
+        container: `.${domain}-management-modern`
       },
       endpoints: {
-        quickAction: DomainRegistry.getAjaxAction(domain, 'quick_action'),
-        bulkAction: DomainRegistry.getAjaxAction(domain, 'bulk_approve')
+        quickAction: `mistr_fachman_${domain}_quick_action`,
+        bulkAction: `mistr_fachman_bulk_approve_${domain}`
       }
     };
 

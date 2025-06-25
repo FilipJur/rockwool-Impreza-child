@@ -44,7 +44,7 @@ class NewFakturyFormHandler extends FormHandlerBase {
      * Get the post type slug for this domain
      */
     protected function getPostType(): string {
-        return 'faktura';
+        return 'invoice';
     }
 
     /**
@@ -59,7 +59,7 @@ class NewFakturyFormHandler extends FormHandlerBase {
      * Faktury-specific field mappings
      */
     protected function mapFormDataToPost(array $posted_data): array {
-        $invoice_value = (int) ($posted_data['hodnota_faktury'] ?? 0);
+        $invoice_value = (int) ($posted_data['invoice_value'] ?? 0);
         return [
             'post_title'   => "Faktura - " . $invoice_value . " Kč - " . date('d.m.Y'),
             'post_content' => '', // Faktury don't need content description
@@ -72,10 +72,10 @@ class NewFakturyFormHandler extends FormHandlerBase {
      */
     protected function saveDomainFields(int $post_id, array $posted_data): void {
         // Save invoice value field (raw user input only)
-        if (isset($posted_data['hodnota_faktury'])) {
-            $value = (int)$posted_data['hodnota_faktury'];
+        if (isset($posted_data['invoice_value'])) {
+            $value = (int)$posted_data['invoice_value'];
             $result = FakturaFieldService::setValue($post_id, $value);
-            error_log('[FAKTURY:DEBUG] hodnota_faktury field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . $value);
+            error_log('[FAKTURY:DEBUG] invoice_value field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . $value);
         }
         
         // Points calculation is handled by PointsHandler ACF hook
@@ -90,7 +90,7 @@ class NewFakturyFormHandler extends FormHandlerBase {
      * Faktury uses single file upload (not gallery like Realizace)
      */
     protected function getGalleryFieldName(): string {
-        return 'faktura_soubor';
+        return 'invoice_file';
     }
 
     /**

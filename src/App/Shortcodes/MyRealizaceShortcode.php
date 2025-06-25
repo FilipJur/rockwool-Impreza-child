@@ -57,7 +57,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 
 		// Query user's realizace posts
 		$query_args = [
-			'post_type' => 'realizace',
+			'post_type' => 'realization',
 			'author' => $user_id,
 			'post_status' => ['pending', 'publish', 'rejected'],
 			'posts_per_page' => (int) $attributes['posts_per_page'],
