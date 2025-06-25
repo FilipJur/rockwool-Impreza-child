@@ -5,7 +5,8 @@
 
 import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAresForm } from './features/ares/handler.js';
-import { setupRealizaceManagement } from './features/admin/realizace-management.js';
+import { setupRealizaceManagement } from './features/admin/RealizaceManagement.js';
+import { adminLogger } from './utils/logger.js';
 
 /**
  * Admin Application Class
@@ -38,7 +39,7 @@ class AdminApp {
     this.initializeModules();
     this.isInitialized = true;
 
-    console.log('Admin application initialized successfully');
+    adminLogger.success('Admin application initialized successfully');
   }
 
   /**
@@ -48,9 +49,9 @@ class AdminApp {
     // Business data modal for user management
     try {
       this.modules.businessModal = setupBusinessModal();
-      console.log('Business data modal initialized');
+      adminLogger.info('Business data modal initialized');
     } catch (error) {
-      console.error('Failed to initialize business data modal:', error);
+      adminLogger.error('Failed to initialize business data modal:', error);
     }
 
     // ARES handler for IČO validation in admin forms (business data modal)
@@ -59,9 +60,9 @@ class AdminApp {
       try {
         // The ARES handler will look for forms containing IČO fields
         this.modules.aresHandler = setupAresForm('.business-data-form, .registration-form, form');
-        console.log('ARES handler initialized for admin');
+        adminLogger.info('ARES handler initialized for admin');
       } catch (error) {
-        console.error('Failed to initialize ARES handler for admin:', error);
+        adminLogger.error('Failed to initialize ARES handler for admin:', error);
       }
     }
 
@@ -69,9 +70,9 @@ class AdminApp {
     if (document.querySelector('.realizace-management-modern')) {
       try {
         this.modules.realizaceManagement = setupRealizaceManagement('.realizace-management-modern');
-        console.log('Realizace management initialized for admin');
+        adminLogger.info('Realizace management initialized for admin');
       } catch (error) {
-        console.error('Failed to initialize realizace management for admin:', error);
+        adminLogger.error('Failed to initialize realizace management for admin:', error);
       }
     }
   }
@@ -107,7 +108,7 @@ class AdminApp {
     });
 
     this.isInitialized = false;
-    console.log('Admin application destroyed');
+    adminLogger.info('Admin application destroyed');
   }
 }
 

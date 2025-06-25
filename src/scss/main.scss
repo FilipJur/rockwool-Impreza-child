@@ -21,9 +21,24 @@ Version:        0.1.0
 @use 'components/file-upload';
 @use 'components/woocommerce';
 @use 'components/user-debug';
-@use 'components/admin-interface';
 @use 'components/business-data-modal';
 @use 'components/ares-form';
+
+// Admin Components (replaces monolithic admin-interface)
+@use 'components/admin/base';
+@use 'components/admin/layout';
+@use 'components/admin/cards';
+@use 'components/admin/status';
+@use 'components/admin/timeline';
+@use 'components/admin/summary';
+@use 'components/admin/admin-actions';
+@use 'components/admin/notifications';
+
+// Domain-Specific Admin Components
+@use 'components/admin/realizace-dashboard';
+@use 'components/admin/realizace-sections';
+@use 'components/admin/realizace-items';
+@use 'components/admin/admin-user-management';
 
 // Utilities
 @use 'utilities/helpers';

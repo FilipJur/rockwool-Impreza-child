@@ -1,0 +1,52 @@
+/**
+ * Admin Layout Components
+ * Grid systems and section layouts
+ */
+
+@use '../../base/variables' as *;
+
+// Grid layout
+.management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $spacing-xl;
+}
+
+// Realizace management modern layout
+.realizace-management-modern {
+  .management-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: $spacing-xl;
+    
+    @media (max-width: 1200px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .management-section {
+    background: $bg-white;
+    border-radius: $border-radius-lg;
+    border: 1px solid $border-color;
+    overflow: hidden;
+  }
+  
+  .section-content {
+    padding: $spacing-xl;
+  }
+}
+
+// Responsive grid adjustments
+@media (max-width: 768px) {
+  .management-grid {
+    grid-template-columns: 1fr;
+    gap: $spacing-md;
+  }
+  
+  .realizace-management-modern {
+    .management-layout {
+      grid-template-columns: 1fr;
+      gap: $spacing-md;
+    }
+  }
+}

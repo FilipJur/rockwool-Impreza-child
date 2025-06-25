@@ -1,0 +1,88 @@
+/**
+ * Admin Timeline Components
+ * Progress indicators, timeline markers, and step flows
+ */
+
+@use '../../base/variables' as *;
+
+// Timeline styles
+.status-timeline {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid $border-color;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  color: $gray-500;
+  font-size: $font-size-sm;
+
+  &.active {
+    color: $color-primary;
+    font-weight: 600;
+
+    .timeline-marker {
+      background: $color-primary;
+    }
+  }
+
+  &.completed {
+    color: $color-info;
+
+    .timeline-marker {
+      background: $color-info;
+    }
+  }
+}
+
+.timeline-marker {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: $border-color;
+  flex-shrink: 0;
+}
+
+// Vertical timeline
+.timeline-vertical {
+  position: relative;
+  padding-left: 24px;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: $border-color;
+  }
+  
+  .timeline-item {
+    position: relative;
+    padding: $spacing-sm 0;
+    
+    .timeline-marker {
+      position: absolute;
+      left: -30px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: $bg-white;
+      border: 2px solid $border-color;
+      z-index: 1;
+    }
+    
+    &.completed .timeline-marker {
+      background: $color-success;
+      border-color: $color-success;
+    }
+    
+    &.active .timeline-marker {
+      background: $color-primary;
+      border-color: $color-primary;
+    }
+  }
+}

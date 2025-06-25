@@ -1,9 +1,18 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+/**
+ * Firebase Configuration
+ * 
+ * Initializes Firebase app for authentication and messaging services.
+ * Used for:
+ * - SMS OTP authentication during user registration
+ * - Future SMS notifications system
+ * 
+ * @package mistr-fachman
+ * @since 1.0.0
+ */
 
-// Your web app's Firebase configuration
+import { initializeApp } from "firebase/app";
+
+// Firebase project configuration
 const firebaseConfig = {
   apiKey: "AIzaSyC4M_V1sb-lwPc_UYF7gqeyoiTa0sFXH5w",
   authDomain: "mistrfachman.firebaseapp.com",

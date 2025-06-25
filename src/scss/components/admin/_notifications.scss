@@ -1,0 +1,183 @@
+/**
+ * Admin Notifications Components
+ * Alert system, notice styling, and notification management
+ */
+
+@use '../../base/variables' as *;
+
+// Realizace Notification Styles
+.realizace-notification {
+  position: relative;
+  margin: $spacing-lg 0;
+  padding: $spacing-md;
+  border-radius: $border-radius;
+  border-left: 4px solid $color-info;
+  background: #f0f9ff;
+
+  &.notice-success {
+    border-left-color: $color-success;
+    background: #f0fdf4;
+
+    p {
+      color: #166534;
+    }
+  }
+
+  &.notice-error {
+    border-left-color: $color-danger;
+    background: #fef2f2;
+
+    p {
+      color: #dc2626;
+    }
+  }
+
+  &.notice-info {
+    border-left-color: $color-info;
+    background: #f0f9ff;
+
+    p {
+      color: #1d4ed8;
+    }
+  }
+  
+  &.notice-warning {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+
+    p {
+      color: #92400e;
+    }
+  }
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+  }
+
+  .notice-dismiss {
+    position: absolute;
+    top: 0;
+    right: $spacing-sm;
+    padding: $spacing-sm;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    &:before {
+      content: '×';
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .screen-reader-text {
+      clip: rect(1px, 1px, 1px, 1px);
+      position: absolute !important;
+      height: 1px;
+      width: 1px;
+      overflow: hidden;
+    }
+  }
+}
+
+// Toast notifications (for JavaScript notifications)
+.toast-notification {
+  position: fixed;
+  top: 32px; // Below WordPress admin bar
+  right: $spacing-xl;
+  z-index: 100000;
+  min-width: 300px;
+  max-width: 500px;
+  padding: $spacing-md;
+  border-radius: $border-radius;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+  
+  &.toast-visible {
+    transform: translateX(0);
+  }
+  
+  &.toast-success {
+    background: #f0fdf4;
+    border-left: 4px solid $color-success;
+    color: #166534;
+  }
+  
+  &.toast-error {
+    background: #fef2f2;
+    border-left: 4px solid $color-danger;
+    color: #dc2626;
+  }
+  
+  &.toast-info {
+    background: #f0f9ff;
+    border-left: 4px solid $color-info;
+    color: #1d4ed8;
+  }
+  
+  &.toast-warning {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    color: #92400e;
+  }
+  
+  .toast-content {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    
+    .toast-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    
+    .toast-message {
+      flex: 1;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+    }
+    
+    .toast-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      opacity: 0.7;
+      padding: 0;
+      font-size: 16px;
+      
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+// Loading notifications
+.loading-notification {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  border-radius: $border-radius;
+  font-size: $font-size-sm;
+  color: #1d4ed8;
+  
+  .loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #bfdbfe;
+    border-top-color: $color-info;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}

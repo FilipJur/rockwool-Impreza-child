@@ -1,0 +1,110 @@
+/**
+ * Admin Actions Component Styles
+ * Semantic CSS classes for post action elements
+ */
+
+@use '../../base/variables' as *;
+
+// Post actions container
+.realizace-actions,
+.faktury-actions {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  
+  .points-input {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+    
+    label {
+      font-size: $font-size-sm;
+      color: $color-gray-medium;
+      white-space: nowrap;
+    }
+  }
+  
+  .rejection-input {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+}
+
+// Input styling
+.quick-points-input {
+  width: 60px !important; // Override WordPress default widths
+  flex-shrink: 0;
+}
+
+.rejection-reason-input {
+  width: 100% !important; // Override WordPress default widths
+  margin-bottom: 5px !important; // Specific spacing for rejection textarea
+  resize: vertical;
+  min-height: 60px;
+}
+
+.rejection-input-wrapper {
+  margin-top: 10px !important; // Specific spacing for rejection section
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+// Action buttons
+.action-approve,
+.action-reject,
+.save-rejection-btn {
+  white-space: nowrap;
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Button state styling
+.action-approve {
+  background-color: $color-success;
+  border-color: $color-success;
+  
+  &:hover:not(:disabled) {
+    background-color: darken($color-success, 10%);
+    border-color: darken($color-success, 10%);
+  }
+}
+
+.action-reject {
+  background-color: $color-danger;
+  border-color: $color-danger;
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background-color: darken($color-danger, 10%);
+    border-color: darken($color-danger, 10%);
+  }
+}
+
+.save-rejection-btn {
+  background-color: $color-info;
+  border-color: $color-info;
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background-color: darken($color-info, 10%);
+    border-color: darken($color-info, 10%);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .realizace-actions,
+  .faktury-actions {
+    .points-input {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $space-xs;
+    }
+  }
+}

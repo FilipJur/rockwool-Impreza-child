@@ -1,0 +1,88 @@
+/**
+ * Admin Base Styles
+ * Common patterns and mixins for admin interface
+ */
+
+@use '../../base/variables' as *;
+
+// Main section styles
+.mistr-user-management-section {
+  margin: $spacing-xl 0;
+  padding: $spacing-xxl;
+  background: $bg-light;
+  border-radius: $border-radius-lg;
+  border: 1px solid $border-color;
+  font-family: inherit;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin: 0 0 $spacing-xxl 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #000;
+}
+
+.title-icon {
+  font-size: 24px;
+}
+
+// Common admin form elements
+.admin-notice {
+  padding: $spacing-md;
+  margin: $spacing-sm 0;
+  border-radius: $border-radius;
+  
+  &.notice-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+  }
+  
+  &.notice-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+  }
+  
+  &.notice-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+  }
+  
+  &.notice-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+  }
+}
+
+// Loading states
+.admin-loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid $color-primary;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

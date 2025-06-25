@@ -24,8 +24,7 @@ if (!defined('ABSPATH')) {
                    class="quick-points-input small-text"
                    placeholder="0"
                    data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
-                   value="<?php echo esc_attr($assigned_points ?: ''); ?>"
-                   style="width: 60px;">
+                   value="<?php echo esc_attr($assigned_points ?: ''); ?>">
             <button type="button"
                     class="button button-primary action-approve"
                     data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
@@ -35,7 +34,7 @@ if (!defined('ABSPATH')) {
             <textarea class="rejection-reason-input"
                       data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
                       placeholder="Důvod zamítnutí..."
-                      rows="2" style="width: 100%; margin-bottom: 5px;"></textarea>
+                      rows="2"></textarea>
             <button type="button"
                     class="button action-reject"
                     data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
@@ -58,18 +57,17 @@ if (!defined('ABSPATH')) {
                class="quick-points-input small-text"
                placeholder="0"
                data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
-               value="<?php echo esc_attr($assigned_points ?: ''); ?>"
-               style="width: 60px;">
+               value="<?php echo esc_attr($assigned_points ?: ''); ?>">
         <button type="button"
                 class="button button-primary action-approve"
                 data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
                 data-action="approve">Schválit</button>
 
-        <div style="margin-top: 10px;">
+        <div class="rejection-input-wrapper">
             <textarea class="rejection-reason-input"
                       data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
                       placeholder="Upravit důvod odmítnutí..."
-                      rows="2" style="width: 100%; margin-bottom: 5px;"><?php echo esc_textarea($rejection_reason); ?></textarea>
+                      rows="2"><?php echo esc_textarea($rejection_reason); ?></textarea>
             <button type="button"
                     class="button save-rejection-btn"
                     data-post-id="<?php echo esc_attr((string)$post->ID); ?>">Uložit důvod</button>

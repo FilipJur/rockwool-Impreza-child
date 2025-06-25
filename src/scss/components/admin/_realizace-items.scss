@@ -1,0 +1,200 @@
+/**
+ * Realizace Items Components
+ * Item layouts, galleries, and display patterns
+ */
+
+@use '../../base/variables' as *;
+
+// Compact Realizace Items
+.realizace-list-compact {
+  .realizace-item-compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    background: $bg-white;
+    margin-bottom: $spacing-sm;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .compact-content {
+      flex: 1;
+
+      .compact-title {
+        margin-bottom: 2px;
+
+        a {
+          text-decoration: none;
+          color: #000;
+          font-weight: 600;
+          font-size: $font-size-sm;
+
+          &:hover {
+            color: $color-primary;
+          }
+        }
+      }
+
+      .compact-meta {
+        display: flex;
+        gap: $spacing-sm;
+        font-size: $font-size-xs;
+        color: $gray-500;
+
+        .compact-points {
+          font-weight: 600;
+          color: $color-success;
+        }
+      }
+    }
+
+    .compact-actions {
+      .button-small {
+        font-size: $font-size-xs;
+        padding: 2px 8px;
+      }
+    }
+  }
+}
+
+// Summary Grid for Overview
+.summary-grid {
+  display: grid;
+  gap: 8px;
+}
+
+// Realizace List with Dynamic Layout
+.realizace-list {
+  display: grid;
+  gap: $spacing-md;
+  grid-template-columns: repeat(3, 1fr);
+
+  // Dynamic layout based on number of children
+  // Single child - full width
+  &:has(.realizace-item:nth-child(1):nth-last-child(1)) {
+    .realizace-item {
+      grid-column: 1 / span 3;
+    }
+  }
+
+  // Two children - each takes half width
+  &:has(.realizace-item:nth-child(2):nth-last-child(1)) {
+    grid-template-columns: 1fr 1fr;
+    
+    .realizace-item {
+      grid-column: span 1;
+    }
+  }
+
+  // Fallback for browsers without :has() support
+  @supports not (selector(:has(*))) {
+    // Single child fallback
+    .realizace-item:only-child {
+      grid-column: 1 / span 3;
+    }
+    
+    // Two children fallback - split the 3-column grid evenly
+    .realizace-item:first-child:nth-last-child(2) {
+      grid-column: 1 / 2;
+    }
+    
+    .realizace-item:first-child:nth-last-child(2) ~ .realizace-item {
+      grid-column: 2 / 4;
+    }
+  }
+  
+  // Responsive adjustments
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr 1fr;
+    
+    .realizace-item:only-child {
+      grid-column: 1 / span 2;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    
+    .realizace-item {
+      grid-column: 1;
+    }
+  }
+}
+
+.realizace-item {
+  padding: $spacing-md;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background: $bg-white;
+
+  &[data-status="pending"] {
+    border-left: 3px solid #f59e0b;
+  }
+
+  &[data-status="publish"] {
+    border-left: 3px solid $color-success;
+  }
+
+  &[data-status="rejected"] {
+    border-left: 3px solid $color-danger;
+  }
+  
+  .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: $spacing-sm;
+    
+    .item-title {
+      margin: 0;
+      font-size: $font-size-sm;
+      font-weight: 600;
+      
+      a {
+        text-decoration: none;
+        color: #000;
+        
+        &:hover {
+          color: $color-primary;
+        }
+      }
+    }
+  }
+  
+  .item-meta {
+    display: flex;
+    gap: $spacing-sm;
+    font-size: $font-size-xs;
+    color: $color-gray-medium;
+    margin-bottom: $spacing-sm;
+    
+    .meta-points {
+      color: $color-primary;
+      font-weight: 600;
+    }
+  }
+  
+  .item-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 4px;
+    margin-bottom: $spacing-sm;
+    
+    .gallery-image {
+      aspect-ratio: 1;
+      border-radius: $border-radius;
+      overflow: hidden;
+      background: $color-gray-bg;
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+  }
+}

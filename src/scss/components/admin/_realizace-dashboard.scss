@@ -1,0 +1,99 @@
+/**
+ * Realizace Dashboard Components
+ * Domain-specific dashboard styling and stats grid
+ */
+
+@use '../../base/variables' as *;
+
+// Realizace Management Layout
+.realizace-management-modern {
+  margin: $spacing-xl 0;
+
+  .management-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: $spacing-xl;
+    align-items: start;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: 1fr;
+      gap: $spacing-xl;
+    }
+  }
+
+  .management-sidebar {
+    // Remove sticky positioning for cleaner layout
+  }
+
+  .management-main {
+    min-width: 0; // Prevent overflow
+  }
+}
+
+// Consolidated Realizace Dashboard
+.realizace-dashboard {
+  .card-header {
+    padding: $spacing-lg $spacing-xl;
+
+    .card-title {
+      font-size: $font-size-lg;
+      margin-bottom: $spacing-md;
+    }
+  }
+
+  .stats-header {
+    .stats-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: $spacing-md;
+      margin-bottom: $spacing-md;
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background: $bg-white;
+        border-radius: $border-radius;
+        border: 1px solid $border-color;
+        font-size: $font-size-sm;
+
+        .stat-label {
+          color: $gray-500;
+          font-weight: 600;
+        }
+
+        .stat-value {
+          color: #000;
+          font-weight: 700;
+        }
+
+        &.stat-pending .stat-value {
+          color: #f59e0b;
+        }
+
+        &.stat-approved .stat-value {
+          color: $color-success;
+        }
+
+        &.stat-rejected .stat-value {
+          color: $color-danger;
+        }
+
+        &.stat-points .stat-value {
+          color: $color-primary;
+        }
+      }
+    }
+
+    .stats-actions {
+      display: flex;
+      gap: $spacing-sm;
+
+      .button-small {
+        font-size: $font-size-xs;
+        padding: 4px 8px;
+      }
+    }
+  }
+}

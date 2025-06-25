@@ -1,0 +1,142 @@
+/**
+ * Admin Summary Components
+ * Business summary items, verification badges, and data display
+ */
+
+@use '../../base/variables' as *;
+
+// Business summary styles
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: 8px 0;
+  border-bottom: 1px solid $border-color;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  // Modest status coloring
+  &.status-pending {
+    .summary-value {
+      color: #f59e0b;
+      font-weight: 600;
+    }
+  }
+
+  &.status-approved {
+    .summary-value {
+      color: $color-success;
+      font-weight: 600;
+    }
+  }
+
+  &.status-rejected {
+    .summary-value {
+      color: $color-danger;
+      font-weight: 600;
+    }
+  }
+}
+
+.summary-label {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $gray-500;
+  min-width: 80px;
+}
+
+.summary-value {
+  color: #000;
+  font-size: $font-size-sm;
+  flex: 1;
+}
+
+.verification-badge {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: $font-size-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  
+  &.verified {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  &.pending {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  
+  &.error {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+}
+
+// Stats grid for summary data
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.stat-item {
+  text-align: center;
+  padding: $spacing-md;
+  border-radius: $border-radius;
+  background: $bg-light;
+  border: 1px solid $border-color;
+  
+  .stat-number {
+    display: block;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $color-primary;
+    margin-bottom: 4px;
+  }
+  
+  .stat-label {
+    font-size: $font-size-xs;
+    color: $color-gray-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+  
+  // Status-specific coloring
+  &.stat-pending {
+    border-left: 4px solid #f59e0b;
+    
+    .stat-number {
+      color: #f59e0b;
+    }
+  }
+  
+  &.stat-approved {
+    border-left: 4px solid $color-success;
+    
+    .stat-number {
+      color: $color-success;
+    }
+  }
+  
+  &.stat-rejected {
+    border-left: 4px solid $color-danger;
+    
+    .stat-number {
+      color: $color-danger;
+    }
+  }
+  
+  &.stat-points {
+    border-left: 4px solid #8b5cf6;
+    
+    .stat-number {
+      color: #8b5cf6;
+    }
+  }
+}
