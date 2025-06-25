@@ -26,7 +26,7 @@
                       "aria-label": "",
                       "type": "number",
                       "instructions": "Body se vypočítají automaticky z hodnoty faktury. Toto pole je pouze pro audit.",
-                      "required": 0,
+                      "required": 1,
                       "conditional_logic": 0,
                       "wrapper": {
                           "width": "50",
@@ -36,11 +36,11 @@
                       "default_value": "",
                       "min": "",
                       "max": "",
+                      "allow_in_bindings": 1,
                       "placeholder": "",
                       "step": "",
                       "prepend": "",
-                      "append": "",
-                      "readonly": 1
+                      "append": ""
                   },
                   {
                       "key": "field_668d4f7c1a2b6",
@@ -82,7 +82,7 @@
               "min": 1,
               "max": "",
               "placeholder": "",
-              "step": "1",
+              "step": 1,
               "prepend": "",
               "append": "Kč"
           },
@@ -113,7 +113,7 @@
               "aria-label": "",
               "type": "text",
               "instructions": "Vyplní administrátor pro kontrolu duplicity.",
-              "required": 0,
+              "required": 1,
               "conditional_logic": 0,
               "wrapper": {
                   "width": "50",
@@ -121,10 +121,11 @@
                   "id": ""
               },
               "default_value": "",
+              "maxlength": "",
+              "allow_in_bindings": 1,
               "placeholder": "",
               "prepend": "",
-              "append": "",
-              "maxlength": ""
+              "append": ""
           },
           {
               "key": "field_668d4f7c1a2ba",
@@ -133,16 +134,17 @@
               "aria-label": "",
               "type": "date_picker",
               "instructions": "Vyplní administrátor pro kontrolu platnosti.",
-              "required": 0,
+              "required": 1,
               "conditional_logic": 0,
               "wrapper": {
                   "width": "50",
                   "class": "",
                   "id": ""
               },
-              "display_format": "d/m/Y",
+              "display_format": "d\/m\/Y",
               "return_format": "Ymd",
-              "first_day": 1
+              "first_day": 1,
+              "allow_in_bindings": 1
           }
       ],
       "location": [

@@ -1,0 +1,169 @@
+[
+    {
+        "key": "group_668d4f7c1a2b3",
+        "title": "Detaily Faktury",
+        "fields": [
+            {
+                "key": "field_668d4f7c1a2b4",
+                "label": "Správa a hodnocení",
+                "name": "admin_management",
+                "aria-label": "",
+                "type": "group",
+                "instructions": "Tato sekce je určena pouze pro administrátory.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "acf-group-admin-section",
+                    "id": ""
+                },
+                "layout": "block",
+                "sub_fields": [
+                    {
+                        "key": "field_668d4f7c1a2b5",
+                        "label": "Přidělené body (vypočítané)",
+                        "name": "points_assigned",
+                        "aria-label": "",
+                        "type": "number",
+                        "instructions": "Body se vypočítají automaticky z hodnoty faktury. Toto pole je pouze pro audit.",
+                        "required": 1,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "50",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "",
+                        "min": "",
+                        "max": "",
+                        "allow_in_bindings": 1,
+                        "placeholder": "",
+                        "step": "",
+                        "prepend": "",
+                        "append": ""
+                    },
+                    {
+                        "key": "field_668d4f7c1a2b6",
+                        "label": "Důvod zamítnutí",
+                        "name": "rejection_reason",
+                        "aria-label": "",
+                        "type": "textarea",
+                        "instructions": "Pokud fakturu zamítáte, uveďte zde stručný důvod pro uživatele.",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "",
+                        "maxlength": "",
+                        "rows": 3,
+                        "placeholder": "",
+                        "new_lines": ""
+                    }
+                ]
+            },
+            {
+                "key": "field_668d4f7c1a2b7",
+                "label": "Hodnota faktury (CZK)",
+                "name": "invoice_value",
+                "aria-label": "",
+                "type": "number",
+                "instructions": "Uživatelem zadaná hodnota faktury v CZK.",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "min": 1,
+                "max": "",
+                "placeholder": "",
+                "step": 1,
+                "prepend": "",
+                "append": "Kč"
+            },
+            {
+                "key": "field_668d4f7c1a2b8",
+                "label": "Naskenovaná faktura",
+                "name": "invoice_file",
+                "aria-label": "",
+                "type": "file",
+                "instructions": "Soubor faktury nahraný uživatelem.",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "return_format": "id",
+                "library": "all",
+                "min_size": "",
+                "max_size": "10MB",
+                "mime_types": "pdf, jpg, jpeg, png"
+            },
+            {
+                "key": "field_668d4f7c1a2b9",
+                "label": "Číslo faktury (Admin)",
+                "name": "invoice_number",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Vyplní administrátor pro kontrolu duplicity.",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "allow_in_bindings": 1,
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_668d4f7c1a2ba",
+                "label": "Datum faktury (Admin)",
+                "name": "invoice_date",
+                "aria-label": "",
+                "type": "date_picker",
+                "instructions": "Vyplní administrátor pro kontrolu platnosti.",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "display_format": "d/m/Y",
+                "return_format": "Ymd",
+                "first_day": 1,
+                "allow_in_bindings": 1
+            }
+        ],
+        "location": [
+            [
+                {
+                    "param": "post_type",
+                    "operator": "==",
+                    "value": "invoice"
+                }
+            ]
+        ],
+        "menu_order": 0,
+        "position": "normal",
+        "style": "default",
+        "label_placement": "top",
+        "instruction_placement": "label",
+        "hide_on_screen": "",
+        "active": true,
+        "description": "",
+        "show_in_rest": 0
+    }
+]
