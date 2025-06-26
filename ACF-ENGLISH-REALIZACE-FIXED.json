@@ -1,0 +1,178 @@
+[
+  {
+      "key": "group_realization_2025",
+      "title": "Detaily Realizace",
+      "fields": [
+          {
+              "key": "field_realization_admin_group_2025",
+              "label": "Správa a hodnocení",
+              "name": "admin_management",
+              "aria-label": "",
+              "type": "group",
+              "instructions": "Tato sekce je určena pouze pro administrátory.",
+              "required": 0,
+              "conditional_logic": 0,
+              "wrapper": {
+                  "width": "",
+                  "class": "acf-group-admin-section",
+                  "id": ""
+              },
+              "layout": "block",
+              "sub_fields": [
+                  {
+                      "key": "field_realization_points_2025",
+                      "label": "Udělené body",
+                      "name": "realization_points_assigned",
+                      "aria-label": "",
+                      "type": "number",
+                      "instructions": "Zadejte počet bodů, které chcete uživateli za tuto realizaci udělit.",
+                      "required": 0,
+                      "conditional_logic": 0,
+                      "wrapper": {
+                          "width": "50",
+                          "class": "",
+                          "id": ""
+                      },
+                      "default_value": "",
+                      "min": "",
+                      "max": "",
+                      "allow_in_bindings": 1,
+                      "placeholder": "",
+                      "step": "",
+                      "prepend": "",
+                      "append": ""
+                  },
+                  {
+                      "key": "field_realization_rejection_2025",
+                      "label": "Důvod zamítnutí",
+                      "name": "realization_rejection_reason",
+                      "aria-label": "",
+                      "type": "textarea",
+                      "instructions": "Pokud realizaci zamítáte, uveďte zde stručný důvod pro uživatele.",
+                      "required": 0,
+                      "conditional_logic": 0,
+                      "wrapper": {
+                          "width": "",
+                          "class": "",
+                          "id": ""
+                      },
+                      "default_value": "",
+                      "maxlength": "",
+                      "allow_in_bindings": 1,
+                      "rows": 3,
+                      "placeholder": "",
+                      "new_lines": ""
+                  }
+              ]
+          },
+          {
+              "key": "field_realization_gallery_2025",
+              "label": "Fotky z realizace",
+              "name": "realization_gallery",
+              "aria-label": "",
+              "type": "gallery",
+              "instructions": "Fotky nahrané uživatelem z frontend formuláře.",
+              "required": 1,
+              "conditional_logic": 0,
+              "wrapper": {
+                  "width": "",
+                  "class": "",
+                  "id": ""
+              },
+              "return_format": "id",
+              "library": "all",
+              "min": "",
+              "max": "",
+              "min_width": "",
+              "min_height": "",
+              "min_size": "",
+              "max_width": "",
+              "max_height": "",
+              "max_size": "",
+              "mime_types": "",
+              "insert": "append",
+              "preview_size": "large"
+          },
+          {
+              "key": "field_realization_area_2025",
+              "label": "Počet m²",
+              "name": "realization_area_sqm",
+              "aria-label": "",
+              "type": "number",
+              "instructions": "Celková plocha realizace v metrech čtverečních zadaná uživatelem.",
+              "required": 1,
+              "conditional_logic": false,
+              "wrapper": {
+                  "width": "50",
+                  "class": "",
+                  "id": ""
+              },
+              "default_value": "",
+              "min": "",
+              "max": "",
+              "step": "",
+              "placeholder": "",
+              "prepend": "",
+              "append": ""
+          },
+          {
+              "key": "field_realization_construction_2025",
+              "label": "Typy konstrukcí (Text)",
+              "name": "realization_construction_type",
+              "aria-label": "",
+              "type": "textarea",
+              "instructions": "Uživatelem zadané typy konstrukcí jako prostý text.",
+              "required": 0,
+              "conditional_logic": 0,
+              "wrapper": {
+                  "width": "",
+                  "class": "",
+                  "id": ""
+              },
+              "default_value": "",
+              "maxlength": "",
+              "rows": 3,
+              "placeholder": "",
+              "new_lines": ""
+          },
+          {
+              "key": "field_realization_materials_2025",
+              "label": "Použité materiály (Text)",
+              "name": "realization_materials_used",
+              "aria-label": "",
+              "type": "textarea",
+              "instructions": "Uživatelem zadané materiály a množství jako prostý text.",
+              "required": 0,
+              "conditional_logic": false,
+              "wrapper": {
+                  "width": "",
+                  "class": "",
+                  "id": ""
+              },
+              "rows": 5,
+              "default_value": "",
+              "new_lines": "",
+              "maxlength": "",
+              "placeholder": ""
+          }
+      ],
+      "location": [
+          [
+              {
+                  "param": "post_type",
+                  "operator": "==",
+                  "value": "realization"
+              }
+          ]
+      ],
+      "menu_order": 0,
+      "position": "normal",
+      "style": "default",
+      "label_placement": "top",
+      "instruction_placement": "label",
+      "hide_on_screen": "",
+      "active": true,
+      "description": "",
+      "show_in_rest": 0
+  }
+]
