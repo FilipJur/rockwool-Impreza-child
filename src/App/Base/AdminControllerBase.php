@@ -117,10 +117,10 @@ abstract class AdminControllerBase {
     public function init_common_hooks(): void {
         // Common UI customization hooks (generic across all domains)
         $this->init_common_ui_hooks();
-        
+
         // Domain-specific UI customization hooks
         $this->init_ui_hooks();
-        
+
         // AJAX endpoint hooks
         $this->init_ajax_hooks();
     }
@@ -145,7 +145,7 @@ abstract class AdminControllerBase {
 
         // User profile integration
         add_action('mistr_fachman_user_profile_cards', [$this, 'add_cards_to_user_profile'], 10, 2);
-        
+
         // Users table customization - generic across all domains
         add_filter('manage_users_columns', [$this, 'add_pending_column_to_users_table']);
         add_action('manage_users_custom_column', [$this, 'render_pending_column_for_users_table'], 10, 3);
@@ -166,13 +166,13 @@ abstract class AdminControllerBase {
     protected function init_ajax_hooks(): void {
         $post_type = $this->getPostType();
         $domain_debug = strtoupper($post_type);
-        
+
         $quick_action = "mistr_fachman_{$post_type}_quick_action";
         $bulk_action = "mistr_fachman_bulk_approve_{$post_type}";
-        
+
         error_log("[{$domain_debug}:AJAX] Registering AJAX action: wp_ajax_{$quick_action}");
         error_log("[{$domain_debug}:AJAX] Registering AJAX action: wp_ajax_{$bulk_action}");
-        
+
         add_action("wp_ajax_{$quick_action}", [$this, 'handle_quick_action_ajax']);
         add_action("wp_ajax_{$bulk_action}", [$this, 'handle_bulk_approve_ajax']);
         add_action("wp_ajax_mistr_fachman_update_acf_field", [$this, 'handle_update_acf_field_ajax']);
@@ -189,7 +189,7 @@ abstract class AdminControllerBase {
 
         $columns['points'] = 'Přidělené body';
         $columns['status'] = 'Status';
-        
+
         if ($date) {
             $columns['date'] = $date;
         }
@@ -358,11 +358,11 @@ abstract class AdminControllerBase {
      */
     public function render_pending_column_for_users_table(string $output, string $column_name, int $user_id): string {
         $expected_column = 'pending_' . $this->getPostType();
-        
+
         if ($column_name === $expected_column) {
             return $this->render_pending_posts_column($user_id);
         }
-        
+
         return $output;
     }
 
@@ -455,12 +455,12 @@ abstract class AdminControllerBase {
      */
     protected function validateDomainConfiguration(): void {
         $post_type = $this->getPostType();
-        
+
         if (empty($post_type)) {
             error_log("ERROR: Post type is empty or not properly configured");
             return;
         }
-        
+
         // Log successful validation
         $domain_debug = strtoupper($post_type);
         error_log("[{$domain_debug}:CONFIG] Domain configuration validated successfully");
@@ -471,9 +471,9 @@ abstract class AdminControllerBase {
      */
     protected function getNonceAction(string $action_type = 'quick_action'): string {
         $post_type = $this->getPostType();
-        
+
         return match ($action_type) {
-            'quick_action' => "mistr_fachman_{$post_type}_action",
+            'quick_action' => "mistr_fachman_{$post_type}_quick_action",
             'bulk_approve' => "mistr_fachman_bulk_approve_{$post_type}",
             default => "mistr_fachman_{$post_type}_{$action_type}"
         };
@@ -489,7 +489,7 @@ abstract class AdminControllerBase {
         try {
             // Validate domain configuration
             $this->validateDomainConfiguration();
-            
+
             // IMPORTANT: The nonce action *must* match the one registered in the hook.
             $nonce_action = "mistr_fachman_" . $this->getPostType() . "_quick_action";
             error_log("Verifying nonce against action: " . $nonce_action);
@@ -504,7 +504,7 @@ abstract class AdminControllerBase {
             $post_id = (int)($_POST['post_id'] ?? 0);
             // Support both legacy and new parameter names (domain-specific action parameters)
             $post_type = $this->getPostType();
-            $action = sanitize_text_field($_POST['action_type'] ?? $_POST['realizace_action'] ?? $_POST["{$post_type}_action"] ?? '');
+            $action = sanitize_text_field($_POST['action_type'] ?? $_POST['realizace_action'] ?? $_POST["{$post_type}_quick_action"] ?? $_POST["{$post_type}_action"] ?? '');
 
             if (!$post_id || !in_array($action, ['approve', 'reject'])) {
                 throw new \Exception('Invalid parameters');
@@ -543,7 +543,7 @@ abstract class AdminControllerBase {
         $this->validateDomainConfiguration();
         $nonce_action = $this->getNonceAction('bulk_approve');
         $nonce_value = $_POST['nonce'] ?? '';
-        
+
         if (!wp_verify_nonce($nonce_value, $nonce_action)) {
             wp_send_json_error(['message' => 'Invalid nonce']);
             return;
@@ -688,7 +688,7 @@ abstract class AdminControllerBase {
         return [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonces' => [
-                'quick_action' => wp_create_nonce("mistr_fachman_{$this->getPostType()}_action"),
+                'quick_action' => wp_create_nonce("mistr_fachman_{$this->getPostType()}_quick_action"),
                 'bulk_approve' => wp_create_nonce("mistr_fachman_bulk_approve_{$this->getPostType()}")
             ],
             'domain' => [
