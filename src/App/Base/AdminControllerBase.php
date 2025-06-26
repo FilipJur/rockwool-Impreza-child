@@ -133,7 +133,8 @@ abstract class AdminControllerBase {
         add_filter('manage_' . $this->getPostType() . '_posts_columns', [$this, 'add_admin_columns']);
         add_action('manage_' . $this->getPostType() . '_posts_custom_column', [$this, 'render_custom_columns'], 10, 2);
 
-        // Post editor form customization (status dropdown now handled by domain asset managers)
+        // Post editor form customization - Reject button in publish box
+        add_action('post_submitbox_misc_actions', [$this, 'add_reject_button_to_publish_box']);
 
         // Status transition handling
         // Priority 5: Run validation gatekeeper BEFORE other transition logic
@@ -169,12 +170,15 @@ abstract class AdminControllerBase {
 
         $quick_action = "mistr_fachman_{$post_type}_quick_action";
         $bulk_action = "mistr_fachman_bulk_approve_{$post_type}";
+        $editor_reject_action = "mistr_fachman_{$post_type}_editor_reject";
 
         error_log("[{$domain_debug}:AJAX] Registering AJAX action: wp_ajax_{$quick_action}");
         error_log("[{$domain_debug}:AJAX] Registering AJAX action: wp_ajax_{$bulk_action}");
+        error_log("[{$domain_debug}:AJAX] Registering AJAX action: wp_ajax_{$editor_reject_action}");
 
         add_action("wp_ajax_{$quick_action}", [$this, 'handle_quick_action_ajax']);
         add_action("wp_ajax_{$bulk_action}", [$this, 'handle_bulk_approve_ajax']);
+        add_action("wp_ajax_{$editor_reject_action}", [$this, 'handle_editor_reject_ajax']);
         add_action("wp_ajax_mistr_fachman_update_acf_field", [$this, 'handle_update_acf_field_ajax']);
     }
 
@@ -269,6 +273,56 @@ abstract class AdminControllerBase {
                 'class' => 'status-default'
             ]
         };
+    }
+
+    /**
+     * Add context-aware reject/revoke button to post editor publish box
+     */
+    public function add_reject_button_to_publish_box(): void {
+        global $post;
+        
+        if (!$post) {
+            return;
+        }
+
+        // Only show for our specific post types
+        if ($post->post_type !== $this->getPostType()) {
+            return;
+        }
+
+        // Determine button text, style, and behavior based on status
+        $button_text = 'Odmítnout';
+        $button_style = 'background: #d63638; border-color: #b62d2f; color: #fff;'; // Red for reject
+        $button_disabled = '';
+        $action_type = 'reject';
+
+        if ($post->post_status === 'publish') {
+            $button_text = 'Zrušit schválení';
+            $button_style = 'background: #f0ad4e; border-color: #eea236; color: #fff;'; // Orange for revoke
+            $action_type = 'revoke';
+        } elseif ($post->post_status === 'rejected') {
+            $button_text = 'Odmítnuto';
+            $button_style = 'background: #7e8993; border-color: #7e8993; color: #fff; cursor: not-allowed;'; // Grey for rejected
+            $button_disabled = 'disabled';
+            $action_type = 'disabled';
+        }
+
+        // Generate a unique nonce for this action
+        $nonce = wp_create_nonce('mistr_fachman_editor_reject_nonce_' . $post->ID);
+        ?>
+        <div class="misc-pub-section misc-pub-section-reject">
+            <button type="button" 
+                    id="mistr-fachman-reject-button" 
+                    class="button button-large" 
+                    data-post-id="<?php echo esc_attr($post->ID); ?>" 
+                    data-nonce="<?php echo esc_attr($nonce); ?>"
+                    data-action-type="<?php echo esc_attr($action_type); ?>"
+                    style="width: 100%; margin-top: 10px; <?php echo esc_attr($button_style); ?>"
+                    <?php echo $button_disabled; ?>>
+                <?php echo esc_html($button_text); ?>
+            </button>
+        </div>
+        <?php
     }
 
     /**
@@ -653,6 +707,48 @@ abstract class AdminControllerBase {
 
         } catch (\Exception $e) {
             wp_send_json_error(['message' => 'Error updating field: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Handle dedicated editor reject AJAX action
+     */
+    public function handle_editor_reject_ajax(): void {
+        try {
+            $post_id = isset($_POST['post_id']) ? (int)$_POST['post_id'] : 0;
+            $nonce = $_POST['nonce'] ?? '';
+
+            if (!wp_verify_nonce($nonce, 'mistr_fachman_editor_reject_nonce_' . $post_id)) {
+                throw new \Exception('Invalid security token.');
+            }
+
+            if (!current_user_can('edit_post', $post_id)) {
+                throw new \Exception('Insufficient permissions.');
+            }
+
+            $rejection_reason = isset($_POST['reason']) ? sanitize_textarea_field($_POST['reason']) : 'Odmítnuto administrátorem z editoru.';
+
+            // Use the existing field service to set the reason
+            $field_selector = $this->getRejectionReasonFieldSelector();
+            if (function_exists('update_field')) {
+                update_field($field_selector, $rejection_reason, $post_id);
+            } else {
+                update_post_meta($post_id, $field_selector, $rejection_reason);
+            }
+
+            // Update the post status to 'rejected'
+            wp_update_post([
+                'ID' => $post_id,
+                'post_status' => 'rejected',
+            ]);
+
+            wp_send_json_success([
+                'message' => 'Položka byla úspěšně odmítnuta.',
+                'redirect_url' => get_edit_post_link($post_id, 'raw'),
+            ]);
+
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
 

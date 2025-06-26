@@ -62,6 +62,10 @@ final class StatusManager {
         add_action('init', [$this, 'register_custom_status'], 1);
         add_action('wp_loaded', [$this, 'verify_custom_status'], 1);
         add_filter('display_post_states', [$this, 'add_post_state_labels'], 10, 2);
+        
+        // Add custom status to post editor dropdown
+        add_action('admin_footer-post.php', [$this, 'add_custom_status_to_dropdown']);
+        add_action('admin_footer-post-new.php', [$this, 'add_custom_status_to_dropdown']);
     }
 
     /**
@@ -256,5 +260,42 @@ final class StatusManager {
         
         error_log("[{$domain_debug}:STATUS] Validation complete: " . json_encode($diagnostics));
         return $diagnostics;
+    }
+
+    /**
+     * Add custom status to post editor dropdown via JavaScript
+     */
+    public function add_custom_status_to_dropdown(): void {
+        global $post;
+        
+        // Only add to posts of our specific post type
+        if (!$post || $post->post_type !== $this->post_type) {
+            return;
+        }
+        
+        $status_slug = $this->custom_status_slug;
+        $status_label = $this->custom_status_label;
+        $current_status = $post->post_status;
+        
+        ?>
+        <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            // Add custom status to the status dropdown
+            var $statusSelect = $('select[name="post_status"]');
+            if ($statusSelect.length && !$statusSelect.find('option[value="<?php echo esc_js($status_slug); ?>"]').length) {
+                $statusSelect.append('<option value="<?php echo esc_js($status_slug); ?>"><?php echo esc_js($status_label); ?></option>');
+            }
+            
+            // Set the correct status if this post is already rejected
+            <?php if ($current_status === $status_slug): ?>
+            $statusSelect.val('<?php echo esc_js($status_slug); ?>');
+            $('#post-status-display').text('<?php echo esc_js($status_label); ?>');
+            
+            // Also update hidden status input
+            $('input[name="_status"]').val('<?php echo esc_js($status_slug); ?>');
+            <?php endif; ?>
+        });
+        </script>
+        <?php
     }
 }

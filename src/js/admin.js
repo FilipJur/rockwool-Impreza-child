@@ -7,7 +7,6 @@ import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAresForm } from './features/ares/handler.js';
 import { setupRealizaceManagement } from './features/admin/RealizaceManagement.js';
 import { setupFakturyManagement } from './features/admin/FakturyManagement.js';
-import { StatusDropdownManager } from './features/admin/StatusDropdownManager.js';
 
 /**
  * Admin Application Class
@@ -19,8 +18,7 @@ class AdminApp {
       businessModal: null,
       aresHandler: null,
       realizaceManagement: null,
-      fakturyManagement: null,
-      statusDropdown: null
+      fakturyManagement: null
     };
     this.isInitialized = false;
 
@@ -40,6 +38,7 @@ class AdminApp {
 
   setup() {
     this.initializeModules();
+    this.setupEventListeners();
     this.isInitialized = true;
 
     console.log('[Admin] Application initialized successfully');
@@ -95,14 +94,77 @@ class AdminApp {
       }
     }
 
-    // Status dropdown manager for post edit pages
-    if (window.mistrFachmanStatusDropdown) {
-      try {
-        this.modules.statusDropdown = new StatusDropdownManager(window.mistrFachmanStatusDropdown);
-        console.log('[Admin] Status dropdown manager initialized');
-      } catch (error) {
-        console.error('[Admin] Failed to initialize status dropdown manager:', error);
+  }
+
+  /**
+   * Setup event listeners for admin functionality
+   */
+  setupEventListeners() {
+    // Handle reject button clicks in post editor
+    document.body.addEventListener('click', (event) => {
+      if (event.target.id === 'mistr-fachman-reject-button') {
+        event.preventDefault();
+        this.handleEditorRejectClick(event.target);
       }
+    });
+  }
+
+  /**
+   * Handle editor reject button click
+   */
+  async handleEditorRejectClick(button) {
+    const postId = button.dataset.postId;
+    const nonce = button.dataset.nonce;
+    const actionType = button.dataset.actionType; // 'reject', 'revoke', or 'disabled'
+
+    // Don't do anything if button is disabled (already rejected)
+    if (actionType === 'disabled' || button.disabled) {
+      return;
+    }
+
+    const confirmMessage = actionType === 'revoke' 
+      ? 'Opravdu chcete zrušit schválení této položky? Tím se vrátí do stavu "Čeká na schválení" a body budou uživateli odebrány.'
+      : 'Opravdu chcete tuto položku odmítnout?';
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    const reason = prompt('Zadejte prosím důvod pro odmítnutí/zrušení (nepovinné):', '');
+    
+    // Proceed even if the user cancels the prompt or leaves the reason empty
+    if (reason === null) { // User clicked cancel
+      return;
+    }
+
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Zpracovává se...';
+
+    const formData = new FormData();
+    formData.append('action', `mistr_fachman_${window.typenow}_editor_reject`);
+    formData.append('post_id', postId);
+    formData.append('nonce', nonce);
+    formData.append('reason', reason);
+
+    try {
+      const response = await fetch(window.ajaxurl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(data.data.message);
+        window.location.href = data.data.redirect_url;
+      } else {
+        throw new Error(data.data.message);
+      }
+    } catch (error) {
+      alert('Chyba: ' + error.message);
+      button.disabled = false;
+      button.textContent = originalText;
     }
   }
 

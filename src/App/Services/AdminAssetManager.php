@@ -58,15 +58,11 @@ final class AdminAssetManager {
     }
 
     /**
-     * Handle domain-specific asset loading (e.g., status dropdowns)
+     * Handle domain-specific asset loading
      */
     protected function handle_domain_specific_assets(): void {
-        global $post;
-
-        $screen = get_current_screen();
-        if ($screen && $screen->base === 'post' && $post && $post->post_type === $this->config['post_type']) {
-            $this->enqueue_status_dropdown();
-        }
+        // Domain-specific assets can be added here if needed
+        // Status dropdown functionality has been replaced with dedicated reject button
     }
 
     /**
@@ -208,38 +204,6 @@ final class AdminAssetManager {
         ];
     }
 
-    /**
-     * Enqueue status dropdown script with configuration
-     */
-    public function enqueue_status_dropdown(): void {
-        global $post;
-
-        if (!$post || $post->post_type !== $this->config['post_type']) {
-            return;
-        }
-
-        // Ensure admin.js is loaded (contains StatusDropdownManager)
-        $this->enqueue_admin_scripts();
-
-        $script_handle = $this->getActiveScriptHandle() ?? 'theme-admin-js';
-
-        // Prepare status dropdown configuration
-        $status_config = [
-            'domain' => ucfirst($this->config['post_type']),
-            'postType' => $this->config['post_type'],
-            'customStatus' => 'rejected',
-            'customStatusLabel' => 'Odmítnuto',
-            'currentStatus' => $post->post_status ?? '',
-            'debugPrefix' => strtoupper($this->config['post_type'])
-        ];
-
-        // Localize status dropdown configuration
-        wp_localize_script(
-            $script_handle,
-            'mistrFachmanStatusDropdown',
-            $status_config
-        );
-    }
 
     /**
      * Get localized script data for AJAX requests (backward compatibility)
