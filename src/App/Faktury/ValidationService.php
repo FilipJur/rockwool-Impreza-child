@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace MistrFachman\Faktury;
 
-use MistrFachman\Services\DebugLogger;
-
 /**
  * Faktury Validation Service - Business Rules Validation
  *
@@ -42,19 +40,8 @@ class ValidationService {
      * @return bool
      */
     public function isValid(): bool {
-        DebugLogger::log('--- Starting STREAMLINED isValid() Check ---', ['post_id' => $this->post->ID]);
-
         // Only validate the rules that ACF cannot handle: the date and monthly value limits.
-        $check1 = $this->isDateValid();
-        DebugLogger::log('Check 1: isDateValid()', ['result' => $check1]);
-
-        $check2 = $this->isMonthlyLimitOk();
-        DebugLogger::log('Check 2: isMonthlyLimitOk()', ['result' => $check2]);
-
-        $final_result = $check1 && $check2;
-        DebugLogger::log('--- Final STREAMLINED isValid() Result ---', ['result' => $final_result]);
-
-        return $final_result;
+        return $this->isDateValid() && $this->isMonthlyLimitOk();
     }
 
 
@@ -65,45 +52,27 @@ class ValidationService {
      */
     public function isDateValid(): bool {
         $invoice_date_str = FakturaFieldService::getInvoiceDate($this->post->ID);
-        $current_year = date('Y');
-        
-        DebugLogger::log('isDateValid() - Date validation:', [
-            'invoice_date_str' => $invoice_date_str,
-            'current_year' => $current_year,
-            'is_empty' => empty($invoice_date_str)
-        ]);
         
         // If no date is set yet, that's OK (admin will fill it)
         if (empty($invoice_date_str)) {
-            DebugLogger::log('isDateValid() - No date set, returning true');
             return true;
         }
-        
-        $invoice_year = '';
         
         // ACF date picker returns Ymd format (20250625)
         if (strlen($invoice_date_str) === 8) {
             $invoice_year = substr($invoice_date_str, 0, 4);
-            DebugLogger::log('isDateValid() - Ymd format detected', ['invoice_year' => $invoice_year]);
         } else {
             // Try to parse other date formats
             $date = \DateTime::createFromFormat('Y-m-d', $invoice_date_str);
             if (!$date) {
-                DebugLogger::log('isDateValid() - Invalid date format, returning false');
                 return false; // Invalid date format
             }
             $invoice_year = $date->format('Y');
-            DebugLogger::log('isDateValid() - Y-m-d format detected', ['invoice_year' => $invoice_year]);
         }
         
-        $is_valid = $invoice_year === $current_year;
-        DebugLogger::log('isDateValid() - Final result:', [
-            'invoice_year' => $invoice_year,
-            'current_year' => $current_year,
-            'is_valid' => $is_valid
-        ]);
+        $current_year = date('Y');
         
-        return $is_valid;
+        return $invoice_year === $current_year;
     }
     
     /**
@@ -115,15 +84,8 @@ class ValidationService {
     public function isInvoiceNumberUnique(): bool {
         $invoice_number = FakturaFieldService::getInvoiceNumber($this->post->ID);
         
-        DebugLogger::log('isInvoiceNumberUnique() - Starting check:', [
-            'invoice_number' => $invoice_number,
-            'is_empty' => empty($invoice_number),
-            'user_id' => $this->user_id
-        ]);
-        
         // If no invoice number is set yet, that's OK (admin will fill it)
         if (empty($invoice_number)) {
-            DebugLogger::log('isInvoiceNumberUnique() - No invoice number set, returning true');
             return true;
         }
         
@@ -139,15 +101,7 @@ class ValidationService {
             'posts_per_page' => 1 // We only need to know if any exist
         ];
         
-        DebugLogger::log('isInvoiceNumberUnique() - Query args:', $args);
-        
         $query = new \WP_Query($args);
-        
-        DebugLogger::log('isInvoiceNumberUnique() - Query results:', [
-            'post_count' => $query->post_count,
-            'found_posts' => $query->found_posts,
-            'is_unique' => $query->post_count === 0
-        ]);
         
         // Return true if no duplicates found
         return $query->post_count === 0;
@@ -167,18 +121,9 @@ class ValidationService {
         $current_value = FakturaFieldService::getValue($this->post->ID);
         $invoice_date_str = FakturaFieldService::getInvoiceDate($this->post->ID);
 
-        DebugLogger::log('isMonthlyLimitOk() - Starting check:', [
-            'limit' => $limit,
-            'current_value' => $current_value,
-            'invoice_date_str' => $invoice_date_str,
-            'user_id' => $this->user_id,
-            'post_id' => $this->post->ID
-        ]);
-
         // If no invoice date is set, we cannot check the limit. Assume it's ok for now.
         // This will be caught by the required fields check later.
         if (empty($invoice_date_str)) {
-            DebugLogger::log('isMonthlyLimitOk() - No invoice date set, returning true');
             return true;
         }
 
@@ -190,20 +135,8 @@ class ValidationService {
         $start_date = $year . $month . '01';
         $end_date = $year . $month . '31';
 
-        DebugLogger::log('isMonthlyLimitOk() - Date parsing:', [
-            'year' => $year,
-            'month' => $month,
-            'start_date' => $start_date,
-            'end_date' => $end_date
-        ]);
-
         $value_meta_key = FakturaFieldService::getValueFieldSelector();
         $date_meta_key = FakturaFieldService::getInvoiceDateFieldSelector();
-
-        DebugLogger::log('isMonthlyLimitOk() - Meta keys:', [
-            'value_meta_key' => $value_meta_key,
-            'date_meta_key' => $date_meta_key
-        ]);
 
         $total_approved_this_month = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT SUM(value_meta.meta_value)
@@ -223,18 +156,7 @@ class ValidationService {
             $end_date
         ));
 
-        $total_with_current = $total_approved_this_month + $current_value;
-        $is_within_limit = $total_with_current <= $limit;
-
-        DebugLogger::log('isMonthlyLimitOk() - Final calculation:', [
-            'total_approved_this_month' => $total_approved_this_month,
-            'current_value' => $current_value,
-            'total_with_current' => $total_with_current,
-            'limit' => $limit,
-            'is_within_limit' => $is_within_limit
-        ]);
-
-        return $is_within_limit;
+        return ($total_approved_this_month + $current_value) <= $limit;
     }
 
     /**

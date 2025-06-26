@@ -6,7 +6,6 @@ namespace MistrFachman\Faktury;
 
 use MistrFachman\Base\AdminControllerBase;
 use MistrFachman\Base\AdminCardRendererBase;
-use MistrFachman\Services\DebugLogger;
 
 /**
  * Faktury Admin Controller - Unified Admin Interface Controller
@@ -203,43 +202,26 @@ class AdminController extends AdminControllerBase {
      * Runs before the post is saved to database
      */
     public function gatekeeper_validation(array $data, array $postarr): array {
-        DebugLogger::log('GATEKEEPER VALIDATION HOOK TRIGGERED', [
-            'post_type' => $data['post_type'],
-            'post_status' => $data['post_status'],
-            'post_id' => $postarr['ID'] ?? 'NEW_POST'
-        ]);
-
         // Only run on our specific post type and when trying to publish
         if ($data['post_type'] !== $this->getPostType() || $data['post_status'] !== 'publish') {
-            DebugLogger::log('Exiting gatekeeper: Not a faktura post or not trying to publish.');
             return $data;
         }
 
         // Don't run on new posts being created, only on updates
         if (empty($postarr['ID'])) {
-            DebugLogger::log('Exiting gatekeeper: New post creation.');
             return $data;
         }
 
         $post = get_post($postarr['ID']);
         if (!$post) {
-            DebugLogger::log('Exiting gatekeeper: Post not found.');
             return $data;
         }
 
-        DebugLogger::log('Post object retrieved for gatekeeper validation.', [
-            'post_id' => $post->ID,
-            'current_status' => $post->post_status
-        ]);
-
         // Run our validation logic
-        DebugLogger::log('Starting gatekeeper validation...');
         $validator = new ValidationService($post);
         $is_valid = $validator->isValid();
-        DebugLogger::log('Gatekeeper validation complete.', ['is_valid' => $is_valid]);
 
         if (!$is_valid) {
-            DebugLogger::log('GATEKEEPER VALIDATION FAILED. Blocking publication.');
             // Validation FAILED. Block the status change.
             $data['post_status'] = $post->post_status; // Revert to original status
 
@@ -252,8 +234,6 @@ class AdminController extends AdminControllerBase {
                 ],
                 30 // Expires in 30 seconds
             );
-        } else {
-            DebugLogger::log('GATEKEEPER VALIDATION PASSED. Allowing publication.');
         }
 
         return $data;
