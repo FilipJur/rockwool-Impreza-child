@@ -6,6 +6,7 @@ namespace MistrFachman\Faktury;
 
 use MistrFachman\Base\AdminControllerBase;
 use MistrFachman\Base\AdminCardRendererBase;
+use MistrFachman\Services\DebugLogger;
 
 /**
  * Faktury Admin Controller - Unified Admin Interface Controller
@@ -59,6 +60,12 @@ class AdminController extends AdminControllerBase {
 
         // Asset management hooks - asset manager handles its own conditional logic
         add_action('admin_enqueue_scripts', [$this->asset_manager, 'enqueue_admin_assets']);
+
+        // Gatekeeper validation hook - blocks invalid posts from being published
+        add_filter('wp_insert_post_data', [$this, 'gatekeeper_validation'], 10, 2);
+        
+        // Display gatekeeper validation notices
+        add_action('admin_notices', [$this, 'display_gatekeeper_validation_notices']);
 
         // AJAX hooks
         $this->init_ajax_hooks();
@@ -191,6 +198,84 @@ class AdminController extends AdminControllerBase {
         return ['success' => true];
     }
 
+    /**
+     * Gatekeeper validation - blocks invalid posts from being published
+     * Runs before the post is saved to database
+     */
+    public function gatekeeper_validation(array $data, array $postarr): array {
+        DebugLogger::log('GATEKEEPER VALIDATION HOOK TRIGGERED', [
+            'post_type' => $data['post_type'],
+            'post_status' => $data['post_status'],
+            'post_id' => $postarr['ID'] ?? 'NEW_POST'
+        ]);
+
+        // Only run on our specific post type and when trying to publish
+        if ($data['post_type'] !== $this->getPostType() || $data['post_status'] !== 'publish') {
+            DebugLogger::log('Exiting gatekeeper: Not a faktura post or not trying to publish.');
+            return $data;
+        }
+
+        // Don't run on new posts being created, only on updates
+        if (empty($postarr['ID'])) {
+            DebugLogger::log('Exiting gatekeeper: New post creation.');
+            return $data;
+        }
+
+        $post = get_post($postarr['ID']);
+        if (!$post) {
+            DebugLogger::log('Exiting gatekeeper: Post not found.');
+            return $data;
+        }
+
+        DebugLogger::log('Post object retrieved for gatekeeper validation.', [
+            'post_id' => $post->ID,
+            'current_status' => $post->post_status
+        ]);
+
+        // Run our validation logic
+        DebugLogger::log('Starting gatekeeper validation...');
+        $validator = new ValidationService($post);
+        $is_valid = $validator->isValid();
+        DebugLogger::log('Gatekeeper validation complete.', ['is_valid' => $is_valid]);
+
+        if (!$is_valid) {
+            DebugLogger::log('GATEKEEPER VALIDATION FAILED. Blocking publication.');
+            // Validation FAILED. Block the status change.
+            $data['post_status'] = $post->post_status; // Revert to original status
+
+            // Set a transient to show the admin a persistent error notice.
+            set_transient(
+                'domain_validation_error_' . get_current_user_id(),
+                [
+                    'message' => $validator->getValidationMessage(),
+                    'post_title' => $post->post_title
+                ],
+                30 // Expires in 30 seconds
+            );
+        } else {
+            DebugLogger::log('GATEKEEPER VALIDATION PASSED. Allowing publication.');
+        }
+
+        return $data;
+    }
+
+    /**
+     * Display gatekeeper validation error notices
+     */
+    public function display_gatekeeper_validation_notices(): void {
+        $error_data = get_transient('domain_validation_error_' . get_current_user_id());
+        
+        if ($error_data && is_array($error_data)) {
+            delete_transient('domain_validation_error_' . get_current_user_id());
+            
+            printf(
+                '<div class="notice notice-error is-dismissible"><p><strong>Publikování faktury "%s" bylo zablokováno:</strong> %s</p></div>',
+                esc_html($error_data['post_title']),
+                esc_html($error_data['message'])
+            );
+        }
+    }
+
     // ===========================================
     // ABSTRACT METHOD IMPLEMENTATIONS
     // Required by AdminControllerBase
@@ -220,7 +305,7 @@ class AdminController extends AdminControllerBase {
 
     /**
      * Get the calculated points for faktury (dynamic calculation)
-     * Core business requirement: floor(invoice_value / 30)
+     * Core business requirement: floor(invoice_value / 10) - 10 CZK = 1 bod
      */
     protected function getCalculatedPoints(int $post_id = 0): int {
         if ($post_id === 0) {
@@ -232,8 +317,8 @@ class AdminController extends AdminControllerBase {
             return 0; // No valid invoice value
         }
         
-        // Core business logic: floor(value / 30)
-        return (int) floor($invoice_value / 30);
+        // Core business logic: floor(value / 10) - 10 CZK = 1 bod
+        return (int) floor($invoice_value / 10);
     }
 
     /**
