@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MistrFachman\Base;
+namespace MistrFachman\Services;
 
 /**
- * Base Status Manager - Abstract Foundation for Custom Post Status Management
+ * Unified Status Manager Service
  *
- * Provides common patterns for registering and managing custom post statuses
- * across all domains. Handles registration, verification, and validation.
+ * Handles registration and management of custom post statuses for any domain.
+ * This service consolidates all status management logic into a single, configurable class.
  *
  * @package mistr-fachman
  * @since 1.0.0
@@ -19,22 +19,17 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-abstract class StatusManagerBase {
+final class StatusManager {
 
-    /**
-     * Get the post type slug for this domain
-     */
-    abstract protected function getPostType(): string;
+    private string $post_type;
+    private string $custom_status_slug;
+    private string $custom_status_label;
 
-    /**
-     * Get the custom status slug to register
-     */
-    abstract protected function getCustomStatusSlug(): string;
-
-    /**
-     * Get the display label for the custom status
-     */
-    abstract protected function getCustomStatusLabel(): string;
+    public function __construct(string $post_type, string $custom_status_slug, string $custom_status_label) {
+        $this->post_type = $post_type;
+        $this->custom_status_slug = $custom_status_slug;
+        $this->custom_status_label = $custom_status_label;
+    }
 
     /**
      * Get the custom status arguments for registration
@@ -42,7 +37,7 @@ abstract class StatusManagerBase {
      */
     protected function getCustomStatusArgs(): array {
         return [
-            'label' => $this->getCustomStatusLabel(),
+            'label' => $this->custom_status_label,
             'public' => false,
             'exclude_from_search' => true,
             'show_in_admin_all_list' => true,
@@ -52,8 +47,8 @@ abstract class StatusManagerBase {
             'publicly_queryable' => false,
             '_builtin' => false,
             'label_count' => _n_noop(
-                $this->getCustomStatusLabel() . ' <span class="count">(%s)</span>',
-                $this->getCustomStatusLabel() . ' <span class="count">(%s)</span>'
+                $this->custom_status_label . ' <span class="count">(%s)</span>',
+                $this->custom_status_label . ' <span class="count">(%s)</span>'
             ),
         ];
     }
@@ -75,8 +70,8 @@ abstract class StatusManagerBase {
     public function register_custom_status(): void {
         static $registered = false;
         
-        $status_slug = $this->getCustomStatusSlug();
-        $domain_debug = strtoupper($this->getPostType());
+        $status_slug = $this->custom_status_slug;
+        $domain_debug = strtoupper($this->post_type);
         
         // Prevent multiple registrations
         if ($registered) {
@@ -117,8 +112,8 @@ abstract class StatusManagerBase {
      * Verify custom status registration after WordPress is fully loaded
      */
     public function verify_custom_status(): void {
-        $status_slug = $this->getCustomStatusSlug();
-        $domain_debug = strtoupper($this->getPostType());
+        $status_slug = $this->custom_status_slug;
+        $domain_debug = strtoupper($this->post_type);
         
         error_log("[{$domain_debug}:STATUS] Verifying {$status_slug} status after wp_loaded...");
         
@@ -156,13 +151,13 @@ abstract class StatusManagerBase {
      * @return array Modified post states
      */
     public function add_post_state_labels(array $post_states, \WP_Post $post): array {
-        if ($post->post_type !== $this->getPostType()) {
+        if ($post->post_type !== $this->post_type) {
             return $post_states;
         }
 
-        $status_slug = $this->getCustomStatusSlug();
+        $status_slug = $this->custom_status_slug;
         if ($post->post_status === $status_slug) {
-            $post_states[$status_slug] = $this->getCustomStatusLabel();
+            $post_states[$status_slug] = $this->custom_status_label;
         }
 
         return $post_states;
@@ -175,7 +170,7 @@ abstract class StatusManagerBase {
      */
     public function is_custom_status_available(): bool {
         $available_statuses = get_post_stati(['show_in_admin_status_list' => true]);
-        return isset($available_statuses[$this->getCustomStatusSlug()]);
+        return isset($available_statuses[$this->custom_status_slug]);
     }
 
     /**
@@ -185,8 +180,8 @@ abstract class StatusManagerBase {
      * @return bool True if re-registration succeeded
      */
     public function emergency_register_custom_status(): bool {
-        $status_slug = $this->getCustomStatusSlug();
-        $domain_debug = strtoupper($this->getPostType());
+        $status_slug = $this->custom_status_slug;
+        $domain_debug = strtoupper($this->post_type);
         
         error_log("[{$domain_debug}:STATUS] EMERGENCY: Attempting re-registration...");
         
@@ -212,8 +207,8 @@ abstract class StatusManagerBase {
      * @return array Diagnostic information
      */
     public function validate_status_implementation(?int $post_id = null): array {
-        $status_slug = $this->getCustomStatusSlug();
-        $domain_debug = strtoupper($this->getPostType());
+        $status_slug = $this->custom_status_slug;
+        $domain_debug = strtoupper($this->post_type);
         
         error_log("[{$domain_debug}:STATUS] Starting status validation");
         

@@ -61,8 +61,32 @@ class Manager extends PostTypeManagerBase {
         
         // Initialize admin components with consolidated architecture
         $card_renderer = new FakturyCardRenderer();
-        $asset_manager = new AdminAssetManager();
-        $status_manager = new StatusManager();
+        $asset_manager = new \MistrFachman\Services\AdminAssetManager([
+            'script_handle_prefix' => 'invoice',
+            'localization_object_name' => 'mistrFakturyAdmin',
+            'admin_screen_ids' => ['user-edit', 'profile', 'users', 'post', 'faktura'],
+            'post_type' => 'invoice',
+            'wordpress_post_type' => 'faktura',
+            'domain_localization_data' => [
+                'field_names' => [
+                    'rejection_reason' => FakturaFieldService::getRejectionReasonFieldSelector(),
+                    'points' => FakturaFieldService::getPointsFieldSelector(),
+                    'invoice_number' => FakturaFieldService::getInvoiceNumberFieldSelector(),
+                    'value' => FakturaFieldService::getValueFieldSelector(),
+                    'file' => FakturaFieldService::getFileFieldSelector(),
+                    'invoice_date' => FakturaFieldService::getInvoiceDateFieldSelector()
+                ],
+                'default_values' => [
+                    'points' => 100 // Different default for invoices
+                ],
+                'messages' => [
+                    'confirm_approve' => __('Opravdu chcete schválit tuto fakturu?', 'mistr-fachman'),
+                    'confirm_reject' => __('Opravdu chcete odmítnout tuto fakturu?', 'mistr-fachman'),
+                    'confirm_bulk_approve' => __('Opravdu chcete hromadně schválit všechny čekající faktury tohoto uživatele?', 'mistr-fachman')
+                ]
+            ]
+        ]);
+        $status_manager = new \MistrFachman\Services\StatusManager('invoice', 'rejected', 'Odmítnuto');
         
         // Create consolidated admin controller
         $admin_controller = new AdminController($status_manager, $card_renderer, $asset_manager);

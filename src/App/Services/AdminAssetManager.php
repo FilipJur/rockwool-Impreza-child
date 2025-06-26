@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MistrFachman\Base;
-
+namespace MistrFachman\Services;
 
 /**
- * Base Admin Asset Manager - Abstract Foundation for Asset Management
+ * Unified Admin Asset Manager Service
  *
- * Provides common patterns for managing CSS and JavaScript assets
- * in admin interfaces across all domains.
+ * Handles admin asset management (CSS, JavaScript, and localization) for any domain.
+ * This service consolidates all asset management logic into a single, configurable class.
  *
  * @package mistr-fachman
  * @since 1.0.0
@@ -20,39 +19,24 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-abstract class AdminAssetManagerBase {
+final class AdminAssetManager {
+
+    private array $config;
 
     /**
-     * Get the domain-specific script handle prefix
+     * Constructor accepts configuration array with domain-specific settings
      */
-    abstract protected function getScriptHandlePrefix(): string;
-
-    /**
-     * Get the domain-specific localization object name
-     */
-    abstract protected function getLocalizationObjectName(): string;
-
-    /**
-     * Get domain-specific admin screen IDs where assets should load
-     */
-    abstract protected function getAdminScreenIds(): array;
-
-    /**
-     * Get the post type slug for this domain (English, for internal logic)
-     * Used for consistent naming conventions
-     */
-    abstract protected function getPostType(): string;
-
-    /**
-     * Get the WordPress post type slug (Czech, for database/WP operations)
-     * Used for CSS classes and WordPress integration
-     */
-    abstract protected function getWordPressPostType(): string;
-
-    /**
-     * Get domain-specific localized data for scripts
-     */
-    abstract protected function getDomainLocalizationData(): array;
+    public function __construct(array $config) {
+        $this->config = array_merge([
+            'script_handle_prefix' => '',
+            'localization_object_name' => '',
+            'admin_screen_ids' => [],
+            'post_type' => '',
+            'wordpress_post_type' => '',
+            'domain_localization_data' => [],
+            'field_service_class' => null
+        ], $config);
+    }
 
     /**
      * Enqueue admin assets with conditional logic
@@ -75,10 +59,14 @@ abstract class AdminAssetManagerBase {
 
     /**
      * Handle domain-specific asset loading (e.g., status dropdowns)
-     * Override in child classes to implement domain-specific logic
      */
     protected function handle_domain_specific_assets(): void {
-        // Default implementation - child classes override for specific behavior
+        global $post;
+
+        $screen = get_current_screen();
+        if ($screen && $screen->base === 'post' && $post && $post->post_type === $this->config['post_type']) {
+            $this->enqueue_status_dropdown();
+        }
     }
 
     /**
@@ -98,7 +86,7 @@ abstract class AdminAssetManagerBase {
      * Enqueue admin scripts
      */
     protected function enqueue_admin_scripts(): void {
-        $script_handle = $this->getScriptHandlePrefix() . '-admin-js';
+        $script_handle = $this->config['script_handle_prefix'] . '-admin-js';
         
         // Check if script is already enqueued by another domain
         if (wp_script_is('theme-admin-js', 'enqueued') || wp_script_is('mistr-admin-js', 'enqueued')) {
@@ -133,7 +121,7 @@ abstract class AdminAssetManagerBase {
         if ($script_handle) {
             wp_localize_script(
                 $script_handle,
-                $this->getLocalizationObjectName(),
+                $this->config['localization_object_name'],
                 $this->getBaseLocalizationData()
             );
         }
@@ -144,7 +132,7 @@ abstract class AdminAssetManagerBase {
      */
     protected function getActiveScriptHandle(): ?string {
         // Check for the main theme admin script first (enqueued in functions.php)
-        $handles = ['theme-admin-js', 'mistr-admin-js', $this->getScriptHandlePrefix() . '-admin-js'];
+        $handles = ['theme-admin-js', 'mistr-admin-js', $this->config['script_handle_prefix'] . '-admin-js'];
         
         foreach ($handles as $handle) {
             if (wp_script_is($handle, 'enqueued')) {
@@ -160,8 +148,7 @@ abstract class AdminAssetManagerBase {
      */
     protected function is_admin_screen(): bool {
         $screen = get_current_screen();
-        $admin_screens = $this->getAdminScreenIds();
-        
+        $admin_screens = $this->config['admin_screen_ids'];
         
         if (!$screen) {
             return false;
@@ -186,20 +173,18 @@ abstract class AdminAssetManagerBase {
      * Get base localization data (common patterns)
      */
     protected function getBaseLocalizationData(): array {
-        $domain_data = $this->getDomainLocalizationData();
-        
         return array_merge([
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonces' => $this->generateNonces(),
             'messages' => $this->getDefaultMessages()
-        ], $domain_data);
+        ], $this->config['domain_localization_data']);
     }
 
     /**
      * Generate domain-specific nonces using direct string concatenation
      */
     protected function generateNonces(): array {
-        $post_type = $this->getPostType();
+        $post_type = $this->config['post_type'];
         
         return [
             'quick_action' => wp_create_nonce("mistr_fachman_{$post_type}_quick_action"),
@@ -209,7 +194,6 @@ abstract class AdminAssetManagerBase {
 
     /**
      * Get default localized messages
-     * Override in child classes to customize messages
      */
     protected function getDefaultMessages(): array {
         return [
@@ -226,28 +210,41 @@ abstract class AdminAssetManagerBase {
 
     /**
      * Enqueue status dropdown script with configuration
-     * Generic method for any domain's status dropdown
      */
-    public function enqueue_status_dropdown_script(array $config): void {
+    public function enqueue_status_dropdown(): void {
         global $post;
 
-
-        if (!$post || $post->post_type !== $config['postType']) {
+        if (!$post || $post->post_type !== $this->config['post_type']) {
             return;
         }
-
 
         // Ensure admin.js is loaded (contains StatusDropdownManager)
         $this->enqueue_admin_scripts();
 
         $script_handle = $this->getActiveScriptHandle() ?? 'theme-admin-js';
 
+        // Prepare status dropdown configuration
+        $status_config = [
+            'domain' => ucfirst($this->config['post_type']),
+            'postType' => $this->config['post_type'],
+            'customStatus' => 'rejected',
+            'customStatusLabel' => 'Odmítnuto',
+            'currentStatus' => $post->post_status ?? '',
+            'debugPrefix' => strtoupper($this->config['post_type'])
+        ];
+
         // Localize status dropdown configuration
         wp_localize_script(
             $script_handle,
             'mistrFachmanStatusDropdown',
-            $config
+            $status_config
         );
-        
+    }
+
+    /**
+     * Get localized script data for AJAX requests (backward compatibility)
+     */
+    public function get_localized_data(): array {
+        return $this->getBaseLocalizationData();
     }
 }

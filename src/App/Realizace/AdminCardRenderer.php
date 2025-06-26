@@ -269,7 +269,7 @@ class AdminCardRenderer {
                 <div class="realizace-meta">
                     <span class="post-date"><?php echo esc_html(mysql2date('j.n.Y H:i', $post->post_date)); ?></span>
                     <?php if ($assigned_points): ?>
-                        <span class="points-assigned">Přiděleno: <?php echo esc_html($assigned_points); ?> bodů</span>
+                        <span class="points-assigned">Přiděleno: <?php echo esc_html((string)$assigned_points); ?> bodů</span>
                     <?php endif; ?>
                     <?php if ($awarded_points > 0): ?>
                         <span class="points-awarded">Uděleno: <?php echo esc_html((string)$awarded_points); ?> bodů</span>
@@ -463,18 +463,19 @@ class AdminCardRenderer {
     private function get_user_realizace_stats(int $user_id): array {
         global $wpdb;
 
+        $awarded_points_field = RealizaceFieldService::getAwardedPointsFieldSelector();
         $stats = $wpdb->get_results($wpdb->prepare("
             SELECT
                 post_status,
                 COUNT(*) as count,
                 COALESCE(SUM(CAST(pm.meta_value AS SIGNED)), 0) as total_points
             FROM {$wpdb->posts} p
-            LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = '" . RealizaceFieldService::getAwardedPointsFieldSelector() . "')"
+            LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = %s)
             WHERE p.post_type = 'realization'
             AND p.post_author = %d
             AND p.post_status IN ('pending', 'publish', 'rejected')
             GROUP BY post_status
-        ", $user_id), ARRAY_A);
+        ", $awarded_points_field, $user_id), ARRAY_A);
 
         $result = [
             'total' => 0,

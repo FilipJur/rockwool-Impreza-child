@@ -61,8 +61,32 @@ class Manager extends PostTypeManagerBase {
         
         // Initialize admin components with consolidated architecture
         $card_renderer = new RealizaceCardRenderer();
-        $asset_manager = new AdminAssetManager();
-        $status_manager = new StatusManager();
+        $asset_manager = new \MistrFachman\Services\AdminAssetManager([
+            'script_handle_prefix' => 'realization',
+            'localization_object_name' => 'mistrRealizaceAdmin',
+            'admin_screen_ids' => ['user-edit', 'profile', 'users', 'post', 'realizace'],
+            'post_type' => 'realization',
+            'wordpress_post_type' => 'realizace',
+            'domain_localization_data' => [
+                'field_names' => [
+                    'rejection_reason' => RealizaceFieldService::getRejectionReasonFieldSelector(),
+                    'points' => RealizaceFieldService::getPointsFieldSelector(),
+                    'gallery' => RealizaceFieldService::getGalleryFieldSelector(),
+                    'area' => RealizaceFieldService::getAreaFieldSelector(),
+                    'construction_type' => RealizaceFieldService::getConstructionTypeFieldSelector(),
+                    'materials' => RealizaceFieldService::getMaterialsFieldSelector()
+                ],
+                'default_values' => [
+                    'points' => 2500
+                ],
+                'messages' => [
+                    'confirm_approve' => __('Opravdu chcete schválit tuto realizaci?', 'mistr-fachman'),
+                    'confirm_reject' => __('Opravdu chcete odmítnout tuto realizaci?', 'mistr-fachman'),
+                    'confirm_bulk_approve' => __('Opravdu chcete hromadně schválit všechny čekající realizace tohoto uživatele?', 'mistr-fachman')
+                ]
+            ]
+        ]);
+        $status_manager = new \MistrFachman\Services\StatusManager('realization', 'rejected', 'Odmítnuto');
         
         // Create consolidated admin controller
         $admin_controller = new AdminController($status_manager, $card_renderer, $asset_manager);

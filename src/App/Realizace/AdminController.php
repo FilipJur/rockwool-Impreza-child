@@ -44,16 +44,16 @@ class AdminController extends AdminControllerBase {
     // Implements getCalculatedPoints() method - replaces legacy getDefaultPoints()
 
     public function __construct(
-        private StatusManager $status_manager,
+        private \MistrFachman\Services\StatusManager $status_manager,
         private AdminCardRendererBase $card_renderer,
-        private AdminAssetManager $asset_manager
+        private \MistrFachman\Services\AdminAssetManager $asset_manager
     ) {
 
         // Smart status registration based on WordPress lifecycle
         if (did_action('init')) {
-            $this->status_manager->register_rejected_status();
+            $this->status_manager->register_custom_status();
         } else {
-            add_action('init', [$this->status_manager, 'register_rejected_status'], 1);
+            add_action('init', [$this->status_manager, 'register_custom_status'], 1);
         }
     }
 
@@ -267,10 +267,10 @@ class AdminController extends AdminControllerBase {
         error_log("[REALIZACE:AJAX] Current post status before reject: {$post->post_status}");
 
         // Check if rejected status is available
-        if (!$this->status_manager->is_rejected_status_available()) {
+        if (!$this->status_manager->is_custom_status_available()) {
             error_log("[REALIZACE:AJAX] Rejected status not available - attempting emergency registration");
 
-            if (!$this->status_manager->emergency_register_rejected_status()) {
+            if (!$this->status_manager->emergency_register_custom_status()) {
                 throw new \Exception('Chyba: Status "odmítnuto" není dostupný. Kontaktujte administrátora.');
             }
         }
@@ -381,14 +381,14 @@ class AdminController extends AdminControllerBase {
     /**
      * Get the status manager instance
      */
-    public function get_status_manager(): StatusManager {
+    public function get_status_manager(): \MistrFachman\Services\StatusManager {
         return $this->status_manager;
     }
 
     /**
-     * Validate rejected status implementation (delegated to StatusManager)
+     * Validate custom status implementation (delegated to StatusManager)
      */
-    public function validate_rejected_status(?int $post_id = null): array {
+    public function validate_custom_status(?int $post_id = null): array {
         return $this->status_manager->validate_status_implementation($post_id);
     }
 
