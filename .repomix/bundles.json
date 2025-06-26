@@ -172,7 +172,7 @@
     "javascript-modernized": {
       "name": "JavaScript Enterprise Architecture - Post-Registry Refactor",
       "created": "2025-06-25T00:00:00.000Z",
-      "lastUsed": "2025-06-25T23:30:00.000Z",
+      "lastUsed": "2025-06-26T20:00:00.000Z",
       "tags": [
         "frontend",
         "javascript",
@@ -186,7 +186,6 @@
         "src/js/features/admin/base/AdminManagementBase.js",
         "src/js/features/admin/base/AdminConfig.js",
         "src/js/features/admin/RealizaceManagement.js",
-        "src/js/features/admin/StatusDropdownManager.js",
         "src/js/features/admin/FakturyManagement.js",
         "src/js/utils/logger.js",
         "src/js/utils/initialization-manager.js",
@@ -355,7 +354,7 @@
     "base-architecture": {
       "name": "Base Architecture - Abstract Foundation Classes",
       "created": "2025-06-23T00:00:00.000Z",
-      "lastUsed": "2025-06-25T23:45:00.000Z",
+      "lastUsed": "2025-06-26T20:00:00.000Z",
       "tags": [
         "backend",
         "base-classes",
@@ -371,7 +370,9 @@
         "src/App/Base/AdminAssetManagerBase.php",
         "src/App/Base/StatusManagerBase.php",
         "src/App/Base/PointsHandlerBase.php",
-        "src/App/Base/FormHandlerBase.php"
+        "src/App/Base/FormHandlerBase.php",
+        "src/App/Services/StatusManager.php",
+        "src/App/Services/AdminAssetManager.php"
       ]
     },
     "realizace-complete": {
@@ -415,7 +416,7 @@
     "full-stack-architecture": {
       "name": "Full Stack Architecture - Complete Backend + Frontend Integration",
       "created": "2025-06-25T00:00:00.000Z",
-      "lastUsed": "2025-06-26T19:40:59.424Z",
+      "lastUsed": "2025-06-26T20:00:00.000Z",
       "tags": [
         "full-stack",
         "complete-architecture",
@@ -444,6 +445,8 @@
         "src/App/Services/ProductService.php",
         "src/App/Services/UserDetectionService.php",
         "src/App/Services/UserService.php",
+        "src/App/Services/StatusManager.php",
+        "src/App/Services/AdminAssetManager.php",
         "src/App/Shortcodes/ShortcodeManager.php",
         "src/App/Shortcodes/ShortcodeBase.php",
         "src/App/Shortcodes/ProductGridShortcode.php",
@@ -495,7 +498,6 @@
         "src/js/features/admin/base/AdminManagementBase.js",
         "src/js/features/admin/base/AdminConfig.js",
         "src/js/features/admin/RealizaceManagement.js",
-        "src/js/features/admin/StatusDropdownManager.js",
         "src/js/features/admin/FakturyManagement.js",
         "src/js/features/admin/business-data-modal.js",
         "src/js/utils/logger.js",
@@ -596,7 +598,7 @@
     "english-slug-refactor": {
       "name": "English Slug Refactor - Complete Domain Architecture Simplification",
       "created": "2025-06-25T00:00:00.000Z",
-      "lastUsed": "2025-06-26T01:02:59.892Z",
+      "lastUsed": "2025-06-26T20:00:00.000Z",
       "tags": [
         "refactoring",
         "english-slugs",
@@ -636,7 +638,6 @@
         "src/js/features/admin/base/AdminManagementBase.js",
         "src/js/features/admin/base/AdminConfig.js",
         "src/js/features/admin/RealizaceManagement.js",
-        "src/js/features/admin/StatusDropdownManager.js",
         "src/js/features/admin/FakturyManagement.js"
       ]
     }
