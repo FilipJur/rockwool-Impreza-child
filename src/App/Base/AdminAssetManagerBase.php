@@ -202,7 +202,7 @@ abstract class AdminAssetManagerBase {
         $post_type = $this->getPostType();
         
         return [
-            'quick_action' => wp_create_nonce("mistr_fachman_{$post_type}_action"),
+            'quick_action' => wp_create_nonce("mistr_fachman_{$post_type}_quick_action"),
             'bulk_approve' => wp_create_nonce("mistr_fachman_bulk_approve_{$post_type}")
         ];
     }

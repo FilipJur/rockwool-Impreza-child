@@ -132,8 +132,8 @@ export class AdminManagementBase {
    * @param {Event} event - Click event
    */
   async handleQuickAction(event) {
-    const button = event.target.closest('.action-approve, .action-reject');
-    if (!button) return;
+    const button = event.target.closest('button[data-action]');
+    if (!button || !['approve', 'reject'].includes(button.dataset.action)) return;
 
     event.preventDefault();
     
@@ -154,11 +154,15 @@ export class AdminManagementBase {
       return;
     }
 
-    // Get points value for approval
+    // Get points value for approval - find the input associated with the clicked button
+    const itemContainer = button.closest('.realizace-item, .faktura-item'); // Find the parent card
     let points = null;
-    if (action === 'approve') {
-      const pointsInput = document.querySelector(`.quick-points-input[data-post-id="${postId}"]`);
-      points = pointsInput ? parseInt(pointsInput.value) || this.getDefaultValues().points : this.getDefaultValues().points;
+    if (action === 'approve' && itemContainer) {
+        const pointsInput = itemContainer.querySelector(`.quick-points-input[data-post-id="${postId}"]`);
+        if (pointsInput) {
+            points = pointsInput.value;
+            console.log(`[${this.getDomainName()}] Found points input with value: ${points} for post ${postId}`);
+        }
     }
 
     const originalText = button.textContent;

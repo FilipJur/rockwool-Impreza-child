@@ -19,16 +19,11 @@ if (!defined('ABSPATH')) {
 <?php if ($post->post_status === 'pending'): ?>
     <div class="<?php echo esc_attr($post_type); ?>-actions">
         <div class="points-input">
-            <?php if ($post_type === 'faktura'): ?>
+            <?php if ($post_type === 'invoice'): ?>
                 <!-- Faktury: Show calculated points (read-only) -->
-                <?php 
-                // Calculate points from invoice value: floor(value / 30)
-                $invoice_value = function_exists('get_field') ? get_field('hodnota_faktury', $post->ID) : 0;
-                $calculated_points = $invoice_value > 0 ? (int) floor($invoice_value / 30) : 0;
-                ?>
                 <label>Body (vypočítané): </label>
-                <span class="calculated-points"><?php echo esc_html((string)$calculated_points); ?></span>
-                <input type="hidden" class="quick-points-input" data-post-id="<?php echo esc_attr((string)$post->ID); ?>" value="<?php echo esc_attr((string)$calculated_points); ?>">
+                <span class="calculated-points"><?php echo esc_html((string)$assigned_points); ?></span>
+                <input type="hidden" class="quick-points-input" data-post-id="<?php echo esc_attr((string)$post->ID); ?>" value="<?php echo esc_attr((string)$assigned_points); ?>">
             <?php else: ?>
                 <!-- Realizace: Show editable points input -->
                 <label>Body: </label>
@@ -38,10 +33,18 @@ if (!defined('ABSPATH')) {
                        data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
                        value="<?php echo esc_attr($assigned_points ?: ''); ?>">
             <?php endif; ?>
-            <button type="button"
-                    class="button button-primary action-approve"
-                    data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
-                    data-action="approve">Schválit</button>
+            <?php if ($post_type === 'invoice'): ?>
+                <a href="<?php echo esc_url(get_edit_post_link($post->ID)); ?>"
+                   class="button button-primary"
+                   title="Pro schválení je třeba doplnit číslo a datum faktury na stránce příspěvku.">
+                   Upravit a schválit
+                </a>
+            <?php else: ?>
+                <button type="button"
+                        class="button button-primary action-approve"
+                        data-post-id="<?php echo esc_attr((string)$post->ID); ?>"
+                        data-action="approve">Schválit</button>
+            <?php endif; ?>
         </div>
         <div class="rejection-input">
             <textarea class="rejection-reason-input"
@@ -65,16 +68,11 @@ if (!defined('ABSPATH')) {
 
 <?php elseif ($post->post_status === 'rejected'): ?>
     <div class="<?php echo esc_attr($post_type); ?>-actions">
-        <?php if ($post_type === 'faktura'): ?>
+        <?php if ($post_type === 'invoice'): ?>
             <!-- Faktury: Show calculated points (read-only) -->
-            <?php 
-            // Calculate points from invoice value: floor(value / 30)
-            $invoice_value = function_exists('get_field') ? get_field('hodnota_faktury', $post->ID) : 0;
-            $calculated_points = $invoice_value > 0 ? (int) floor($invoice_value / 30) : 0;
-            ?>
             <label>Body (vypočítané): </label>
-            <span class="calculated-points"><?php echo esc_html((string)$calculated_points); ?></span>
-            <input type="hidden" class="quick-points-input" data-post-id="<?php echo esc_attr((string)$post->ID); ?>" value="<?php echo esc_attr((string)$calculated_points); ?>">
+            <span class="calculated-points"><?php echo esc_html((string)$assigned_points); ?></span>
+            <input type="hidden" class="quick-points-input" data-post-id="<?php echo esc_attr((string)$post->ID); ?>" value="<?php echo esc_attr((string)$assigned_points); ?>">
         <?php else: ?>
             <!-- Realizace: Show editable points input -->
             <label>Body: </label>

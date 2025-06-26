@@ -18,7 +18,7 @@ $materials = $field_data['materials'] ?? '';
 ?>
 
 <?php if ($area || $construction_type || $materials): ?>
-    <div class="realizace-details">
+    <div class="realization-details">
         <?php if ($area): ?>
             <div class="detail-item">
                 <span class="detail-label">Plocha:</span>

@@ -38,7 +38,7 @@ class AdminCardRenderer {
         if ($this->admin_controller) {
             return $this->admin_controller->get_current_points($post_id);
         }
-        
+
         // Use centralized field service
         return RealizaceFieldService::getPoints($post_id);
     }
@@ -252,13 +252,13 @@ class AdminCardRenderer {
     private function render_realizace_card(\WP_Post $post): void {
         // Get all the data needed for rendering
         $assigned_points = $this->get_realizace_points($post->ID);
-        $awarded_points = (int)get_post_meta($post->ID, '_realizace_points_awarded', true);
+        $awarded_points = RealizaceFieldService::getAwardedPoints($post->ID);
         $rejection_reason = RealizaceFieldService::getRejectionReason($post->ID);
         $gallery_images = RealizaceFieldService::getGallery($post->ID);
         $pocet_m2 = RealizaceFieldService::getArea($post->ID);
         $typ_konstrukce = RealizaceFieldService::getConstructionType($post->ID);
         $pouzite_materialy = RealizaceFieldService::getMaterials($post->ID);
-        
+
         ?>
         <div class="realizace-item" data-post-id="<?php echo esc_attr((string)$post->ID); ?>" data-status="<?php echo esc_attr($post->post_status); ?>">
             <div class="realizace-header">
@@ -412,7 +412,7 @@ class AdminCardRenderer {
      * @param \WP_Post $post Post object
      */
     private function render_realizace_card_compact(\WP_Post $post): void {
-        $awarded_points = (int)get_post_meta($post->ID, '_realizace_points_awarded', true);
+        $awarded_points = RealizaceFieldService::getAwardedPoints($post->ID);
 
         ?>
         <div class="realizace-item-compact" data-post-id="<?php echo esc_attr((string)$post->ID); ?>">
@@ -469,7 +469,7 @@ class AdminCardRenderer {
                 COUNT(*) as count,
                 COALESCE(SUM(CAST(pm.meta_value AS SIGNED)), 0) as total_points
             FROM {$wpdb->posts} p
-            LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = '_realizace_points_awarded')
+            LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = '" . RealizaceFieldService::getAwardedPointsFieldSelector() . "')"
             WHERE p.post_type = 'realization'
             AND p.post_author = %d
             AND p.post_status IN ('pending', 'publish', 'rejected')

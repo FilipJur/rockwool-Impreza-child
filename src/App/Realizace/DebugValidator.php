@@ -242,9 +242,9 @@ class DebugValidator {
             
             // Sum points for published posts
             if ($post->post_status === 'publish') {
-                $points = get_post_meta($post->ID, '_realizace_points_awarded', true);
+                $points = RealizaceFieldService::getAwardedPoints($post->ID);
                 if ($points) {
-                    $stats['total_points_awarded'] += (int)$points;
+                    $stats['total_points_awarded'] += $points;
                 }
             }
         }

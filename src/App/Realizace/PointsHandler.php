@@ -33,10 +33,10 @@ class PointsHandler extends PointsHandlerBase {
     }
 
     /**
-     * Get the WordPress post type slug (Czech, for database/WP operations)
+     * Get the WordPress post type slug (English, aligned with database)
      */
     protected function getWordPressPostType(): string {
-        return 'realizace';
+        return 'realization';
     }
 
     /**
@@ -66,6 +66,6 @@ class PointsHandler extends PointsHandlerBase {
      * Get the myCred reference type for this domain
      */
     protected function getMyCredReference(): string {
-        return 'approval_of_realizace';
+        return 'approval_of_realization';
     }
 }

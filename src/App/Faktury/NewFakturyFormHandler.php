@@ -33,11 +33,11 @@ class NewFakturyFormHandler extends FormHandlerBase {
     }
 
     /**
-     * Get the form title to match for this domain
-     * TODO: Change to getFormId() when FormHandlerBase is refactored to use IDs
+     * Get the form ID to match for this domain
      */
-    protected function getFormTitle(): string {
-        return 'Přidat fakturu form';
+    protected function getFormId(): int {
+        // ID for "Přidat fakturu form" form
+        return 554;
     }
 
     /**
@@ -103,5 +103,17 @@ class NewFakturyFormHandler extends FormHandlerBase {
             return FakturaFieldService::setFile($post_id, $file_ids[0]);
         }
         return false;
+    }
+
+    /**
+     * Populate initial post meta data immediately after post creation
+     * For Faktury: Calculate dynamic points based on invoice value (value / 30)
+     */
+    protected function populate_initial_post_meta(int $post_id, array $posted_data): void {
+        // $posted_data not used - invoice value already saved in saveDomainFields step
+        // We can now safely calculate and save the points
+        $points_handler = new PointsHandler();
+        $calculated_points = $points_handler->getCalculatedPoints($post_id);
+        FakturaFieldService::setPoints($post_id, $calculated_points);
     }
 }

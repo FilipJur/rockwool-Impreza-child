@@ -415,7 +415,7 @@
     "full-stack-architecture": {
       "name": "Full Stack Architecture - Complete Backend + Frontend Integration",
       "created": "2025-06-25T00:00:00.000Z",
-      "lastUsed": "2025-06-25T23:45:00.000Z",
+      "lastUsed": "2025-06-26T15:50:30.908Z",
       "tags": [
         "full-stack",
         "complete-architecture",
@@ -522,7 +522,9 @@
         "webpack.config.js",
         "package.json",
         "functions.php",
-        "CLAUDE.md"
+        "CLAUDE.md",
+        "src/App/Base/FieldServiceBase.php",
+        "templates/admin-cards/domain-details/faktura-details.php"
       ]
     },
     "architecture-modernization": {
@@ -594,7 +596,7 @@
     "english-slug-refactor": {
       "name": "English Slug Refactor - Complete Domain Architecture Simplification",
       "created": "2025-06-25T00:00:00.000Z",
-      "lastUsed": "2025-06-25T23:16:18.851Z",
+      "lastUsed": "2025-06-26T01:02:59.892Z",
       "tags": [
         "refactoring",
         "english-slugs",

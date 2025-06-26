@@ -68,13 +68,14 @@ export class RealizaceManagement extends AdminManagementBase {
   getFieldNames() {
     const globalFieldNames = this.config.globalData?.field_names || {};
     
+    // Trust the centralized field service - no hardcoded fallbacks
     return {
-      rejection_reason: globalFieldNames.rejection_reason || 'rejection_reason',
-      points: globalFieldNames.points || 'points_assigned',
-      gallery: globalFieldNames.gallery || 'realization_gallery',
-      area: globalFieldNames.area || 'area_sqm',
-      construction_type: globalFieldNames.construction_type || 'construction_type',
-      materials: globalFieldNames.materials || 'materials_used'
+      rejection_reason: globalFieldNames.rejection_reason,
+      points: globalFieldNames.points,
+      gallery: globalFieldNames.gallery,
+      area: globalFieldNames.area,
+      construction_type: globalFieldNames.construction_type,
+      materials: globalFieldNames.materials
     };
   }
 
@@ -251,7 +252,7 @@ export class RealizaceManagement extends AdminManagementBase {
  * @param {string} containerSelector - CSS selector for management container
  * @returns {Object} Management instance with cleanup method
  */
-export function setupRealizaceManagement(containerSelector = '.realizace-management-modern') {
+export function setupRealizaceManagement(containerSelector = '.realization-management-modern') {
   console.log('[Realizace] Setting up management...');
 
   const config = {

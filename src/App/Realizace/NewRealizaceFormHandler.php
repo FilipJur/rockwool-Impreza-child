@@ -32,10 +32,11 @@ class NewRealizaceFormHandler extends FormHandlerBase {
     }
 
     /**
-     * Get the form title to match for this domain
+     * Get the form ID to match for this domain
      */
-    protected function getFormTitle(): string {
-        return 'Přidat realizaci';
+    protected function getFormId(): int {
+        // ID for "Přidat realizaci" form
+        return 320;
     }
 
     /**
@@ -117,5 +118,16 @@ class NewRealizaceFormHandler extends FormHandlerBase {
             $post_id, 
             $gallery_ids
         );
+    }
+
+    /**
+     * Populate initial post meta data immediately after post creation
+     * For Realizace: Set fixed 2500 points
+     */
+    protected function populate_initial_post_meta(int $post_id, array $posted_data): void {
+        // $posted_data not used for Realizace - fixed points only
+        $points_handler = new PointsHandler();
+        $calculated_points = $points_handler->getCalculatedPoints(); // Returns 2500
+        RealizaceFieldService::setPoints($post_id, $calculated_points);
     }
 }

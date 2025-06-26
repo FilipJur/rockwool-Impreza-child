@@ -218,16 +218,18 @@ class AdminController extends AdminControllerBase {
     protected function process_approve_action(int $post_id): void {
         error_log("[REALIZACE:AJAX] Processing APPROVE action for post {$post_id}");
 
-        // 1. Determine the points value from the AJAX UI
-        $points_to_award = (isset($_POST['points']) && is_numeric($_POST['points']))
-            ? (int)$_POST['points']
-            : $this->get_current_points($post_id);
-
-        if ($points_to_award <= 0) {
-            $points_to_award = $this->getCalculatedPoints($post_id);
+        // PRIORITY: Use points value from AJAX request if available and valid.
+        if (isset($_POST['points']) && is_numeric($_POST['points'])) {
+            $points_to_award = (int)$_POST['points'];
+            error_log("[REALIZACE:AJAX] Using points value from AJAX POST: {$points_to_award}");
+        } else {
+            // Fallback to existing logic if points not sent.
+            $points_to_award = $this->get_current_points($post_id);
+            if ($points_to_award <= 0) {
+                $points_to_award = $this->getCalculatedPoints($post_id);
+            }
+            error_log("[REALIZACE:AJAX] Falling back to calculated/saved points: {$points_to_award}");
         }
-
-        error_log("[REALIZACE:AJAX] Setting points value: {$points_to_award} for post {$post_id}");
 
         // 2. SAVE this value
         $this->set_points($post_id, $points_to_award);
@@ -489,7 +491,7 @@ class AdminController extends AdminControllerBase {
      * Render realizace-specific user profile card
      */
     protected function render_user_profile_card(\WP_User $user): void {
-        echo '<div class="realizace-management-modern">';
+        echo '<div class="realization-management-modern">';
         $this->card_renderer->render_consolidated_dashboard($user);
         echo '</div>';
     }

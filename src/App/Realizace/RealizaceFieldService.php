@@ -30,13 +30,18 @@ class RealizaceFieldService extends FieldServiceBase {
 
     /**
      * Field selector constants - Single source of truth
+     * Following Realizace pattern with domain-specific naming
+     * Uses full group_field pattern to match Realizace architecture
      */
-    private const POINTS_FIELD = 'admin_management_points_assigned';
-    private const REJECTION_REASON_FIELD = 'admin_management_rejection_reason';
+    private const POINTS_FIELD = 'admin_management_realization_points_assigned';
+    private const REJECTION_REASON_FIELD = 'admin_management_realization_rejection_reason';
     private const GALLERY_FIELD = 'realization_gallery';
-    private const AREA_FIELD = 'area_sqm';
-    private const CONSTRUCTION_TYPE_FIELD = 'construction_type';
-    private const MATERIALS_FIELD = 'materials_used';
+    private const AREA_FIELD = 'realization_area_sqm';
+    private const CONSTRUCTION_TYPE_FIELD = 'realization_construction_type';
+    private const MATERIALS_FIELD = 'realization_materials_used';
+    
+    // Legacy meta fields for MyCred integration
+    private const AWARDED_POINTS_META_FIELD = '_realizace_points_awarded';
 
     /**
      * Get points value for a realizace post
@@ -46,6 +51,17 @@ class RealizaceFieldService extends FieldServiceBase {
      */
     public static function getPoints(int $post_id): int {
         $value = self::getFieldValue(self::POINTS_FIELD, $post_id);
+        return is_numeric($value) ? (int)$value : 0;
+    }
+
+    /**
+     * Get awarded points from MyCred transaction history (legacy meta field)
+     *
+     * @param int $post_id Post ID
+     * @return int Awarded points value
+     */
+    public static function getAwardedPoints(int $post_id): int {
+        $value = get_post_meta($post_id, self::AWARDED_POINTS_META_FIELD, true);
         return is_numeric($value) ? (int)$value : 0;
     }
 
@@ -151,6 +167,10 @@ class RealizaceFieldService extends FieldServiceBase {
 
     public static function getMaterialsFieldSelector(): string {
         return self::MATERIALS_FIELD;
+    }
+
+    public static function getAwardedPointsFieldSelector(): string {
+        return self::AWARDED_POINTS_META_FIELD;
     }
 
 

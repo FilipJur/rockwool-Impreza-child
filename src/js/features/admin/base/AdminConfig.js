@@ -84,18 +84,14 @@ export class AdminConfig {
    */
   validateFieldNames(fieldNames) {
     const required = ['rejection_reason'];
-    const defaults = {
-      rejection_reason: 'rejection_reason', // English field names
-      points: 'points_assigned',
-      status: 'status'
-    };
 
-    const validated = { ...defaults, ...fieldNames };
+    // No hardcoded defaults - trust centralized field service configuration
+    const validated = { ...fieldNames };
 
-    // Check required fields
+    // Check required fields are provided from PHP
     for (const field of required) {
       if (!validated[field]) {
-        console.warn(`Missing required field name: ${field}`);
+        console.error(`Missing required field name '${field}' from PHP FieldService localization. Check AdminAssetManager implementation.`);
       }
     }
 

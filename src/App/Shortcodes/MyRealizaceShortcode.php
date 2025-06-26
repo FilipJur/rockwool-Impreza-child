@@ -57,7 +57,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 
 		// Query user's realizace posts
 		$query_args = [
-			'post_type' => 'realizace',
+			'post_type' => 'realization',
 			'author' => $user_id,
 			'post_status' => ['pending', 'publish', 'rejected'],
 			'posts_per_page' => (int) $attributes['posts_per_page'],
@@ -154,7 +154,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 
 		// Points (only for published posts)
 		if ($status === 'publish') {
-			$points = (int) get_post_meta($post_id, '_realizace_points_awarded', true);
+			$points = \MistrFachman\Realizace\RealizaceFieldService::getPoints($post_id);
 			if ($points > 0) {
 				$output .= "<div class='bg-green-50 border border-green-200 rounded p-2 text-sm text-green-800 mb-2'>Získané body: <strong>{$points}</strong></div>";
 			}

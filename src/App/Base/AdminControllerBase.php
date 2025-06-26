@@ -483,13 +483,19 @@ abstract class AdminControllerBase {
      * Handle AJAX quick actions
      */
     public function handle_quick_action_ajax(): void {
+        error_log("AJAX Handler 'handle_quick_action_ajax' started for domain: " . $this->getPostType());
+        error_log("POST data: " . json_encode($_POST));
+
         try {
             // Validate domain configuration
             $this->validateDomainConfiguration();
             
-            // Verify nonce and permissions using DomainRegistry
-            $nonce_action = $this->getNonceAction('quick_action');
+            // IMPORTANT: The nonce action *must* match the one registered in the hook.
+            $nonce_action = "mistr_fachman_" . $this->getPostType() . "_quick_action";
+            error_log("Verifying nonce against action: " . $nonce_action);
+
             check_ajax_referer($nonce_action, 'nonce');
+            error_log("Nonce VERIFIED successfully.");
 
             if (!current_user_can('edit_posts')) {
                 throw new \Exception('Insufficient permissions');

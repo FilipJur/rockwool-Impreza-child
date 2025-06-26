@@ -34,8 +34,8 @@ class FakturaFieldService extends FieldServiceBase {
      * Following Realizace pattern with domain-specific naming
      * Uses full group_field pattern to match Realizace architecture
      */
-    private const POINTS_FIELD = 'admin_management_points_assigned';
-    private const REJECTION_REASON_FIELD = 'admin_management_rejection_reason';
+    private const POINTS_FIELD = 'admin_management_invoice_points_assigned';
+    private const REJECTION_REASON_FIELD = 'admin_management_invoice_rejection_reason';
     private const VALUE_FIELD = 'invoice_value';
     private const FILE_FIELD = 'invoice_file';
     private const INVOICE_NUMBER_ADMIN_FIELD = 'invoice_number';

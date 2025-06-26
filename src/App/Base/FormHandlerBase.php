@@ -29,9 +29,9 @@ abstract class FormHandlerBase {
     ) {}
 
     /**
-     * Get the form title to match for this domain
+     * Get the form ID to match for this domain
      */
-    abstract protected function getFormTitle(): string;
+    abstract protected function getFormId(): int;
 
     /**
      * Get the post type slug for this domain
@@ -65,6 +65,12 @@ abstract class FormHandlerBase {
     abstract protected function saveGalleryData(int $post_id, array $gallery_ids): bool;
 
     /**
+     * Populate initial post meta data immediately after post creation
+     * This ensures points and other calculated fields are available from the start
+     */
+    abstract protected function populate_initial_post_meta(int $post_id, array $posted_data): void;
+
+    /**
      * Main handler for WPCF7 form submissions
      *
      * @param \WPCF7_ContactForm $contact_form The WPCF7 form object
@@ -81,9 +87,9 @@ abstract class FormHandlerBase {
         // Debug: Log form details
         error_log("[{$domain_debug}:DEBUG] Form details - ID: {$form_id}, Title: {$form_title}");
         
-        // Check if this is the correct form by title
-        if ($form_title !== $this->getFormTitle()) {
-            error_log("[{$domain_debug}:DEBUG] Form title mismatch - Expected: \"{$this->getFormTitle()}\", Got: \"{$form_title}\"");
+        // Check if this is the correct form by ID
+        if ((int)$contact_form->id() !== $this->getFormId()) {
+            error_log("[{$domain_debug}:DEBUG] Form ID mismatch - Expected: {$this->getFormId()}, Got: {$contact_form->id()}");
             return;
         }
         
@@ -130,6 +136,10 @@ abstract class FormHandlerBase {
         // Save domain-specific fields
         error_log("[{$domain_debug}:DEBUG] Saving meta data for post ID: {$post_id}");
         $this->saveDomainFields($post_id, $posted_data);
+
+        // New step: Immediately populate meta fields after post creation
+        $this->populate_initial_post_meta($post_id, $posted_data);
+        error_log("[{$domain_debug}:SUCCESS] Initial meta population complete for post ID: {$post_id}");
 
         // Handle file uploads
         $this->handleFileUploads($post_id, $posted_data, $uploaded_files, $domain_debug);

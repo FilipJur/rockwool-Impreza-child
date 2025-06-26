@@ -69,13 +69,14 @@ export class FakturyManagement extends AdminManagementBase {
   getFieldNames() {
     const globalFieldNames = this.config.globalData?.field_names || {};
     
+    // Trust the centralized field service - no hardcoded fallbacks
     return {
-      rejection_reason: globalFieldNames.rejection_reason || 'rejection_reason',
-      amount: globalFieldNames.amount || 'invoice_value',
-      due_date: globalFieldNames.due_date || 'invoice_date',
-      supplier: globalFieldNames.supplier || 'invoice_supplier',
-      invoice_number: globalFieldNames.invoice_number || 'invoice_number',
-      status: globalFieldNames.status || 'invoice_status'
+      rejection_reason: globalFieldNames.rejection_reason,
+      amount: globalFieldNames.value, // Use 'value' from field service
+      due_date: globalFieldNames.invoice_date,
+      supplier: globalFieldNames.supplier,
+      invoice_number: globalFieldNames.invoice_number,
+      status: globalFieldNames.status
     };
   }
 
@@ -282,7 +283,7 @@ export class FakturyManagement extends AdminManagementBase {
  * @param {string} containerSelector - CSS selector for management container
  * @returns {Object} Management instance with cleanup method
  */
-export function setupFakturyManagement(containerSelector = '.faktury-management-modern') {
+export function setupFakturyManagement(containerSelector = '.invoice-management-modern') {
   console.log('Setting up faktury management...');
 
   const config = {

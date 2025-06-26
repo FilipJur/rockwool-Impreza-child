@@ -82,6 +82,7 @@ function mycred_log_performance(string $operation, float $start_time, array $dat
     mycred_debug("PERFORMANCE: $operation", $data, 'performance', 'info');
 }
 
+
 // Enable verbose debugging conditionally
 if (!defined('MYCRED_DEBUG_VERBOSE')) {
     define('MYCRED_DEBUG_VERBOSE', WP_DEBUG);

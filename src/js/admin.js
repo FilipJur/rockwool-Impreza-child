@@ -70,19 +70,25 @@ class AdminApp {
     }
 
     // Realizace management for user admin interface
-    if (document.querySelector('.realizace-management-modern')) {
+    const realizaceContainer = document.querySelector('.realization-management-modern');
+    console.log('[Admin] Looking for realizace container:', realizaceContainer);
+    console.log('[Admin] All elements with "realization" in class:', document.querySelectorAll('[class*="realization"]'));
+    
+    if (realizaceContainer) {
       try {
-        this.modules.realizaceManagement = setupRealizaceManagement('.realizace-management-modern');
+        this.modules.realizaceManagement = setupRealizaceManagement('.realization-management-modern');
         console.log('[Admin] Realizace management initialized for admin');
       } catch (error) {
         console.error('[Admin] Failed to initialize realizace management for admin:', error);
       }
+    } else {
+      console.log('[Admin] No realizace container found - skipping initialization');
     }
 
     // Faktury management for user admin interface
-    if (document.querySelector('.faktury-management-modern')) {
+    if (document.querySelector('.invoice-management-modern')) {
       try {
-        this.modules.fakturyManagement = setupFakturyManagement('.faktury-management-modern');
+        this.modules.fakturyManagement = setupFakturyManagement('.invoice-management-modern');
         console.log('[Admin] Faktury management initialized for admin');
       } catch (error) {
         console.error('[Admin] Failed to initialize faktury management for admin:', error);
@@ -139,6 +145,14 @@ class AdminApp {
 console.log('[Admin] admin.js script is executing');
 console.log('[Admin] Current URL:', window.location.href);
 console.log('[Admin] Document ready state:', document.readyState);
+
+// Add temporary visible debug indicator
+if (document.readyState !== 'loading') {
+  const debugDiv = document.createElement('div');
+  debugDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:red;color:white;padding:10px;z-index:99999;font-size:12px;';
+  debugDiv.textContent = 'Admin.js Loaded';
+  document.body.appendChild(debugDiv);
+}
 
 // Initialize the admin application
 const adminApp = new AdminApp();

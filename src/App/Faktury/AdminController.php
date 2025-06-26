@@ -262,7 +262,7 @@ class AdminController extends AdminControllerBase {
      * Render faktury-specific user profile card
      */
     protected function render_user_profile_card(\WP_User $user): void {
-        echo '<div class="faktury-management-modern">';
+        echo '<div class="invoice-management-modern">';
         $this->card_renderer->render_consolidated_dashboard($user);
         echo '</div>';
     }
