@@ -101,6 +101,7 @@ if (file_exists($autoloader_path)) {
     return;
 }
 
+
 // Initialize systems with service layer using dependency injection
 add_action('init', function () {
     // Namespace aliases for clarity

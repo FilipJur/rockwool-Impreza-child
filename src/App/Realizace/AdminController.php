@@ -105,23 +105,6 @@ class AdminController extends AdminControllerBase {
         }
     }
 
-    /**
-     * Render points column content
-     */
-    protected function render_points_column(int $post_id): void {
-        // SINGLE SOURCE OF TRUTH: Use base class method
-        $points_assigned = $this->get_current_points($post_id);
-        $points_awarded = (int)get_post_meta($post_id, '_realizace_points_awarded', true);
-
-        if ($points_assigned > 0) {
-            echo '<strong>' . esc_html((string)$points_assigned) . '</strong>';
-            if ($points_awarded && $points_awarded !== $points_assigned) {
-                echo '<br><small>Uděleno: ' . esc_html((string)$points_awarded) . '</small>';
-            }
-        } else {
-            echo '<span style="color: #999;">—</span>';
-        }
-    }
 
     /**
      * Render status column content
@@ -413,10 +396,17 @@ class AdminController extends AdminControllerBase {
     // ===========================================
 
     /**
-     * Get the post type slug for this domain
+     * Get the post type slug for this domain (English, for internal logic)
      */
     protected function getPostType(): string {
         return 'realization';
+    }
+
+    /**
+     * Get the WordPress post type slug (Czech, for database/WP operations)
+     */
+    protected function getWordPressPostType(): string {
+        return 'realizace';
     }
 
 

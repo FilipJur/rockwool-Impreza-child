@@ -31,8 +31,8 @@ class RealizaceFieldService extends FieldServiceBase {
     /**
      * Field selector constants - Single source of truth
      */
-    private const POINTS_FIELD = 'points_assigned';
-    private const REJECTION_REASON_FIELD = 'rejection_reason';
+    private const POINTS_FIELD = 'admin_management_points_assigned';
+    private const REJECTION_REASON_FIELD = 'admin_management_rejection_reason';
     private const GALLERY_FIELD = 'realization_gallery';
     private const AREA_FIELD = 'area_sqm';
     private const CONSTRUCTION_TYPE_FIELD = 'construction_type';

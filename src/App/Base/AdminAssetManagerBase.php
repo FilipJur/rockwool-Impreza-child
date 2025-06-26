@@ -38,10 +38,16 @@ abstract class AdminAssetManagerBase {
     abstract protected function getAdminScreenIds(): array;
 
     /**
-     * Get the post type slug for this domain
+     * Get the post type slug for this domain (English, for internal logic)
      * Used for consistent naming conventions
      */
     abstract protected function getPostType(): string;
+
+    /**
+     * Get the WordPress post type slug (Czech, for database/WP operations)
+     * Used for CSS classes and WordPress integration
+     */
+    abstract protected function getWordPressPostType(): string;
 
     /**
      * Get domain-specific localized data for scripts

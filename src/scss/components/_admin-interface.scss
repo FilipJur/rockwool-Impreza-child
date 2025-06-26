@@ -305,7 +305,7 @@
 }
 
 /* Consolidated Realizace Dashboard */
-.realizace-dashboard {
+.realization-dashboard {
   .card-header {
     padding: $spacing-lg $spacing-xl;
 
@@ -540,7 +540,7 @@
 }
 
 /* Realizace List */
-.realizace-list {
+.realization-list {
   display: grid;
   gap: $spacing-md;
   grid-template-columns: repeat(3, 1fr);
@@ -556,7 +556,7 @@
   // Two children - each takes half width
   &:has(.realizace-item:nth-child(2):nth-last-child(1)) {
     grid-template-columns: 1fr 1fr;
-    
+
     .realizace-item {
       grid-column: span 1;
     }
@@ -568,12 +568,12 @@
     .realizace-item:only-child {
       grid-column: 1 / span 3;
     }
-    
+
     // Two children fallback - split the 3-column grid evenly
     .realizace-item:first-child:nth-last-child(2) {
       grid-column: 1 / 2;
     }
-    
+
     .realizace-item:first-child:nth-last-child(2) ~ .realizace-item {
       grid-column: 2 / 4;
     }

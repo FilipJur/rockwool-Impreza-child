@@ -44,14 +44,21 @@ class AdminAssetManager extends AdminAssetManagerBase {
      * Get domain-specific admin screen IDs where assets should load
      */
     protected function getAdminScreenIds(): array {
-        return ['user-edit', 'profile', 'users', 'post', 'invoice'];
+        return ['user-edit', 'profile', 'users', 'post', 'faktura'];
     }
 
     /**
-     * Get the domain registry key for this domain
+     * Get the post type slug for this domain (English, for internal logic)
      */
     protected function getPostType(): string {
         return 'invoice';
+    }
+
+    /**
+     * Get the WordPress post type slug (Czech, for database/WP operations)
+     */
+    protected function getWordPressPostType(): string {
+        return 'faktura';
     }
 
     /**

@@ -26,10 +26,17 @@ if (!defined('ABSPATH')) {
 class PointsHandler extends PointsHandlerBase {
 
     /**
-     * Get the post type slug for this domain
+     * Get the post type slug for this domain (English, for internal logic)
      */
     protected function getPostType(): string {
         return 'realization';
+    }
+
+    /**
+     * Get the WordPress post type slug (Czech, for database/WP operations)
+     */
+    protected function getWordPressPostType(): string {
+        return 'realizace';
     }
 
     /**

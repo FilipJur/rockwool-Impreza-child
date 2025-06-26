@@ -197,10 +197,17 @@ class AdminController extends AdminControllerBase {
     // ===========================================
 
     /**
-     * Get the post type slug for this domain
+     * Get the post type slug for this domain (English, for internal logic)
      */
     protected function getPostType(): string {
         return 'invoice';
+    }
+
+    /**
+     * Get the WordPress post type slug (Czech, for database/WP operations)
+     */
+    protected function getWordPressPostType(): string {
+        return 'faktura';
     }
 
 

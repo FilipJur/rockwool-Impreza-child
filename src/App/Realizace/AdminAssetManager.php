@@ -41,14 +41,21 @@ class AdminAssetManager extends AdminAssetManagerBase {
      * Get domain-specific admin screen IDs where assets should load
      */
     protected function getAdminScreenIds(): array {
-        return ['user-edit', 'profile', 'users', 'post', 'realization'];
+        return ['user-edit', 'profile', 'users', 'post', 'realizace'];
     }
 
     /**
-     * Get the domain registry key for this domain
+     * Get the post type slug for this domain (English, for internal logic)
      */
     protected function getPostType(): string {
         return 'realization';
+    }
+
+    /**
+     * Get the WordPress post type slug (Czech, for database/WP operations)
+     */
+    protected function getWordPressPostType(): string {
+        return 'realizace';
     }
 
 
@@ -99,7 +106,7 @@ class AdminAssetManager extends AdminAssetManagerBase {
     protected function handle_domain_specific_assets(): void {
         // Handle status dropdown for post edit pages
         global $post;
-        
+
         $screen = get_current_screen();
         if ($screen && $screen->base === 'post' && $post && $post->post_type === 'realization') {
             $this->enqueue_realizace_status_dropdown();

@@ -28,9 +28,14 @@ if (!defined('ABSPATH')) {
 abstract class PointsHandlerBase {
 
     /**
-     * Get the post type slug for this domain
+     * Get the post type slug for this domain (English, for internal logic)
      */
     abstract protected function getPostType(): string;
+
+    /**
+     * Get the WordPress post type slug (Czech, for database/WP operations)
+     */
+    abstract protected function getWordPressPostType(): string;
 
     /**
      * Get the display name for this domain
@@ -124,7 +129,7 @@ abstract class PointsHandlerBase {
             return false;
         }
 
-        $points_already_awarded = (int)get_post_meta($post_id, "_{$this->getPostType()}_points_awarded", true);
+        $points_already_awarded = (int)get_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", true);
         $point_difference = $points_to_award - $points_already_awarded;
 
         // Only process if there's a change
@@ -132,7 +137,7 @@ abstract class PointsHandlerBase {
             $log_message = $this->get_log_message($post_id, 'award', $point_difference);
             
             if (mycred_add($this->getMyCredReference(), $user_id, $point_difference, $log_message, $post_id)) {
-                update_post_meta($post_id, "_{$this->getPostType()}_points_awarded", $points_to_award);
+                update_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", $points_to_award);
                 
                 error_log(sprintf(
                     '[%s:INFO] Points awarded for post %d: %+d points (total: %d)',
@@ -182,7 +187,7 @@ abstract class PointsHandlerBase {
             return;
         }
 
-        $points_awarded = (int)get_post_meta($post_id, "_{$this->getPostType()}_points_awarded", true);
+        $points_awarded = (int)get_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", true);
         
         if ($points_awarded > 0) {
             // Get user's current balance to implement "No Debt" policy
@@ -206,7 +211,7 @@ abstract class PointsHandlerBase {
                 
                 if ($result) {
                     // Update tracking to reflect actual points revoked
-                    update_post_meta($post_id, "_{$this->getPostType()}_points_awarded", $points_awarded - $points_to_revoke);
+                    update_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", $points_awarded - $points_to_revoke);
                     
                     if ($points_to_revoke < $points_awarded) {
                         error_log("[{$this->getPostType()}:INFO] No Debt Policy: Revoked {$points_to_revoke}/{$points_awarded} points from post {$post_id} (balance: {$current_balance}, status: {$new_status})");

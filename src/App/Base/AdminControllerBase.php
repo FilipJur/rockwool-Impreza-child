@@ -23,9 +23,14 @@ if (!defined('ABSPATH')) {
 abstract class AdminControllerBase {
 
     /**
-     * Get the post type slug for this domain
+     * Get the post type slug for this domain (English, for internal logic)
      */
     abstract protected function getPostType(): string;
+
+    /**
+     * Get the WordPress post type slug (Czech, for database/WP operations)
+     */
+    abstract protected function getWordPressPostType(): string;
 
 
     /**
@@ -211,7 +216,7 @@ abstract class AdminControllerBase {
      */
     protected function render_points_column(int $post_id): void {
         $points_assigned = $this->get_current_points($post_id);
-        $points_awarded = (int)get_post_meta($post_id, "_{$this->getPostType()}_points_awarded", true);
+        $points_awarded = (int)get_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", true);
 
         if ($points_assigned > 0) {
             echo '<strong>' . esc_html((string)$points_assigned) . '</strong>';
