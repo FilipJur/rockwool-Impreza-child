@@ -12,7 +12,7 @@ use MistrFachman\Base\PointsHandlerBase;
  * Core business logic that connects ACF fields to myCred points.
  * Handles point awards and corrections based on faktura approval status.
  * 
- * KEY BUSINESS RULE: Dynamic points calculation = floor(invoice_value / 30)
+ * KEY BUSINESS RULE: Dynamic points calculation = floor(invoice_value / 10) - 10 CZK = 1 bod
  * This is the core requirement that differentiates Faktury from Realizace.
  *
  * @package mistr-fachman
@@ -64,7 +64,7 @@ class PointsHandler extends PointsHandlerBase {
     /**
      * Get the calculated points for faktury - CORE BUSINESS LOGIC
      * 
-     * Dynamic calculation: floor(invoice_value / 30)
+     * Dynamic calculation: floor(invoice_value / 10) - 10 CZK = 1 bod
      * This is the key differentiator from Realizace (which has fixed 2500 points)
      *
      * @param int $post_id Post ID
@@ -83,10 +83,10 @@ class PointsHandler extends PointsHandlerBase {
             return 0;
         }
         
-        // CORE BUSINESS LOGIC: floor(value / 30)
-        $calculated_points = (int) floor($invoice_value / 30);
+        // CORE BUSINESS LOGIC: floor(value / 10) - 10 CZK = 1 bod
+        $calculated_points = (int) floor($invoice_value / 10);
         
-        error_log("[FAKTURY:DEBUG] Points calculation for post {$post_id}: {$invoice_value} CZK / 30 = {$calculated_points} points");
+        error_log("[FAKTURY:DEBUG] Points calculation for post {$post_id}: {$invoice_value} CZK / 10 = {$calculated_points} points");
         
         return $calculated_points;
     }
