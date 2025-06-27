@@ -4,6 +4,12 @@ This document outlines the development patterns, coding standards, and implement
 
 ## Modern JavaScript Architecture
 
+### Dual JavaScript Structure
+- **Frontend**: `src/js/main.js` - ThemeApp class for public-facing functionality
+- **Admin**: `src/js/admin.js` - AdminApp class for WordPress admin interface functionality
+- **Clean Separation**: Admin functionality completely separate from frontend code
+- **Event-Driven Architecture**: Global event delegation for admin interactions
+
 ### Core Principles
 - **Functions over classes**: Use classes only for stateful components, functions for utilities
 - **ES6 modules**: Clean import/export patterns with object exports for utilities
@@ -32,6 +38,14 @@ This document outlines the development patterns, coding standards, and implement
 - **FileUpload**: Class for complex state management (legitimate singleton pattern)
 - Only used when state complexity justifies the pattern
 - Implements proper cleanup and destroy methods
+
+#### Admin App Architecture
+- **AdminApp Class**: Manages admin-specific module initialization and lifecycle
+- **Reject Button System**: Centralized handling of reject/revoke button interactions
+  - Context-aware confirmation messages
+  - AJAX error recovery and button state management
+  - Proper form data handling with nonce security
+- **Module Conditional Loading**: Modules loaded based on DOM elements and admin context
 
 ## WordPress Integration Standards
 
@@ -79,15 +93,27 @@ This document outlines the development patterns, coding standards, and implement
 - **Modern class loading**: Composer autoloader replaces manual require_once
 - **Optimized class mapping**: Efficient autoloading for all classes
 
+### Base Class Architecture
+- **AdminControllerBase**: Foundation for all domain admin interfaces
+  - Reject/revoke button system implementation
+  - Pre-publish validation gatekeeper
+  - User profile card integration
+  - Custom admin columns and AJAX endpoints
+- **PointsHandlerBase**: Dual-pathway points management (ACF save + AJAX direct)
+- **FieldServiceBase**: Consistent ACF field access with meta fallback
+- **AdminCardRendererBase**: Template-based rendering with MVC separation
+
 ### Dependency Injection
 - **Constructor injection**: Services injected, never created within components
 - **Service location**: Avoid service locator anti-pattern
 - **Clean dependencies**: Clear dependency graphs
+- **Services Directory**: StatusManager and AdminAssetManager provide reusable patterns
 
-### Template Rendering
-- **Inline template rendering**: Use `ob_start()`/`ob_get_clean()` for direct output
-- **Eliminate abstraction layers**: Remove unnecessary intermediate methods
-- **React-like components**: Stateless components with data injection
+### Template System
+- **Complete MVC Separation**: Zero HTML generation in PHP classes
+- **Template Directory**: `templates/admin-cards/` with 8 reusable components
+- **Data Preparation**: AdminCardRendererBase provides clean data arrays to templates
+- **84% Code Reduction**: From monolithic renderers to lean data providers
 
 ## Code Quality Standards
 
@@ -121,3 +147,49 @@ This document outlines the development patterns, coding standards, and implement
 - **Defensive programming**: Check for plugin/service availability
 - **Registration flow resilience**: Cookie fallback prevents user loss during AJAX submissions
 - **Role-based fallbacks**: Pending users get appropriate messaging instead of errors
+
+## Admin Interface Development
+
+### Reject/Revoke Button System
+- **Three-State Logic**: Pending (red reject), Published (orange revoke), Rejected (grey disabled)
+- **Context-Aware UX**: Different confirmation messages and button behaviors per state
+- **AJAX Implementation**: Dedicated endpoints with proper nonce validation
+- **WordPress Integration**: StatusManager adds custom status to native dropdown
+- **Error Recovery**: Button state management with proper error handling
+
+### Template Development
+- **File Structure**: `templates/admin-cards/` directory with component separation
+- **Data Flow**: PHP classes prepare data arrays, templates handle presentation
+- **Reusability**: Templates designed for cross-domain usage (Realizace, Faktury)
+- **Domain Details**: Separate `domain-details/` subdirectory for domain-specific templates
+
+### Troubleshooting Admin Features
+- **AJAX Errors**: Check nonce validation and proper action registration
+- **Button States**: Verify post status and proper JavaScript event handling
+- **Template Issues**: Ensure template files exist and data arrays are properly structured
+- **Field Access**: Use FieldService classes, never hardcode ACF field selectors
+
+## Development Workflow
+
+### New Domain Implementation
+1. **Extend Base Classes**: Use AdminControllerBase, PointsHandlerBase, FieldServiceBase
+2. **Create Field Service**: Centralized ACF field access with English field names
+3. **Configure Services**: StatusManager and AdminAssetManager with domain-specific settings
+4. **Create Templates**: Domain-specific detail template in `templates/admin-cards/domain-details/`
+5. **Test Reject System**: Verify three-state button behavior and AJAX endpoints
+
+### Field Access Pattern
+```php
+// CORRECT - Use centralized field service
+$points = RealizaceFieldService::getPoints($post_id);
+$reason = FakturaFieldService::getRejectionReason($post_id);
+
+// INCORRECT - Never hardcode field selectors
+$points = get_field('realizace_pridelene_body', $post_id);
+```
+
+### Known Issues & Solutions
+- **ACF Grouped Fields**: Use proper field selectors or add ACF load_value hooks
+- **AJAX Action Bugs**: Ensure correct typenow/pagenow usage in JavaScript
+- **Template Errors**: Verify template file paths and data structure
+- **Field Synchronization**: Always use FieldService classes for consistency
