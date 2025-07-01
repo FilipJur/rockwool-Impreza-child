@@ -317,7 +317,7 @@ class AdminController extends AdminControllerBase {
      */
     public function handle_bulk_approve_ajax(): void {
         error_log('[REALIZACE:AJAX] Bulk approve called - delegating to base class');
-        
+
         // Delegate to base class which has correct nonce verification
         parent::handle_bulk_approve_ajax();
     }

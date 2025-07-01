@@ -6,6 +6,7 @@ namespace MistrFachman\Faktury;
 
 use MistrFachman\Base\AdminControllerBase;
 use MistrFachman\Base\AdminCardRendererBase;
+use MistrFachman\Services\DebugLogger;
 
 /**
  * Faktury Admin Controller - Unified Admin Interface Controller
@@ -60,11 +61,8 @@ class AdminController extends AdminControllerBase {
         // Asset management hooks - asset manager handles its own conditional logic
         add_action('admin_enqueue_scripts', [$this->asset_manager, 'enqueue_admin_assets']);
 
-        // Gatekeeper validation hook - blocks invalid posts from being published
-        add_filter('wp_insert_post_data', [$this, 'gatekeeper_validation'], 10, 2);
-        
-        // Display gatekeeper validation notices
-        add_action('admin_notices', [$this, 'display_gatekeeper_validation_notices']);
+        // Gatekeeper validation hook - blocks invalid posts BEFORE database save
+        add_filter('wp_insert_post_data', [$this, 'gatekeeper_validation_wp_insert'], 99, 2);
 
         // AJAX hooks
         $this->init_ajax_hooks();
@@ -135,7 +133,7 @@ class AdminController extends AdminControllerBase {
         error_log('[FAKTURY:AJAX] Quick action called - START');
         error_log('[FAKTURY:AJAX] POST data: ' . json_encode($_POST));
         error_log('[FAKTURY:AJAX] Expected nonce action: mistr_fachman_' . $this->getPostType() . '_action');
-        
+
         // Delegate to base class which has correct nonce verification
         parent::handle_quick_action_ajax();
     }
@@ -153,28 +151,28 @@ class AdminController extends AdminControllerBase {
 
         // Get calculated points for this faktura
         $points_to_award = $this->getCalculatedPoints($post_id);
-        
+
         error_log("[FAKTURY:AJAX] Calculated points for faktura {$post_id}: {$points_to_award}");
-        
+
         // Save the calculated points for auditing
         FakturaFieldService::setPoints($post_id, $points_to_award);
-        
+
         // Clear rejection reason
         FakturaFieldService::setRejectionReason($post_id, '');
-        
+
         // Publish post
         $result = wp_update_post(['ID' => $post_id, 'post_status' => 'publish']);
-        
+
         if (is_wp_error($result)) {
             throw new \Exception('Failed to update post status: ' . $result->get_error_message());
         }
-        
+
         // Award points directly using PointsHandler public method
         $user_id = (int)$post->post_author;
         if ($user_id) {
             $points_handler = new PointsHandler();
             $success = $points_handler->award_points($post_id, $user_id, $points_to_award);
-            
+
             if ($success) {
                 error_log("[FAKTURY:AJAX] Successfully awarded {$points_to_award} points for post {$post_id} via direct method");
             } else {
@@ -189,8 +187,8 @@ class AdminController extends AdminControllerBase {
      */
     protected function run_pre_publish_validation(\WP_Post $post): array {
         $validator = new ValidationService($post);
-        
-        if (!$validator->isValid()) {
+
+        if (!$validator->isPublishable()) {
             return ['success' => false, 'message' => $validator->getValidationMessage()];
         }
 
@@ -198,63 +196,78 @@ class AdminController extends AdminControllerBase {
     }
 
     /**
-     * Gatekeeper validation - blocks invalid posts from being published
-     * Runs before the post is saved to database
+     * WordPress insert post data filter - blocks invalid posts BEFORE database save
+     * This is the correct hook that runs before WordPress saves the post data
      */
-    public function gatekeeper_validation(array $data, array $postarr): array {
-        // Only run on our specific post type and when trying to publish
-        if ($data['post_type'] !== $this->getPostType() || $data['post_status'] !== 'publish') {
+    public function gatekeeper_validation_wp_insert(array $data, array $postarr): array {
+        DebugLogger::log('--- WP_INSERT_POST_DATA GATEKEEPER START ---');
+        
+        // Only process our post type
+        if ($data['post_type'] !== 'invoice') {
+            DebugLogger::log('-> EXIT: Not an invoice post type', [
+                'actual_post_type' => $data['post_type']
+            ]);
             return $data;
         }
 
-        // Don't run on new posts being created, only on updates
-        if (empty($postarr['ID'])) {
+        // Only validate if trying to publish
+        if ($data['post_status'] !== 'publish') {
+            DebugLogger::log('-> EXIT: Not publishing', [
+                'post_status' => $data['post_status']
+            ]);
             return $data;
         }
 
-        $post = get_post($postarr['ID']);
+        DebugLogger::log('-> Processing invoice publication attempt', [
+            'post_id' => $postarr['ID'] ?? 'NEW_POST',
+            'post_status' => $data['post_status']
+        ]);
+
+        // Get post object for validation
+        $post_id = $postarr['ID'] ?? 0;
+        if ($post_id) {
+            $post = get_post($post_id);
+        } else {
+            // For new posts, create a mock post object
+            $post = (object) [
+                'ID' => 0,
+                'post_author' => $postarr['post_author'] ?? get_current_user_id(),
+                'post_type' => 'invoice'
+            ];
+        }
+
         if (!$post) {
+            DebugLogger::log('-> EXIT: Could not get post object');
             return $data;
         }
 
-        // Run our validation logic
-        $validator = new ValidationService($post);
-        $is_valid = $validator->isValid();
-
-        if (!$is_valid) {
-            // Validation FAILED. Block the status change.
-            $data['post_status'] = $post->post_status; // Revert to original status
-
-            // Set a transient to show the admin a persistent error notice.
-            set_transient(
-                'domain_validation_error_' . get_current_user_id(),
-                [
-                    'message' => $validator->getValidationMessage(),
-                    'post_title' => $post->post_title
-                ],
-                30 // Expires in 30 seconds
-            );
+        // Run real validation
+        DebugLogger::log('-> Running actual validation logic');
+        $validator = new ValidationService($post, $_POST);
+        
+        if (!$validator->isPublishable()) {
+            $error_message = $validator->getValidationMessage();
+            DebugLogger::log('-> VALIDATION FAILED - BLOCKING PUBLICATION', ['error' => $error_message]);
+            
+            // Block publication by forcing status back to pending
+            $data['post_status'] = 'pending';
+            
+            // Add admin notice for next page load
+            add_action('admin_notices', function() use ($error_message) {
+                echo '<div class="notice notice-error is-dismissible">';
+                echo '<p><strong>PUBLIKOVÁNÍ BLOKOVÁNO:</strong> ' . esc_html($error_message) . '</p>';
+                echo '</div>';
+            });
+            
+            DebugLogger::log('-> PUBLICATION BLOCKED - STATUS CHANGED TO PENDING');
+        } else {
+            DebugLogger::log('-> VALIDATION PASSED - ALLOWING PUBLICATION');
         }
+        DebugLogger::log('--- WP_INSERT_POST_DATA GATEKEEPER END ---');
 
         return $data;
     }
 
-    /**
-     * Display gatekeeper validation error notices
-     */
-    public function display_gatekeeper_validation_notices(): void {
-        $error_data = get_transient('domain_validation_error_' . get_current_user_id());
-        
-        if ($error_data && is_array($error_data)) {
-            delete_transient('domain_validation_error_' . get_current_user_id());
-            
-            printf(
-                '<div class="notice notice-error is-dismissible"><p><strong>Publikování faktury "%s" bylo zablokováno:</strong> %s</p></div>',
-                esc_html($error_data['post_title']),
-                esc_html($error_data['message'])
-            );
-        }
-    }
 
     // ===========================================
     // ABSTRACT METHOD IMPLEMENTATIONS
@@ -291,12 +304,12 @@ class AdminController extends AdminControllerBase {
         if ($post_id === 0) {
             return 0; // No post ID provided
         }
-        
+
         $invoice_value = FakturaFieldService::getValue($post_id);
         if ($invoice_value <= 0) {
             return 0; // No valid invoice value
         }
-        
+
         // Core business logic: floor(value / 10) - 10 CZK = 1 bod
         return (int) floor($invoice_value / 10);
     }
@@ -399,11 +412,11 @@ class AdminController extends AdminControllerBase {
             // Award points when publishing
             $points_handler = new PointsHandler();
             $points_to_award = $this->getCalculatedPoints($post->ID);
-            
+
             if ($points_to_award > 0) {
                 // Save calculated points
                 FakturaFieldService::setPoints($post->ID, $points_to_award);
-                
+
                 // Award points
                 $points_handler->award_points($post->ID, (int)$post->post_author, $points_to_award);
                 error_log("[{$domain_debug}:UI] Awarded {$points_to_award} points for post #{$post->ID}");

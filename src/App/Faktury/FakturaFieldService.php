@@ -42,6 +42,13 @@ class FakturaFieldService extends FieldServiceBase {
     private const INVOICE_DATE_ADMIN_FIELD = 'invoice_date';
 
     /**
+     * ACF Field key constants for $_POST data access
+     * These are used by the gatekeeper validation to access fresh form data
+     */
+    private const INVOICE_DATE_FIELD_KEY = 'field_invoice_date_2025';
+    private const VALUE_FIELD_KEY = 'field_invoice_value_2025';
+
+    /**
      * Get points value for a faktura post
      *
      * @param int $post_id Post ID
@@ -184,8 +191,8 @@ class FakturaFieldService extends FieldServiceBase {
         return self::REJECTION_REASON_FIELD;
     }
 
-    public static function getValueFieldSelector(): string {
-        return self::VALUE_FIELD;
+    public static function getValueFieldSelector(bool $get_key = false): string {
+        return $get_key ? self::VALUE_FIELD_KEY : self::VALUE_FIELD;
     }
 
     public static function getFileFieldSelector(): string {
@@ -196,8 +203,8 @@ class FakturaFieldService extends FieldServiceBase {
         return self::INVOICE_NUMBER_ADMIN_FIELD;
     }
 
-    public static function getInvoiceDateFieldSelector(): string {
-        return self::INVOICE_DATE_ADMIN_FIELD;
+    public static function getInvoiceDateFieldSelector(bool $get_key = false): string {
+        return $get_key ? self::INVOICE_DATE_FIELD_KEY : self::INVOICE_DATE_ADMIN_FIELD;
     }
 
 

@@ -3,7 +3,7 @@
     "template-system": {
       "name": "Template System - MVC Separation for Admin Cards",
       "created": "2025-06-25T00:00:00.000Z",
-      "lastUsed": "2025-06-25T03:48:59.000Z",
+      "lastUsed": "2025-06-27T15:08:34.998Z",
       "tags": [
         "frontend",
         "template-system",
@@ -21,7 +21,8 @@
         "templates/admin-cards/post-card-compact.php",
         "templates/admin-cards/post-gallery.php",
         "templates/admin-cards/post-actions.php",
-        "templates/admin-cards/domain-details/realizace-details.php"
+        "templates/admin-cards/domain-details/realizace-details.php",
+        "templates/admin-cards/domain-details/faktura-details.php"
       ]
     },
     "mycred-ecommerce": {
@@ -44,13 +45,13 @@
         "src/App/Services/ProductService.php",
         "src/App/Services/UserDetectionService.php",
         "src/App/Services/UserService.php",
+        "src/App/Services/DebugLogger.php",
         "src/App/Shortcodes/ShortcodeManager.php",
         "src/App/Shortcodes/ShortcodeBase.php",
         "src/App/Shortcodes/ProductGridShortcode.php",
         "src/App/Shortcodes/UserDebugShortcode.php",
         "src/App/Shortcodes/UserHeaderShortcode.php",
-        "src/App/Users/AccessControl.php",
-        "src/App/Users/Admin"
+        "src/App/Users/AccessControl.php"
       ]
     },
     "file-upload-feature": {
@@ -80,7 +81,7 @@
     "ares-integration": {
       "name": "ARES Integration",
       "created": "2025-01-15T00:00:00.000Z",
-      "lastUsed": "2025-06-18T00:00:00.000Z",
+      "lastUsed": "2025-06-27T15:08:52.998Z",
       "tags": [
         "frontend",
         "javascript",
@@ -96,7 +97,7 @@
     "theme-configuration": {
       "name": "Theme Configuration & Integration",
       "created": "2025-01-15T00:00:00.000Z",
-      "lastUsed": "2025-01-15T00:00:00.000Z",
+      "lastUsed": "2025-06-27T15:08:58.396Z",
       "tags": [
         "wordpress",
         "theme",
@@ -113,7 +114,7 @@
     "build-development": {
       "name": "Build & Development Configuration",
       "created": "2025-01-15T00:00:00.000Z",
-      "lastUsed": "2025-01-15T00:00:00.000Z",
+      "lastUsed": "2025-06-27T15:09:05.418Z",
       "tags": [
         "build",
         "development",
@@ -129,7 +130,7 @@
     "scss-modular-architecture": {
       "name": "SCSS Modular Architecture - Admin Components",
       "created": "2025-06-25T00:00:00.000Z",
-      "lastUsed": "2025-06-25T20:00:00.000Z",
+      "lastUsed": "2025-06-27T15:09:12.699Z",
       "tags": [
         "design",
         "scss",
@@ -275,22 +276,17 @@
         "src/App/Realizace/Manager.php",
         "src/App/Realizace/NewRealizaceFormHandler.php",
         "src/bootstrap.php",
-        "src/App/Realizace/AdminAssetManager.php",
         "src/App/Realizace/RealizaceCardRenderer.php",
         "src/App/Realizace/AdminController.php",
         "src/App/Realizace/PointsHandler.php",
         "src/App/Shortcodes/MyRealizaceShortcode.php",
         "src/App/Realizace/DebugValidator.php",
-        "src/App/Realizace/StatusManager.php",
         "src/App/Realizace/RealizaceFieldService.php",
-        "src/App/Realizace/AdminCardRenderer.php",
         "src/App/Faktury/FakturaFieldService.php",
         "src/App/Faktury/NewFakturyFormHandler.php",
         "src/App/Faktury/ValidationService.php",
         "src/App/Faktury/AdminController.php",
         "src/App/Faktury/PointsHandler.php",
-        "src/App/Faktury/StatusManager.php",
-        "src/App/Faktury/AdminAssetManager.php",
         "src/App/Faktury/FakturyCardRenderer.php",
         "src/App/Faktury/Manager.php",
         "src/App/Base/FieldServiceBase.php"
@@ -299,7 +295,7 @@
     "realizace-domain": {
       "name": "Realizace Domain - Project Submissions",
       "created": "2025-06-23T00:00:00.000Z",
-      "lastUsed": "2025-06-23T01:30:00.000Z",
+      "lastUsed": "2025-06-27T15:09:24.959Z",
       "tags": [
         "backend",
         "realizace",
@@ -335,7 +331,6 @@
         "src/App/Users/BusinessDataModalRenderer.php",
         "src/App/Users/BusinessDataProcessor.php",
         "src/App/Users/BusinessDataValidator.php",
-        "src/App/Realizace/AdminAssetManager.php",
         "src/App/Realizace/RealizaceCardRenderer.php",
         "src/App/Realizace/AdminController.php",
         "src/js/features/admin/business-data-modal.js",
@@ -348,13 +343,14 @@
         "templates/admin-cards/post-card-compact.php",
         "templates/admin-cards/post-gallery.php",
         "templates/admin-cards/post-actions.php",
-        "templates/admin-cards/domain-details/realizace-details.php"
+        "templates/admin-cards/domain-details/realizace-details.php",
+        "templates/admin-cards/domain-details/faktura-details.php"
       ]
     },
     "base-architecture": {
       "name": "Base Architecture - Abstract Foundation Classes",
       "created": "2025-06-23T00:00:00.000Z",
-      "lastUsed": "2025-06-26T20:00:00.000Z",
+      "lastUsed": "2025-06-27T15:30:00.000Z",
       "tags": [
         "backend",
         "base-classes",
@@ -392,8 +388,6 @@
       "files": [
         "src/App/Realizace/Manager.php",
         "src/App/Realizace/RealizaceFormHandler.php",
-        "src/App/Realizace/AdminAssetManager.php",
-        "src/App/Realizace/AdminCardRenderer.php",
         "src/App/Realizace/AdminController.php",
         "src/App/Realizace/PointsHandler.php",
         "src/App/Shortcodes/MyRealizaceShortcode.php",
@@ -416,7 +410,7 @@
     "full-stack-architecture": {
       "name": "Full Stack Architecture - Complete Backend + Frontend Integration",
       "created": "2025-06-25T00:00:00.000Z",
-      "lastUsed": "2025-06-26T20:00:00.000Z",
+      "lastUsed": "2025-06-27T15:32:37.219Z",
       "tags": [
         "full-stack",
         "complete-architecture",
@@ -429,13 +423,12 @@
       ],
       "files": [
         "src/bootstrap.php",
-        "src/App/Base/PostTypeManagerBase.php",
-        "src/App/Base/AdminControllerBase.php",
         "src/App/Base/AdminCardRendererBase.php",
-        "src/App/Base/AdminAssetManagerBase.php",
-        "src/App/Base/StatusManagerBase.php",
-        "src/App/Base/PointsHandlerBase.php",
+        "src/App/Base/AdminControllerBase.php",
+        "src/App/Base/FieldServiceBase.php",
         "src/App/Base/FormHandlerBase.php",
+        "src/App/Base/PointsHandlerBase.php",
+        "src/App/Base/PostTypeManagerBase.php",
         "src/App/MyCred/ECommerce/Manager.php",
         "src/App/MyCred/ECommerce/CartContext.php",
         "src/App/MyCred/ECommerce/BalanceCalculator.php",
@@ -445,6 +438,7 @@
         "src/App/Services/ProductService.php",
         "src/App/Services/UserDetectionService.php",
         "src/App/Services/UserService.php",
+        "src/App/Services/DebugLogger.php",
         "src/App/Services/StatusManager.php",
         "src/App/Services/AdminAssetManager.php",
         "src/App/Shortcodes/ShortcodeManager.php",
@@ -476,21 +470,16 @@
         "src/App/Users/ThemeIntegration.php",
         "src/App/Realizace/Manager.php",
         "src/App/Realizace/NewRealizaceFormHandler.php",
-        "src/App/Realizace/AdminAssetManager.php",
         "src/App/Realizace/RealizaceCardRenderer.php",
         "src/App/Realizace/AdminController.php",
         "src/App/Realizace/PointsHandler.php",
         "src/App/Realizace/DebugValidator.php",
-        "src/App/Realizace/StatusManager.php",
         "src/App/Realizace/RealizaceFieldService.php",
-        "src/App/Realizace/AdminCardRenderer.php",
         "src/App/Faktury/FakturaFieldService.php",
         "src/App/Faktury/NewFakturyFormHandler.php",
         "src/App/Faktury/ValidationService.php",
         "src/App/Faktury/AdminController.php",
         "src/App/Faktury/PointsHandler.php",
-        "src/App/Faktury/StatusManager.php",
-        "src/App/Faktury/AdminAssetManager.php",
         "src/App/Faktury/FakturyCardRenderer.php",
         "src/App/Faktury/Manager.php",
         "src/js/main.js",
@@ -521,12 +510,11 @@
         "templates/admin-cards/post-gallery.php",
         "templates/admin-cards/post-actions.php",
         "templates/admin-cards/domain-details/realizace-details.php",
+        "templates/admin-cards/domain-details/faktura-details.php",
         "webpack.config.js",
         "package.json",
         "functions.php",
-        "CLAUDE.md",
-        "src/App/Base/FieldServiceBase.php",
-        "templates/admin-cards/domain-details/faktura-details.php"
+        "CLAUDE.md"
       ]
     },
     "architecture-modernization": {
@@ -566,7 +554,6 @@
         "src/scss/components/admin/_summary.scss",
         "src/scss/components/admin/_timeline.scss",
         "src/scss/main.scss",
-        "src/App/Realizace/AdminAssetManager.php",
         "templates/admin-cards/post-actions.php"
       ]
     },
@@ -589,8 +576,6 @@
         "src/App/Faktury/ValidationService.php",
         "src/App/Faktury/AdminController.php",
         "src/App/Faktury/PointsHandler.php",
-        "src/App/Faktury/StatusManager.php",
-        "src/App/Faktury/AdminAssetManager.php",
         "src/App/Faktury/FakturyCardRenderer.php",
         "src/App/Faktury/Manager.php"
       ]
@@ -618,21 +603,16 @@
         "src/App/Base/FieldServiceBase.php",
         "src/App/Realizace/Manager.php",
         "src/App/Realizace/NewRealizaceFormHandler.php",
-        "src/App/Realizace/AdminAssetManager.php",
         "src/App/Realizace/RealizaceCardRenderer.php",
         "src/App/Realizace/AdminController.php",
         "src/App/Realizace/PointsHandler.php",
         "src/App/Realizace/DebugValidator.php",
-        "src/App/Realizace/StatusManager.php",
         "src/App/Realizace/RealizaceFieldService.php",
-        "src/App/Realizace/AdminCardRenderer.php",
         "src/App/Faktury/FakturaFieldService.php",
         "src/App/Faktury/NewFakturyFormHandler.php",
         "src/App/Faktury/ValidationService.php",
         "src/App/Faktury/AdminController.php",
         "src/App/Faktury/PointsHandler.php",
-        "src/App/Faktury/StatusManager.php",
-        "src/App/Faktury/AdminAssetManager.php",
         "src/App/Faktury/FakturyCardRenderer.php",
         "src/App/Faktury/Manager.php",
         "src/js/features/admin/base/AdminManagementBase.js",

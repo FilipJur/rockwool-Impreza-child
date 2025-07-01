@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Faktury;
 
+use MistrFachman\Services\DebugLogger;
+
 /**
  * Faktury Validation Service - Business Rules Validation
  *
@@ -27,52 +29,57 @@ if (!defined('ABSPATH')) {
 class ValidationService {
     private int $user_id;
     private \WP_Post $post;
+    private array $post_data;
 
-    public function __construct(\WP_Post $post_being_validated) {
+    public function __construct(\WP_Post $post_being_validated, ?array $post_data = null) {
         $this->post = $post_being_validated;
+        $this->post_data = $post_data ?? $_POST; // Use passed data or default to global
         $this->user_id = (int) $post_being_validated->post_author;
     }
 
     /**
-     * Basic validation - always returns true for now
-     * TODO: Implement actual business rules
-     *
-     * @return bool
+     * Simple validation check for publishing
      */
-    public function isValid(): bool {
-        // Only validate the rules that ACF cannot handle: the date and monthly value limits.
-        return $this->isDateValid() && $this->isMonthlyLimitOk();
+    public function isPublishable(): bool {
+        DebugLogger::log('ValidationService::isPublishable() - checking rules');
+        
+        $date_valid = $this->isDateValid();
+        $limit_ok = $this->isMonthlyLimitOk();
+        
+        $result = $date_valid && $limit_ok;
+        DebugLogger::log('Validation result:', [
+            'date_valid' => $date_valid,
+            'limit_ok' => $limit_ok,
+            'publishable' => $result
+        ]);
+        
+        return $result;
     }
 
 
     /**
-     * Validate invoice date is in current year
-     *
-     * @return bool
+     * Simple date validation - current year only
      */
     public function isDateValid(): bool {
-        $invoice_date_str = FakturaFieldService::getInvoiceDate($this->post->ID);
+        $invoice_date_str = $this->get_fresh_value('invoiceDate');
         
-        // If no date is set yet, that's OK (admin will fill it)
         if (empty($invoice_date_str)) {
+            DebugLogger::log('Date validation: empty date, allowing');
             return true;
         }
         
-        // ACF date picker returns Ymd format (20250625)
-        if (strlen($invoice_date_str) === 8) {
-            $invoice_year = substr($invoice_date_str, 0, 4);
-        } else {
-            // Try to parse other date formats
-            $date = \DateTime::createFromFormat('Y-m-d', $invoice_date_str);
-            if (!$date) {
-                return false; // Invalid date format
-            }
-            $invoice_year = $date->format('Y');
-        }
-        
+        $invoice_year = substr($invoice_date_str, 0, 4);
         $current_year = date('Y');
+        $is_valid = $invoice_year === $current_year;
         
-        return $invoice_year === $current_year;
+        DebugLogger::log('Date validation:', [
+            'date' => $invoice_date_str,
+            'year' => $invoice_year,
+            'current_year' => $current_year,
+            'valid' => $is_valid
+        ]);
+        
+        return $is_valid;
     }
     
     /**
@@ -109,54 +116,93 @@ class ValidationService {
     */
 
     /**
-     * Check monthly limit (300,000 CZK per user per month)
-     * 
-     * CRITICAL: Checks against invoice_date ACF field, not post creation date
-     *
-     * @return bool
+     * Get fresh value - prioritize $_POST ACF data, fallback to database
+     */
+    private function get_fresh_value(string $field_name) {
+        DebugLogger::log("get_fresh_value called for '{$field_name}'");
+        
+        // Try to get from $_POST ACF data first
+        if (isset($this->post_data['acf']) && is_array($this->post_data['acf'])) {
+            $field_key = match($field_name) {
+                'value' => FakturaFieldService::getValueFieldSelector(true),
+                'invoiceDate' => FakturaFieldService::getInvoiceDateFieldSelector(true),
+                default => null
+            };
+            
+            DebugLogger::log("Looking for ACF field key: '{$field_key}'", [
+                'available_acf_keys' => array_keys($this->post_data['acf'])
+            ]);
+            
+            if ($field_key && isset($this->post_data['acf'][$field_key])) {
+                $value = $this->post_data['acf'][$field_key];
+                DebugLogger::log("-> Found in ACF POST data:", ['field_key' => $field_key, 'value' => $value]);
+                return $value;
+            }
+        }
+        
+        // Fallback to database values
+        $db_value = match($field_name) {
+            'value' => FakturaFieldService::getValue($this->post->ID),
+            'invoiceDate' => FakturaFieldService::getInvoiceDate($this->post->ID),
+            default => null
+        };
+        
+        DebugLogger::log("-> Using DB value:", ['field_name' => $field_name, 'db_value' => $db_value]);
+        return $db_value;
+    }
+
+    /**
+     * Simple monthly limit check
      */
     public function isMonthlyLimitOk(): bool {
-        global $wpdb;
-        $limit = 300000;
-        $current_value = FakturaFieldService::getValue($this->post->ID);
-        $invoice_date_str = FakturaFieldService::getInvoiceDate($this->post->ID);
+        $current_value = (int) $this->get_fresh_value('value');
+        $invoice_date_str = $this->get_fresh_value('invoiceDate');
 
-        // If no invoice date is set, we cannot check the limit. Assume it's ok for now.
-        // This will be caught by the required fields check later.
         if (empty($invoice_date_str)) {
+            DebugLogger::log('Monthly limit: no date, allowing');
             return true;
         }
 
-        // The date is stored as 'Ymd'. We need the year and month.
+        $total_from_db = $this->get_total_for_month($this->user_id, $invoice_date_str, $this->post->ID);
+        
+        $limit = 300000;
+        $total_with_current = $total_from_db + $current_value;
+        $is_within_limit = $total_with_current <= $limit;
+        
+        DebugLogger::log('Monthly limit check:', [
+            'current_value' => $current_value,
+            'total_from_db' => $total_from_db,
+            'total' => $total_with_current,
+            'limit' => $limit,
+            'within_limit' => $is_within_limit
+        ]);
+        
+        return $is_within_limit;
+    }
+
+    /**
+     * Get the total approved invoice value for a given month for a specific user
+     * Used by monthly limit validation
+     */
+    private function get_total_for_month(int $user_id, string $invoice_date_str, int $exclude_post_id): int {
+        global $wpdb;
+        
         $year = substr($invoice_date_str, 0, 4);
         $month = substr($invoice_date_str, 4, 2);
-
-        // Date range for the query (e.g., '20250601' to '20250631')
         $start_date = $year . $month . '01';
         $end_date = $year . $month . '31';
 
         $value_meta_key = FakturaFieldService::getValueFieldSelector();
         $date_meta_key = FakturaFieldService::getInvoiceDateFieldSelector();
 
-        $total_approved_this_month = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(value_meta.meta_value)
-            FROM {$wpdb->posts} p
-            JOIN {$wpdb->postmeta} date_meta ON p.ID = date_meta.post_id AND date_meta.meta_key = %s
-            JOIN {$wpdb->postmeta} value_meta ON p.ID = value_meta.post_id AND value_meta.meta_key = %s
-            WHERE p.post_type = 'invoice'
-            AND p.post_author = %d
-            AND p.post_status = 'publish'
-            AND p.ID != %d
-            AND (date_meta.meta_value BETWEEN %s AND %s)",
-            $date_meta_key,
-            $value_meta_key,
-            $this->user_id,
-            $this->post->ID, // Exclude the current post from the sum
-            $start_date,
-            $end_date
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT SUM(value_meta.meta_value) FROM {$wpdb->posts} p " .
+            "JOIN {$wpdb->postmeta} date_meta ON p.ID = date_meta.post_id AND date_meta.meta_key = %s " .
+            "JOIN {$wpdb->postmeta} value_meta ON p.ID = value_meta.post_id AND value_meta.meta_key = %s " .
+            "WHERE p.post_type = 'invoice' AND p.post_author = %d AND p.post_status = 'publish' AND p.ID != %d " .
+            "AND (date_meta.meta_value BETWEEN %s AND %s)",
+            $date_meta_key, $value_meta_key, $user_id, $exclude_post_id, $start_date, $end_date
         ));
-
-        return ($total_approved_this_month + $current_value) <= $limit;
     }
 
     /**
@@ -170,7 +216,7 @@ class ValidationService {
         }
 
         if (!$this->isMonthlyLimitOk()) {
-            $current_value = FakturaFieldService::getValue($this->post->ID);
+            $current_value = (int) $this->get_fresh_value('value'); // Get fresh value for the message
             return sprintf(
                 'Měsíční limit 300 000 Kč byl překročen. Tato faktura (%s Kč) by překročila povolenou částku.',
                 number_format($current_value, 0, ',', ' ')

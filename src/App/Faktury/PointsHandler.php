@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Faktury;
 
 use MistrFachman\Base\PointsHandlerBase;
+use MistrFachman\Services\DebugLogger;
 
 /**
  * Faktury Points Handler - myCred Integration
@@ -101,6 +102,67 @@ class PointsHandler extends PointsHandlerBase {
         error_log("[FAKTURY:INFO] Awarding {$points_to_award} points to user {$user_id} for faktura {$post_id} (value: {$invoice_value} CZK)");
         
         return parent::award_points($post_id, $user_id, $points_to_award);
+    }
+
+    /**
+     * Initialize hooks for this points handler
+     */
+    public function init_hooks(): void {
+        parent::init_hooks();
+        
+        // Observer hook: React to changes in invoice_value field
+        add_action('updated_post_meta', [$this, 'on_invoice_value_update'], 10, 4);
+    }
+
+    /**
+     * Observes changes to post meta and triggers points recalculation
+     * when the 'invoice_value' field is updated. This method uses the
+     * $meta_value parameter directly to avoid stale data issues.
+     *
+     * @param int    $meta_id     ID of the meta data entry.
+     * @param int    $post_id     Post ID.
+     * @param string $meta_key    Meta key.
+     * @param mixed  $meta_value  New meta value.
+     */
+    public function on_invoice_value_update(int $meta_id, int $post_id, string $meta_key, $meta_value): void {
+        // Step 1: Guard clause. Exit if this is not the field or post type we care about.
+        if ($meta_key !== FakturaFieldService::getValueFieldSelector() || get_post_type($post_id) !== $this->getPostType()) {
+            return;
+        }
+
+        // Step 2: Calculate points directly from the new value passed by the hook.
+        $new_invoice_value = (int) $meta_value;
+        $new_points = ($new_invoice_value > 0) ? (int) floor($new_invoice_value / 10) : 0;
+        
+        // Step 3: Get the currently stored points to see if an update is needed.
+        $current_points = FakturaFieldService::getPoints($post_id);
+
+        // Step 4: Only update if the calculated points are different from what's stored.
+        if ($new_points !== $current_points) {
+            // No need for loop prevention here, as we are not re-triggering the same meta_key update.
+            FakturaFieldService::setPoints($post_id, $new_points);
+
+            DebugLogger::log('REACTIVE UPDATE SUCCESS', [
+                'post_id' => $post_id,
+                'trigger_key' => $meta_key,
+                'new_invoice_value' => $new_invoice_value,
+                'calculated_points' => $new_points,
+                'previous_points' => $current_points
+            ]);
+        }
+    }
+
+    /**
+     * Override the parent handle_post_save method.
+     * The logic within is now handled by the more reliable on_invoice_value_update observer.
+     * This prevents the parent's logic from running and conflicting with our observer.
+     */
+    public function handle_post_save(int $post_id, \WP_Post $post): void {
+        // Do nothing. All logic is now in the reactive observer.
+        DebugLogger::log('handle_post_save() called but disabled for Faktury - observer pattern handles all logic.', [
+            'post_id' => $post_id,
+            'post_status' => $post->post_status
+        ]);
     }
 
     /**
