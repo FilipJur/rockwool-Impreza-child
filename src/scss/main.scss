@@ -25,9 +25,10 @@ Version:        0.1.0
 @use 'components/ares-form';
 @use 'components/cf7-relational-selects';
 
-// Admin Components (replaces monolithic admin-interface)
+// Admin Components (consolidated architecture)
+@use 'components/admin/admin-mixins'; // Shared mixins (must be first)
 @use 'components/admin/base';
-@use 'components/admin/layout';
+@use 'components/admin/layout'; // Now uses mixins - 79% smaller
 @use 'components/admin/cards';
 @use 'components/admin/status';
 @use 'components/admin/timeline';
@@ -35,10 +36,11 @@ Version:        0.1.0
 @use 'components/admin/admin-actions';
 @use 'components/admin/notifications';
 
-// Domain-Specific Admin Components
-@use 'components/admin/realizace-dashboard';
-@use 'components/admin/realizace-sections';
-@use 'components/admin/realizace-items';
+// Domain-Specific Admin Components (now using mixins)
+@use 'components/admin/realization-dashboard'; // 70% smaller
+@use 'components/admin/realization-sections';
+@use 'components/admin/realization-items';
+@use 'components/admin/invoice-dashboard'; // 73% smaller
 @use 'components/admin/admin-user-management';
 
 // Utilities

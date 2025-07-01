@@ -108,7 +108,13 @@ function impreza_child_inject_user_data()
 add_action('admin_enqueue_scripts', 'impreza_child_enqueue_admin_assets');
 function impreza_child_enqueue_admin_assets()
 {
-	// Admin doesn't need frontend styles - only specific admin assets should be loaded here
+	// Enqueue admin-specific CSS (contains grid layout, collapsible sections, etc.)
+	wp_enqueue_style(
+		'theme-admin-css',
+		get_stylesheet_directory_uri() . '/style.css',
+		['admin-bar'],
+		wp_get_theme()->get('Version')
+	);
 
 	// Register built admin JavaScript bundle
 	$admin_js_asset_file = get_stylesheet_directory() . '/build/js/admin.asset.php';

@@ -252,7 +252,7 @@ export class RealizaceManagement extends AdminManagementBase {
  * @param {string} containerSelector - CSS selector for management container
  * @returns {Object} Management instance with cleanup method
  */
-export function setupRealizaceManagement(containerSelector = '.realization-management-modern') {
+export function setupRealizaceManagement(containerSelector = '.management-card.realization-dashboard') {
   console.log('[Realizace] Setting up management...');
 
   const config = {

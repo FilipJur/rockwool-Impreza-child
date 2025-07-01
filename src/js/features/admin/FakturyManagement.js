@@ -193,7 +193,7 @@ export class FakturyManagement extends AdminManagementBase {
   initializeAmountValidation() {
     // Add validation for amount inputs
     document.addEventListener('input', (event) => {
-      if (event.target.matches('.faktury-amount-input')) {
+      if (event.target.matches('.invoice-amount-input')) {
         const input = event.target;
         const value = parseFloat(input.value);
         
@@ -214,7 +214,7 @@ export class FakturyManagement extends AdminManagementBase {
         
         // Calculate points based on amount (example: 1 point per 100 Kč)
         const calculatedPoints = Math.floor(value / 100);
-        const pointsDisplay = input.closest('.faktury-item')?.querySelector('.calculated-points');
+        const pointsDisplay = input.closest('.invoice-item')?.querySelector('.calculated-points');
         if (pointsDisplay) {
           pointsDisplay.textContent = `${calculatedPoints} bodů`;
         }
@@ -228,7 +228,7 @@ export class FakturyManagement extends AdminManagementBase {
   setupFakturySpecificEvents() {
     // Add due date validation
     document.addEventListener('change', (event) => {
-      if (event.target.matches('.faktury-due-date-input')) {
+      if (event.target.matches('.invoice-due-date-input')) {
         const input = event.target;
         const dueDate = new Date(input.value);
         const today = new Date();
@@ -256,7 +256,7 @@ export class FakturyManagement extends AdminManagementBase {
     
     // Populate default amount if empty
     if (defaultValues.amount !== undefined) {
-      const amountInputs = document.querySelectorAll('.faktury-amount-input[data-post-id]');
+      const amountInputs = document.querySelectorAll('.invoice-amount-input[data-post-id]');
       amountInputs.forEach(input => {
         if (!input.value || input.value === '0' || input.value === '') {
           input.value = defaultValues.amount.toString();
@@ -283,7 +283,7 @@ export class FakturyManagement extends AdminManagementBase {
  * @param {string} containerSelector - CSS selector for management container
  * @returns {Object} Management instance with cleanup method
  */
-export function setupFakturyManagement(containerSelector = '.invoice-management-modern') {
+export function setupFakturyManagement(containerSelector = '.management-card.invoice-dashboard') {
   console.log('Setting up faktury management...');
 
   const config = {

@@ -69,13 +69,13 @@ class AdminApp {
     }
 
     // Realizace management for user admin interface
-    const realizaceContainer = document.querySelector('.realization-management-modern');
+    const realizaceContainer = document.querySelector('.management-card.realization-dashboard');
     console.log('[Admin] Looking for realizace container:', realizaceContainer);
     console.log('[Admin] All elements with "realization" in class:', document.querySelectorAll('[class*="realization"]'));
     
     if (realizaceContainer) {
       try {
-        this.modules.realizaceManagement = setupRealizaceManagement('.realization-management-modern');
+        this.modules.realizaceManagement = setupRealizaceManagement();
         console.log('[Admin] Realizace management initialized for admin');
       } catch (error) {
         console.error('[Admin] Failed to initialize realizace management for admin:', error);
@@ -85,9 +85,9 @@ class AdminApp {
     }
 
     // Faktury management for user admin interface
-    if (document.querySelector('.invoice-management-modern')) {
+    if (document.querySelector('.management-card.invoice-dashboard')) {
       try {
-        this.modules.fakturyManagement = setupFakturyManagement('.invoice-management-modern');
+        this.modules.fakturyManagement = setupFakturyManagement();
         console.log('[Admin] Faktury management initialized for admin');
       } catch (error) {
         console.error('[Admin] Failed to initialize faktury management for admin:', error);

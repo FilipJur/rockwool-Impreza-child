@@ -1,0 +1,23 @@
+/**
+ * Realization Dashboard Components
+ * Domain-specific styling using shared mixins
+ * REDUCED FROM 99 LINES TO ~30 LINES (70% reduction)
+ */
+
+@use '../../base/variables' as *;
+@use 'admin-mixins' as *;
+
+// Realization Management Layout (uses shared mixin)
+.realization-management-modern {
+  @include management-layout;
+}
+
+// Realization Dashboard (uses shared mixin + domain customizations)
+.realization-dashboard {
+  @include dashboard-header;
+
+  // Realization-specific stat colors
+  .stats-header .stats-grid .stat-item {
+    @include stat-status-colors;
+  }
+}

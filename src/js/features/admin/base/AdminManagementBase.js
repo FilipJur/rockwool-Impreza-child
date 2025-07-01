@@ -60,6 +60,7 @@ export class AdminManagementBase {
     this.setupEventListeners();
     this.populateDefaultValues();
     this.makePointsInputReadOnly();
+    this.setupCollapsibleSections();
     this.state.isInitialized = true;
   }
 
@@ -155,7 +156,7 @@ export class AdminManagementBase {
     }
 
     // Get points value for approval - find the input associated with the clicked button
-    const itemContainer = button.closest('.realizace-item, .faktura-item'); // Find the parent card
+    const itemContainer = button.closest('.realization-item, .invoice-item'); // Find the parent card
     let points = null;
     if (action === 'approve' && itemContainer) {
         const pointsInput = itemContainer.querySelector(`.quick-points-input[data-post-id="${postId}"]`);
@@ -319,6 +320,61 @@ export class AdminManagementBase {
         button.textContent = originalText;
       }
     }
+  }
+
+  /**
+   * Setup collapsible sections with proper default states
+   * Business rules:
+   * - Pending: Not collapsible (no toggle button)
+   * - Rejected: Collapsible but expanded by default 
+   * - Approved: Collapsible and collapsed by default
+   */
+  setupCollapsibleSections() {
+    this.state.containers.forEach(container => {
+      const sections = container.querySelectorAll(`.${this.getDomainSlug()}-section`);
+      
+      sections.forEach(section => {
+        const status = section.dataset.status || section.className.match(/section-(\w+)/)?.[1];
+        const content = section.querySelector('.section-content.collapsible');
+        const toggleButton = section.querySelector('.section-toggle');
+        const icon = toggleButton?.querySelector('.toggle-icon');
+        
+        if (!content || !status) return;
+        
+        // Apply business rules based on status
+        switch (status) {
+          case 'pending':
+            // Pending sections: Not collapsible, hide toggle button
+            if (toggleButton) {
+              toggleButton.style.display = 'none';
+            }
+            content.classList.remove('collapsed');
+            break;
+            
+          case 'rejected':
+            // Rejected sections: Collapsible but expanded by default
+            if (toggleButton) {
+              toggleButton.style.display = 'block';
+            }
+            content.classList.remove('collapsed');
+            if (icon) {
+              icon.textContent = '▼';
+            }
+            break;
+            
+          case 'approved':
+            // Approved sections: Collapsible and collapsed by default
+            if (toggleButton) {
+              toggleButton.style.display = 'block';
+            }
+            content.classList.add('collapsed');
+            if (icon) {
+              icon.textContent = '▶';
+            }
+            break;
+        }
+      });
+    });
   }
 
   /**
