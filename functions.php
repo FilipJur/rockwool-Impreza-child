@@ -10,8 +10,8 @@ include_once("includes/leadhub.php");
 
 /**
  * Enqueue scripts and styles for frontend only.
- * 
- * Note: Tailwind CSS is intentionally NOT loaded in admin to prevent 
+ *
+ * Note: Tailwind CSS is intentionally NOT loaded in admin to prevent
  * class conflicts with WordPress core (e.g., .fixed class on admin tables).
  */
 add_action('wp_enqueue_scripts', 'impreza_parent_theme_enqueue_styles');
@@ -19,7 +19,7 @@ function impreza_parent_theme_enqueue_styles()
 {
 	// Parent theme styles
 	wp_enqueue_style('impreza-style', get_template_directory_uri() . '/style.css');
-	
+
 	// Tailwind utilities (frontend only - loaded first, lower priority)
 	wp_enqueue_style(
 		'tailwind-utilities',
@@ -27,7 +27,7 @@ function impreza_parent_theme_enqueue_styles()
 		['impreza-style'],
 		'1.0.0'
 	);
-	
+
 	// Child theme custom styles (loaded last, higher priority)
 	wp_enqueue_style(
 		'impreza-child-style',
@@ -66,7 +66,7 @@ function impreza_child_inject_user_data()
 	$user_status = $users_manager->user_service->get_user_registration_status();
 
 	// Get My Account URL
-	$my_account_url = '/';
+	$my_account_url = '/muj-ucet';
 	if (function_exists('wc_get_page_id') && wc_get_page_id('myaccount') > 0) {
 		$my_account_url = wc_get_account_endpoint_url('');
 	} else {

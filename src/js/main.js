@@ -118,6 +118,8 @@ class ThemeApp {
         console.error('Failed to initialize business data modal:', error);
       }
     }
+
+    // Faktury form validation now handled by CF7 validation hook in functions.php
   }
 
   /**
