@@ -165,9 +165,7 @@ class AdminController extends AdminControllerBase {
 
         // Validate rejection reason when moving to rejected status
         if ($new_status === 'rejected' && $old_status !== 'rejected') {
-            $rejection_reason = function_exists('get_field')
-                ? get_field($this->getRejectionReasonFieldSelector(), $post->ID)
-                : get_post_meta($post->ID, $this->getRejectionReasonFieldSelector(), true);
+            $rejection_reason = RealizaceFieldService::getRejectionReason($post->ID);
 
             if (empty($rejection_reason)) {
                 error_log("[{$domain_debug}:UI] Warning: Post #{$post->ID} rejected without reason");
