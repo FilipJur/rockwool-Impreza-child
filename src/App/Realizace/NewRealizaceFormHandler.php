@@ -76,29 +76,94 @@ class NewRealizaceFormHandler extends FormHandlerBase {
                 $post_id, 
                 $area_value
             );
-            error_log('[REALIZACE:DEBUG] area_sqm field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . $area_value);
+            \MistrFachman\Services\DebugLogger::log('[REALIZACE] area_sqm field update', [
+                'result' => $result ? 'success' : 'failed',
+                'value' => $area_value
+            ]);
         }
         
-        // Save construction type field
-        if (isset($posted_data['construction_type'])) {
+        // Save NEW construction types field (taxonomy IDs) - handle both field name patterns
+        if (isset($posted_data['your-construction-types']) && is_array($posted_data['your-construction-types'])) {
+            $construction_ids = array_filter(array_map('intval', $posted_data['your-construction-types']));
+            $result = RealizaceFieldService::setFieldValue(
+                RealizaceFieldService::getConstructionTypeFieldSelector(), 
+                $post_id, 
+                $construction_ids
+            );
+            \MistrFachman\Services\DebugLogger::log('[REALIZACE] NEW construction-types field update', [
+                'result' => $result ? 'success' : 'failed',
+                'term_ids' => $construction_ids,
+                'field_selector' => RealizaceFieldService::getConstructionTypeFieldSelector()
+            ]);
+        }
+        // Also try the alternative field name pattern
+        elseif (isset($posted_data['construction-types']) && is_array($posted_data['construction-types'])) {
+            $construction_ids = array_filter(array_map('intval', $posted_data['construction-types']));
+            $result = RealizaceFieldService::setFieldValue(
+                RealizaceFieldService::getConstructionTypeFieldSelector(), 
+                $post_id, 
+                $construction_ids
+            );
+            \MistrFachman\Services\DebugLogger::log('[REALIZACE] ALT construction-types field update', [
+                'result' => $result ? 'success' : 'failed',
+                'term_ids' => $construction_ids,
+                'field_selector' => RealizaceFieldService::getConstructionTypeFieldSelector()
+            ]);
+        }
+        // Fallback to old construction type field (legacy support)
+        elseif (isset($posted_data['construction_type'])) {
             $construction_value = sanitize_textarea_field($posted_data['construction_type']);
             $result = RealizaceFieldService::setFieldValue(
                 RealizaceFieldService::getConstructionTypeFieldSelector(), 
                 $post_id, 
                 $construction_value
             );
-            error_log('[REALIZACE:DEBUG] construction_type field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . substr($construction_value, 0, 50) . '...');
+            \MistrFachman\Services\DebugLogger::log('[REALIZACE] OLD construction_type field update', [
+                'result' => $result ? 'success' : 'failed', 
+                'value' => substr($construction_value, 0, 50) . '...'
+            ]);
         }
         
-        // Save materials field
-        if (isset($posted_data['materials_used'])) {
+        // Save NEW materials field (taxonomy IDs) - handle both field name patterns  
+        if (isset($posted_data['your-materials']) && is_array($posted_data['your-materials'])) {
+            $material_ids = array_filter(array_map('intval', $posted_data['your-materials']));
+            $result = RealizaceFieldService::setFieldValue(
+                RealizaceFieldService::getMaterialsFieldSelector(), 
+                $post_id, 
+                $material_ids
+            );
+            \MistrFachman\Services\DebugLogger::log('[REALIZACE] NEW materials field update', [
+                'result' => $result ? 'success' : 'failed',
+                'term_ids' => $material_ids,
+                'field_selector' => RealizaceFieldService::getMaterialsFieldSelector()
+            ]);
+        }
+        // Also try the alternative field name pattern
+        elseif (isset($posted_data['materials']) && is_array($posted_data['materials'])) {
+            $material_ids = array_filter(array_map('intval', $posted_data['materials']));
+            $result = RealizaceFieldService::setFieldValue(
+                RealizaceFieldService::getMaterialsFieldSelector(), 
+                $post_id, 
+                $material_ids
+            );
+            \MistrFachman\Services\DebugLogger::log('[REALIZACE] ALT materials field update', [
+                'result' => $result ? 'success' : 'failed',
+                'term_ids' => $material_ids,
+                'field_selector' => RealizaceFieldService::getMaterialsFieldSelector()
+            ]);
+        }
+        // Fallback to old materials field (legacy support)
+        elseif (isset($posted_data['materials_used'])) {
             $materials_value = sanitize_textarea_field($posted_data['materials_used']);
             $result = RealizaceFieldService::setFieldValue(
                 RealizaceFieldService::getMaterialsFieldSelector(), 
                 $post_id, 
                 $materials_value
             );
-            error_log('[REALIZACE:DEBUG] materials_used field update result: ' . ($result ? 'success' : 'failed') . ' | Value: ' . substr($materials_value, 0, 50) . '...');
+            \MistrFachman\Services\DebugLogger::log('[REALIZACE] OLD materials_used field update', [
+                'result' => $result ? 'success' : 'failed',
+                'value' => substr($materials_value, 0, 50) . '...'
+            ]);
         }
     }
 

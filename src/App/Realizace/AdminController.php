@@ -206,6 +206,10 @@ class AdminController extends AdminControllerBase {
     protected function init_ajax_hooks(): void {
         // Call parent to get proper dynamic hook registration with debugging
         parent::init_ajax_hooks();
+        
+        // Add AJAX endpoint for material filtering
+        add_action('wp_ajax_get_allowed_materials', [$this, 'handle_get_materials_ajax']);
+        add_action('wp_ajax_nopriv_get_allowed_materials', [$this, 'handle_get_materials_ajax']);
     }
 
 
@@ -368,6 +372,55 @@ class AdminController extends AdminControllerBase {
         }
 
         return $approved_count;
+    }
+
+    /**
+     * Handle AJAX request for getting allowed materials based on construction types
+     */
+    public function handle_get_materials_ajax(): void {
+        \MistrFachman\Services\DebugLogger::log('[AdminController] handle_get_materials_ajax called', [
+            'POST_data' => $_POST,
+            'nonce_provided' => isset($_POST['nonce']),
+            'construction_types' => $_POST['construction_types'] ?? 'not_set',
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+            'referer' => $_SERVER['HTTP_REFERER'] ?? 'unknown'
+        ]);
+        
+        // Verify nonce for security
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'mistr_fachman_access_control')) {
+            \MistrFachman\Services\DebugLogger::log('[AdminController] Nonce verification failed');
+            wp_send_json_error(['message' => 'Invalid nonce']);
+            return;
+        }
+
+        $construction_type_ids = $_POST['construction_types'] ?? [];
+        
+        // Ensure we have an array
+        if (!is_array($construction_type_ids)) {
+            $construction_type_ids = [$construction_type_ids];
+        }
+
+        // Convert to integers and filter out empty values
+        $construction_type_ids = array_filter(array_map('intval', $construction_type_ids));
+
+        if (empty($construction_type_ids)) {
+            wp_send_json_success([]);
+            return;
+        }
+
+        // Get allowed materials using TaxonomyManager
+        $materials = TaxonomyManager::get_allowed_materials($construction_type_ids);
+
+        // Format materials for frontend
+        $formatted_materials = array_map(function($material) {
+            return [
+                'id' => $material->term_id,
+                'name' => $material->name,
+                'slug' => $material->slug
+            ];
+        }, $materials);
+
+        wp_send_json_success($formatted_materials);
     }
 
 

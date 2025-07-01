@@ -7,7 +7,6 @@ namespace MistrFachman\Realizace;
 use MistrFachman\Base\PostTypeManagerBase;
 use MistrFachman\Base\FormHandlerBase;
 use MistrFachman\Services\UserDetectionService;
-use MistrFachman\Users\RoleManager;
 
 /**
  * Realizace Domain Manager - Domain Orchestrator
@@ -55,6 +54,9 @@ class Manager extends PostTypeManagerBase {
     ) {
         // Initialize base class hooks
         $this->init_common_hooks();
+        
+        // Initialize taxonomies for relational select components
+        TaxonomyManager::init();
         
         // Initialize form handler with injected dependencies
         $this->form_handler = new NewRealizaceFormHandler($this->user_detection_service, $this);
@@ -243,7 +245,8 @@ class Manager extends PostTypeManagerBase {
      * Get the calculated points value for realizace (fixed 2500)
      */
     public function getCalculatedPoints(int $post_id = 0): int {
-        // Fixed value for Realizace domain - $post_id parameter not used
+        // Fixed value for Realizace domain
+        unset($post_id); // Suppress unused parameter warning
         return 2500;
     }
 

@@ -45,6 +45,7 @@ class ShortcodeManager {
      */
     public function init_shortcodes(): void {
         $this->discover_and_register_shortcodes();
+        $this->discover_and_register_cf7_tags();
     }
 
     /**
@@ -69,6 +70,70 @@ class ShortcodeManager {
             'registered_count' => count($this->registered_shortcodes),
             'shortcodes' => array_keys($this->registered_shortcodes)
         ], 'shortcode_manager', 'info');
+    }
+
+    /**
+     * Auto-discover and register all CF7 form tag classes
+     */
+    private function discover_and_register_cf7_tags(): void {
+        // Only register CF7 tags if Contact Form 7 is active
+        if (!function_exists('wpcf7_add_form_tag')) {
+            mycred_debug('Contact Form 7 not available, skipping CF7 tag registration', null, 'shortcode_manager', 'info');
+            return;
+        }
+
+        $shortcode_directory = get_stylesheet_directory() . '/src/App/Shortcodes/';
+        
+        if (!is_dir($shortcode_directory)) {
+            mycred_debug('Shortcode directory not found for CF7 tags', $shortcode_directory, 'shortcode_manager', 'warning');
+            return;
+        }
+
+        // Get all PHP files in the shortcodes directory
+        $files = glob($shortcode_directory . '*CF7Tag.php');
+        
+        foreach ($files as $file) {
+            $this->try_register_cf7_tag_from_file($file);
+        }
+
+        mycred_debug('CF7 tag registration complete', [
+            'cf7_tags_found' => count($files)
+        ], 'shortcode_manager', 'info');
+    }
+
+    /**
+     * Try to register a CF7 form tag from a file
+     * 
+     * @param string $file_path Path to PHP file
+     */
+    private function try_register_cf7_tag_from_file(string $file_path): void {
+        $filename = basename($file_path, '.php');
+        
+        // Build class name from filename
+        $class_name = 'MistrFachman\\Shortcodes\\' . $filename;
+        
+        try {
+            if (class_exists($class_name)) {
+                $reflection = new \ReflectionClass($class_name);
+                
+                // Only register concrete classes that extend CF7FormTagBase
+                if (!$reflection->isAbstract() && $reflection->isSubclassOf('MistrFachman\\Shortcodes\\CF7FormTagBase')) {
+                    $cf7_tag_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service);
+                    $cf7_tag_instance->register_cf7_tag();
+                    
+                    mycred_debug('CF7 tag registered', [
+                        'tag' => $cf7_tag_instance->get_cf7_tag(),
+                        'class' => $class_name
+                    ], 'shortcode_manager', 'info');
+                }
+            }
+        } catch (\Exception $e) {
+            mycred_debug('Failed to register CF7 tag from file', [
+                'file' => $file_path,
+                'class' => $class_name,
+                'error' => $e->getMessage()
+            ], 'shortcode_manager', 'error');
+        }
     }
 
     /**

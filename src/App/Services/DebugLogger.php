@@ -4,7 +4,7 @@ namespace MistrFachman\Services;
 class DebugLogger {
     public static function log(string $message, array $context = []) {
         // Use child theme directory for log file
-        $log_path = get_stylesheet_directory() . '/debug_faktury.log';
+        $log_path = get_stylesheet_directory() . '/debug_realizace.log';
         $timestamp = date('Y-m-d H:i:s');
         $log_entry = "[$timestamp] $message";
 

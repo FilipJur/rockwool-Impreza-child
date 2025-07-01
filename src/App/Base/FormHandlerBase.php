@@ -104,6 +104,16 @@ abstract class FormHandlerBase {
         $posted_data = $submission->get_posted_data();
         $uploaded_files = $submission->uploaded_files();
 
+        // Enhanced logging for taxonomy fields
+        \MistrFachman\Services\DebugLogger::log("[{$domain_debug}] Form submission received", [
+            'form_id' => $form_id,
+            'form_title' => $form_title,
+            'posted_data_keys' => array_keys($posted_data),
+            'construction_types' => $posted_data['construction-types'] ?? 'not_present',
+            'materials' => $posted_data['materials'] ?? 'not_present',
+            'all_posted_data' => $posted_data
+        ]);
+
         // Use UserDetectionService for proper user detection in CF7 context
         $user_id = $this->user_detection_service->detectUser($posted_data);
         if (!$user_id) {
