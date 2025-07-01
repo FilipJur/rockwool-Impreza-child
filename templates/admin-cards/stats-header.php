@@ -1,9 +1,9 @@
 <?php
 /**
  * Stats Header Template
- * 
+ *
  * Statistics grid and action buttons
- * 
+ *
  * @var array $stats User statistics data
  * @var string $post_type Post type slug
  * @var \WP_User $user The user object
@@ -51,11 +51,12 @@ if (!defined('ABSPATH')) {
             <a href="<?php echo esc_url(admin_url('edit.php?post_type=' . $post_type . '&author=' . $user->ID)); ?>"
                class="button button-secondary button-small">Zobrazit všechny</a>
 
-            <?php if ($stats['pending'] > 0): ?>
+            <?php if ($post_type === 'realization' && $stats['pending'] > 0): ?>
                 <button type="button"
                         class="button button-primary button-small bulk-approve-btn"
-                        data-user-id="<?php echo esc_attr((string)$user->ID); ?>">
-                    Hromadně schválit (<?php echo esc_html((string)$stats['pending']); ?>)
+                        data-user-id="<?php echo esc_attr((string)$user->ID); ?>"
+                        data-post-type="<?php echo esc_attr($post_type); ?>">
+                    Hromadně schválit
                 </button>
             <?php endif; ?>
         </div>
