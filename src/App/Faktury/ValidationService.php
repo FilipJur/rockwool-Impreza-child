@@ -181,8 +181,10 @@ class ValidationService {
     }
 
     /**
-     * Get the total approved invoice value for a given month for a specific user
-     * Used by monthly limit validation
+     * Get the total approved and pending invoice value for a given month for a specific user
+     * Used by monthly limit validation to prevent race conditions
+     * 
+     * CRITICAL: Includes both 'publish' and 'pending' status to prevent concurrent approval bypass
      */
     private function get_total_for_month(int $user_id, string $invoice_date_str, int $exclude_post_id): int {
         global $wpdb;
@@ -199,7 +201,7 @@ class ValidationService {
             "SELECT SUM(value_meta.meta_value) FROM {$wpdb->posts} p " .
             "JOIN {$wpdb->postmeta} date_meta ON p.ID = date_meta.post_id AND date_meta.meta_key = %s " .
             "JOIN {$wpdb->postmeta} value_meta ON p.ID = value_meta.post_id AND value_meta.meta_key = %s " .
-            "WHERE p.post_type = 'invoice' AND p.post_author = %d AND p.post_status = 'publish' AND p.ID != %d " .
+            "WHERE p.post_type = 'invoice' AND p.post_author = %d AND p.post_status IN ('publish', 'pending') AND p.ID != %d " .
             "AND (date_meta.meta_value BETWEEN %s AND %s)",
             $date_meta_key, $value_meta_key, $user_id, $exclude_post_id, $start_date, $end_date
         ));
@@ -216,10 +218,18 @@ class ValidationService {
         }
 
         if (!$this->isMonthlyLimitOk()) {
-            $current_value = (int) $this->get_fresh_value('value'); // Get fresh value for the message
+            $current_value = (int) $this->get_fresh_value('value');
+            $invoice_date_str = $this->get_fresh_value('invoiceDate');
+            $total_from_db = $this->get_total_for_month($this->user_id, $invoice_date_str, $this->post->ID);
+            $limit = 300000;
+            $total_with_current = $total_from_db + $current_value;
+            $exceeded_by = $total_with_current - $limit;
+            
             return sprintf(
-                'Měsíční limit 300 000 Kč byl překročen. Tato faktura (%s Kč) by překročila povolenou částku.',
-                number_format($current_value, 0, ',', ' ')
+                'Měsíční limit 300 000 Kč byl překročen. Tato faktura (%s Kč) by překročila povolenou částku o %s Kč. Aktuálně nahráno: %s Kč.',
+                number_format($current_value, 0, ',', ' '),
+                number_format($exceeded_by, 0, ',', ' '),
+                number_format($total_from_db, 0, ',', ' ')
             );
         }
 

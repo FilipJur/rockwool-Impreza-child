@@ -66,6 +66,8 @@ class AdminController extends AdminControllerBase {
 
         // AJAX hooks
         $this->init_ajax_hooks();
+
+        // Frontend validation handled by CF7 validation hook in functions.php
     }
 
     // ===========================================
@@ -130,9 +132,30 @@ class AdminController extends AdminControllerBase {
      * Handle quick action AJAX for faktury
      */
     public function handle_quick_action_ajax(): void {
-        error_log('[FAKTURY:AJAX] Quick action called - START');
-        error_log('[FAKTURY:AJAX] POST data: ' . json_encode($_POST));
-        error_log('[FAKTURY:AJAX] Expected nonce action: mistr_fachman_' . $this->getPostType() . '_action');
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FAKTURY:AJAX] Quick action called - START');
+            error_log('[FAKTURY:AJAX] POST data: ' . json_encode($_POST));
+            error_log('[FAKTURY:AJAX] Expected nonce action: mistr_fachman_' . $this->getPostType() . '_action');
+        }
+
+        // Rate limiting - 10 requests per minute per user
+        $user_id = get_current_user_id();
+        $rate_limit_key = 'faktury_ajax_rate_limit_' . $user_id;
+        $current_requests = (int) get_transient($rate_limit_key);
+        
+        if ($current_requests >= 10) {
+            wp_send_json_error(['message' => 'Příliš mnoho požadavků. Zkuste to znovu za chvíli.']);
+            return;
+        }
+        
+        // Increment request counter
+        set_transient($rate_limit_key, $current_requests + 1, 60); // 60 seconds
+
+        // Additional capability check specific to invoice management
+        if (!current_user_can('edit_posts') || !current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Nedostatečná oprávnění pro správu faktur.']);
+            return;
+        }
 
         // Delegate to base class which has correct nonce verification
         parent::handle_quick_action_ajax();
@@ -142,7 +165,9 @@ class AdminController extends AdminControllerBase {
      * Handle AJAX approve action with validation
      */
     protected function process_approve_action(int $post_id): void {
-        error_log("[FAKTURY:AJAX] Processing APPROVE action for post {$post_id}");
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[FAKTURY:AJAX] Processing APPROVE action for post {$post_id}");
+        }
 
         $post = get_post($post_id);
         if (!$post) {
@@ -152,7 +177,9 @@ class AdminController extends AdminControllerBase {
         // Get calculated points for this faktura
         $points_to_award = $this->getCalculatedPoints($post_id);
 
-        error_log("[FAKTURY:AJAX] Calculated points for faktura {$post_id}: {$points_to_award}");
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[FAKTURY:AJAX] Calculated points for faktura {$post_id}: {$points_to_award}");
+        }
 
         // Save the calculated points for auditing
         FakturaFieldService::setPoints($post_id, $points_to_award);
@@ -173,10 +200,12 @@ class AdminController extends AdminControllerBase {
             $points_handler = new PointsHandler();
             $success = $points_handler->award_points($post_id, $user_id, $points_to_award);
 
-            if ($success) {
-                error_log("[FAKTURY:AJAX] Successfully awarded {$points_to_award} points for post {$post_id} via direct method");
-            } else {
-                error_log("[FAKTURY:AJAX] Failed to award points for post {$post_id}");
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                if ($success) {
+                    error_log("[FAKTURY:AJAX] Successfully awarded {$points_to_award} points for post {$post_id} via direct method");
+                } else {
+                    error_log("[FAKTURY:AJAX] Failed to award points for post {$post_id}");
+                }
             }
         }
     }
@@ -252,12 +281,15 @@ class AdminController extends AdminControllerBase {
             // Block publication by forcing status back to pending
             $data['post_status'] = 'pending';
             
-            // Add admin notice for next page load
-            add_action('admin_notices', function() use ($error_message) {
-                echo '<div class="notice notice-error is-dismissible">';
-                echo '<p><strong>PUBLIKOVÁNÍ BLOKOVÁNO:</strong> ' . esc_html($error_message) . '</p>';
-                echo '</div>';
-            });
+            // Store validation error in transient for proper admin notice display
+            $user_id = get_current_user_id();
+            $transient_key = 'domain_validation_error_' . $user_id;
+            $post_title = $data['post_title'] ?? 'Faktura';
+            
+            set_transient($transient_key, [
+                'post_title' => $post_title,
+                'message' => $error_message
+            ], 60); // Store for 60 seconds
             
             DebugLogger::log('-> PUBLICATION BLOCKED - STATUS CHANGED TO PENDING');
         } else {
@@ -349,12 +381,16 @@ class AdminController extends AdminControllerBase {
      * Process reject action with comprehensive status validation
      */
     protected function process_reject_action(int $post_id, \WP_Post $post, string $rejection_reason = ''): void {
-        error_log("[FAKTURY:AJAX] Processing REJECT action for post {$post_id}");
-        error_log("[FAKTURY:AJAX] Current post status before reject: {$post->post_status}");
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[FAKTURY:AJAX] Processing REJECT action for post {$post_id}");
+            error_log("[FAKTURY:AJAX] Current post status before reject: {$post->post_status}");
+        }
 
         // Check if rejected status is available
         if (!$this->status_manager->is_custom_status_available()) {
-            error_log("[FAKTURY:AJAX] Rejected status not available - attempting emergency registration");
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("[FAKTURY:AJAX] Rejected status not available - attempting emergency registration");
+            }
 
             if (!$this->status_manager->emergency_register_custom_status()) {
                 throw new \Exception('Chyba: Status "odmítnuto" není dostupný. Kontaktujte administrátora.');
@@ -370,13 +406,22 @@ class AdminController extends AdminControllerBase {
             throw new \Exception('Chyba při změně statusu faktury: ' . $result->get_error_message());
         }
 
-        // Save rejection reason if provided
+        // Save rejection reason if provided (already sanitized by base class)
         if (!empty($rejection_reason)) {
+            // Additional validation - ensure rejection reason is reasonable length
+            if (strlen($rejection_reason) > 1000) {
+                throw new \Exception('Důvod zamítnutí je příliš dlouhý (max 1000 znaků).');
+            }
+            
             FakturaFieldService::setRejectionReason($post_id, $rejection_reason);
-            error_log("[FAKTURY:AJAX] Rejection reason saved: {$rejection_reason}");
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("[FAKTURY:AJAX] Rejection reason saved: " . substr($rejection_reason, 0, 100) . (strlen($rejection_reason) > 100 ? '...' : ''));
+            }
         }
 
-        error_log("[FAKTURY:AJAX] Post {$post_id} successfully rejected");
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[FAKTURY:AJAX] Post {$post_id} successfully rejected");
+        }
     }
 
     // ===========================================
@@ -393,14 +438,17 @@ class AdminController extends AdminControllerBase {
             return;
         }
 
-        $domain_debug = strtoupper($this->getPostType());
-        error_log("[{$domain_debug}:UI] Status transition: {$old_status} → {$new_status} for post #{$post->ID}");
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $domain_debug = strtoupper($this->getPostType());
+            error_log("[{$domain_debug}:UI] Status transition: {$old_status} → {$new_status} for post #{$post->ID}");
+        }
 
         // Validate rejection reason when moving to rejected status
         if ($new_status === 'rejected' && $old_status !== 'rejected') {
             $rejection_reason = FakturaFieldService::getRejectionReason($post->ID);
 
-            if (empty($rejection_reason)) {
+            if (empty($rejection_reason) && defined('WP_DEBUG') && WP_DEBUG) {
+                $domain_debug = strtoupper($this->getPostType());
                 error_log("[{$domain_debug}:UI] Warning: Post #{$post->ID} rejected without reason");
             }
         }
@@ -417,13 +465,19 @@ class AdminController extends AdminControllerBase {
 
                 // Award points
                 $points_handler->award_points($post->ID, (int)$post->post_author, $points_to_award);
-                error_log("[{$domain_debug}:UI] Awarded {$points_to_award} points for post #{$post->ID}");
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    $domain_debug = strtoupper($this->getPostType());
+                    error_log("[{$domain_debug}:UI] Awarded {$points_to_award} points for post #{$post->ID}");
+                }
             }
         } elseif ($old_status === 'publish' && $new_status !== 'publish') {
             // Revoke points when unpublishing
             $points_handler = new PointsHandler();
             // Note: revoke_points is protected in PointsHandlerBase, called automatically via hooks
-            error_log("[{$domain_debug}:UI] Points will be revoked for post #{$post->ID} (status: {$new_status})");
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                $domain_debug = strtoupper($this->getPostType());
+                error_log("[{$domain_debug}:UI] Points will be revoked for post #{$post->ID} (status: {$new_status})");
+            }
         }
     }
 
@@ -464,6 +518,19 @@ class AdminController extends AdminControllerBase {
      * Delegates to parent class implementation
      */
     public function handle_bulk_approve_ajax(): void {
+        // Rate limiting for bulk operations - 5 requests per minute per user
+        $user_id = get_current_user_id();
+        $rate_limit_key = 'faktury_bulk_rate_limit_' . $user_id;
+        $current_requests = (int) get_transient($rate_limit_key);
+        
+        if ($current_requests >= 5) {
+            wp_send_json_error(['message' => 'Příliš mnoho hromadných operací. Zkuste to znovu za chvíli.']);
+            return;
+        }
+        
+        // Increment request counter
+        set_transient($rate_limit_key, $current_requests + 1, 60); // 60 seconds
+        
         parent::handle_bulk_approve_ajax();
     }
 
@@ -499,7 +566,9 @@ class AdminController extends AdminControllerBase {
                 $success = $points_handler->award_points($post_id, $user_id, $calculated_points);
                 if ($success) {
                     $approved_count++;
-                    error_log("[FAKTURY:AJAX] Bulk approved post {$post_id} with {$calculated_points} points");
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("[FAKTURY:AJAX] Bulk approved post {$post_id} with {$calculated_points} points");
+                    }
                 }
             }
         }
@@ -521,4 +590,6 @@ class AdminController extends AdminControllerBase {
 
         return !empty($posts);
     }
+
+    // AJAX methods removed - frontend validation now handled by CF7 validation hook
 }
