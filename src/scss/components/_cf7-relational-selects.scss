@@ -1,0 +1,46 @@
+/**
+ * Contact Form 7 Relational Selects Components
+ *
+ * Barebone wireframe styles for dynamic construction type and material selection.
+ */
+
+// Realizace select wrapper
+.realizace-select-wrapper {
+  position: relative;
+
+  select {
+    width: 100%;
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Loading indicator positioned inside select
+.realizace-loading {
+  position: absolute;
+  top: 50%;
+  right: 50%; // Position to left of dropdown arrow
+  transform: translateY(-50%);
+  pointer-events: none; // Don't interfere with select clicking
+
+  .loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: cf7-spin 1s linear infinite;
+  }
+}
+
+// Spinner animation
+@keyframes cf7-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -47,35 +47,48 @@ class RealizaceConstructionTypesShortcode extends ShortcodeBase {
         $construction_types = TaxonomyManager::get_construction_types();
 
         if (empty($construction_types)) {
-            return '<p class="realizace-error">Žádné typy konstrukcí nejsou k dispozici.</p>';
+            return $this->renderErrorMessage('Žádné typy konstrukcí nejsou k dispozici.');
         }
 
-        $options_html = '';
-        foreach ($construction_types as $type) {
-            $options_html .= sprintf(
-                '<option value="%d">%s</option>',
-                esc_attr($type->term_id),
-                esc_html($type->name)
-            );
-        }
-
-        $multiple_attr = $attributes['multiple'] === 'true' ? 'multiple' : '';
         $name_attr = $attributes['multiple'] === 'true' ? $attributes['name'] . '[]' : $attributes['name'];
+        $multiple_attr = $attributes['multiple'] === 'true' ? 'multiple' : '';
 
-        return sprintf(
-            '<div class="realizace-select-wrapper %s" x-data="constructionSelector">
-                <select name="%s" class="realizace-select %s" %s x-model="selectedTypes" @change="updateMaterials()">
-                    <option value="" disabled :selected="selectedTypes.length === 0">%s</option>
-                    %s
-                </select>
-            </div>',
-            esc_attr($attributes['class']),
-            esc_attr($name_attr),
-            esc_attr($attributes['class']),
-            $multiple_attr,
-            esc_html($attributes['placeholder']),
-            $options_html
-        );
+        return $this->renderConstructionTypesSelect($name_attr, $multiple_attr, $attributes, $construction_types);
+    }
+
+    /**
+     * Render error message component
+     */
+    private function renderErrorMessage(string $message): string {
+        return '<p class="realizace-error">' . esc_html($message) . '</p>';
+    }
+
+    /**
+     * Render construction types select component
+     */
+    private function renderConstructionTypesSelect(string $name_attr, string $multiple_attr, array $attributes, array $construction_types): string {
+        ob_start();
+        ?>
+        <div class="realizace-select-wrapper <?= esc_attr($attributes['class']) ?>" x-data="constructionSelector">
+            <select 
+                name="<?= esc_attr($name_attr) ?>" 
+                class="realizace-select <?= esc_attr($attributes['class']) ?>" 
+                <?= esc_attr($multiple_attr) ?> 
+                x-model="selectedTypes" 
+                @change="updateMaterials()"
+            >
+                <option value="" disabled :selected="selectedTypes.length === 0">
+                    <?= esc_html($attributes['placeholder']) ?>
+                </option>
+                <?php foreach ($construction_types as $type): ?>
+                    <option value="<?= esc_attr($type->term_id) ?>">
+                        <?= esc_html($type->name) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <?php
+        return ob_get_clean();
     }
 
     /**

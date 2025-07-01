@@ -23,6 +23,7 @@ Version:        0.1.0
 @use 'components/user-debug';
 @use 'components/business-data-modal';
 @use 'components/ares-form';
+@use 'components/cf7-relational-selects';
 
 // Admin Components (replaces monolithic admin-interface)
 @use 'components/admin/base';

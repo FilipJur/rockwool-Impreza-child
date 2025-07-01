@@ -400,16 +400,33 @@ class AdminController extends AdminControllerBase {
             $construction_type_ids = [$construction_type_ids];
         }
 
-        // Convert to integers and filter out empty values
-        $construction_type_ids = array_filter(array_map('intval', $construction_type_ids));
+        // Convert to integers and filter out empty/invalid values
+        $construction_type_ids = array_filter(array_map('intval', $construction_type_ids), function($id) {
+            return $id > 0; // Only positive integers are valid term IDs
+        });
 
-        if (empty($construction_type_ids)) {
+        // Validate that construction type IDs exist in the taxonomy
+        $valid_construction_type_ids = [];
+        foreach ($construction_type_ids as $type_id) {
+            $term = get_term($type_id, 'construction_type');
+            if (!is_wp_error($term) && $term) {
+                $valid_construction_type_ids[] = $type_id;
+            } else {
+                \MistrFachman\Services\DebugLogger::log('[AdminController] Invalid construction type ID', [
+                    'invalid_id' => $type_id,
+                    'error' => is_wp_error($term) ? $term->get_error_message() : 'term not found'
+                ]);
+            }
+        }
+
+        if (empty($valid_construction_type_ids)) {
+            \MistrFachman\Services\DebugLogger::log('[AdminController] No valid construction type IDs provided');
             wp_send_json_success([]);
             return;
         }
 
         // Get allowed materials using TaxonomyManager
-        $materials = TaxonomyManager::get_allowed_materials($construction_type_ids);
+        $materials = TaxonomyManager::get_allowed_materials($valid_construction_type_ids);
 
         // Format materials for frontend
         $formatted_materials = array_map(function($material) {

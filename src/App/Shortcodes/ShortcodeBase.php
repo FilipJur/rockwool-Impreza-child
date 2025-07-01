@@ -94,7 +94,7 @@ abstract class ShortcodeBase {
         foreach ($this->required_attributes as $required) {
             if (empty($attributes[$required])) {
                 throw new \InvalidArgumentException(
-                    sprintf('Required attribute "%s" is missing for shortcode [%s]', $required, $this->get_tag())
+                    'Required attribute "' . $required . '" is missing for shortcode [' . $this->get_tag() . ']'
                 );
             }
         }
@@ -134,14 +134,23 @@ abstract class ShortcodeBase {
      */
     protected function render_error(string $error_message): string {
         if (current_user_can('manage_options')) {
-            return sprintf(
-                '<div class="mycred-shortcode-error">Chyba v shortcode [%s]: %s</div>',
-                esc_html($this->get_tag()),
-                esc_html($error_message)
-            );
+            return $this->renderAdminError($error_message);
         }
 
         return '<div class="mycred-shortcode-error">Došlo k chybě při načítání obsahu.</div>';
+    }
+
+    /**
+     * Render admin error message component
+     */
+    private function renderAdminError(string $error_message): string {
+        ob_start();
+        ?>
+        <div class="mycred-shortcode-error">
+            Chyba v shortcode [<?= esc_html($this->get_tag()) ?>]: <?= esc_html($error_message) ?>
+        </div>
+        <?php
+        return ob_get_clean();
     }
 
 

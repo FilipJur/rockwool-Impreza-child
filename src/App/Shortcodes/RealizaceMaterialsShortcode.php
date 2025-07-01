@@ -39,25 +39,48 @@ class RealizaceMaterialsShortcode extends ShortcodeBase {
      * Render the shortcode output
      */
     protected function render(array $attributes, ?string $content = null): string {
-        $multiple_attr = $attributes['multiple'] === 'true' ? 'multiple' : '';
         $name_attr = $attributes['multiple'] === 'true' ? $attributes['name'] . '[]' : $attributes['name'];
+        $multiple_attr = $attributes['multiple'] === 'true' ? 'multiple' : '';
 
-        return sprintf(
-            '<div class="realizace-select-wrapper %s" x-data="materialsSelector">
-                <select name="%s" class="realizace-select %s" %s x-model="selectedMaterials" :disabled="availableMaterials.length === 0">
-                    <option value="" disabled :selected="selectedMaterials.length === 0">%s</option>
-                    <template x-for="material in availableMaterials" :key="material.id">
-                        <option :value="material.id" x-text="material.name"></option>
-                    </template>
-                </select>
-                <div x-show="loading" class="realizace-loading">Načítání materiálů...</div>
-            </div>',
-            esc_attr($attributes['class']),
-            esc_attr($name_attr),
-            esc_attr($attributes['class']),
-            $multiple_attr,
-            esc_html($attributes['placeholder'])
-        );
+        return $this->renderMaterialsSelect($name_attr, $multiple_attr, $attributes);
+    }
+
+    /**
+     * Render materials select component
+     */
+    private function renderMaterialsSelect(string $name_attr, string $multiple_attr, array $attributes): string {
+        ob_start();
+        ?>
+        <div class="realizace-select-wrapper <?= esc_attr($attributes['class']) ?>" x-data="materialsSelector">
+            <select
+                name="<?= esc_attr($name_attr) ?>"
+                class="realizace-select <?= esc_attr($attributes['class']) ?>"
+                <?= esc_attr($multiple_attr) ?>
+                x-model="selectedMaterials"
+                :disabled="availableMaterials.length === 0"
+            >
+                <option value="" disabled :selected="selectedMaterials.length === 0">
+                    <?= esc_html($attributes['placeholder']) ?>
+                </option>
+                <template x-for="material in availableMaterials" :key="material.id">
+                    <option :value="material.id" x-text="material.name"></option>
+                </template>
+            </select>
+            <?php echo $this->renderLoadingIndicator(); ?>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Render loading indicator component
+     */
+    private function renderLoadingIndicator(): string {
+        ob_start();
+        ?>
+        <div x-show="loading" class="realizace-loading">Načítání materiálů...</div>
+        <?php
+        return ob_get_clean();
     }
 
     /**

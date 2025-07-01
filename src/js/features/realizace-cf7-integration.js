@@ -13,6 +13,8 @@ import Alpine from 'alpinejs';
 /**
  * Construction Types Component
  * Multi-select for construction types with change event handling
+ * 
+ * @returns {void}
  */
 export function setupConstructionTypesComponent() {
     Alpine.data('constructionTypes', () => ({
@@ -37,6 +39,8 @@ export function setupConstructionTypesComponent() {
 /**
  * Materials Component  
  * Checkbox list that filters based on construction type selection
+ * 
+ * @returns {void}
  */
 export function setupMaterialsComponent() {
     Alpine.data('materials', () => ({
@@ -51,6 +55,12 @@ export function setupMaterialsComponent() {
             });
         },
         
+        /**
+         * Update available materials based on construction type selection
+         * 
+         * @param {Array<string|number>} constructionTypeIds - Array of construction type IDs
+         * @returns {Promise<void>}
+         */
         async updateAvailableMaterials(constructionTypeIds) {
             if (!constructionTypeIds || constructionTypeIds.length === 0) {
                 this.availableMaterials = [];
@@ -91,6 +101,12 @@ export function setupMaterialsComponent() {
             }
         },
         
+        /**
+         * Toggle selection of a material
+         * 
+         * @param {string|number} materialId - The material ID to toggle
+         * @returns {void}
+         */
         toggleMaterial(materialId) {
             const index = this.selectedMaterials.indexOf(materialId);
             if (index > -1) {
@@ -100,6 +116,12 @@ export function setupMaterialsComponent() {
             }
         },
         
+        /**
+         * Check if a material is currently selected
+         * 
+         * @param {string|number} materialId - The material ID to check
+         * @returns {boolean} True if material is selected
+         */
         isMaterialSelected(materialId) {
             return this.selectedMaterials.includes(materialId);
         }
@@ -108,6 +130,9 @@ export function setupMaterialsComponent() {
 
 /**
  * Initialize all CF7 integration components
+ * Call this function to set up both construction types and materials components
+ * 
+ * @returns {void}
  */
 export function setupRealizaceCF7Integration() {
     setupConstructionTypesComponent();

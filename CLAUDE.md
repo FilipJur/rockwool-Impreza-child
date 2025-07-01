@@ -5,7 +5,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise-grade architecture. **ALL MAJOR SYSTEMS PRODUCTION-READY**. Successfully implemented dedicated reject button system with context-aware states, complete Faktury invoice domain with dynamic points calculation (floor(value/10)), comprehensive validation service, and form integration. ACF field population issue resolved. Consolidated services architecture with unified Services directory eliminates code duplication across domains. System ready for full production deployment with robust admin workflow, template-based MVC separation, and perfect PHP/JavaScript alignment.
+WordPress child theme development with enterprise architecture. All major systems are production-ready. CF7 relational selects implementation complete with dynamic material filtering based on construction types. Taxonomy system uses Czech admin labels and English slugs with ACF JSON import support. Alpine.js reactive components handle AJAX material filtering. Dual shortcode system supports CF7 custom tags and regular WordPress shortcodes. Consolidated services architecture reduces code duplication. System ready for production deployment with form integration and data validation.
 
 ## Build & Development Commands
 
@@ -31,7 +31,7 @@ WordPress child theme development with enterprise-grade architecture. **ALL MAJO
 
 ## Living Memory System
 
-**🧠 This CLAUDE.md serves as the central memory hub, intertwined with detailed documentation:**
+This CLAUDE.md serves as the central memory hub, integrated with detailed documentation:
 - **[Architecture Overview](docs/architecture.md)** - Enterprise structure, domains, and service patterns
 - **[Feature Specifications](docs/features.md)** - Detailed feature implementations and technical specs
 - **[Development Patterns](docs/development.md)** - Coding standards, patterns, and implementation guidelines
@@ -81,15 +81,16 @@ WordPress child theme development with enterprise-grade architecture. **ALL MAJO
 - **Third-party API integration** → Read `docs/development.md` error handling + `docs/architecture.md` service patterns
 
 ## Recent Changes
+- **2025-07-01**: [feature] CF7 RELATIONAL SELECTS IMPLEMENTATION COMPLETE - Contact Form 7 integration with dynamic construction type and material filtering. Complete taxonomy system with Czech admin labels and English slugs via ACF JSON imports. Alpine.js reactive components for AJAX material filtering based on construction type selection. Dual shortcode system: CF7 custom tags ([realizace_construction_types], [realizace_materials]) and regular WordPress shortcodes. CF7FormTagBase provides foundation for future form tag development. ES6 module architecture with webpack integration. Enhanced with XSS protection, input validation for taxonomy term IDs, user-facing error messages for AJAX failures, improved loading states, extracted hardcoded strings to constants, JSDoc documentation, optimized Alpine.js component structure. Replaces static text areas with relational selects, enforcing data quality through guided user selection of valid construction type and material combinations.
 - **2025-06-27**: [fix] FAKTURY ACF FIELD POPULATION RESOLVED - Fixed ACF field population issue for Faktury domain. Points now display correctly in both admin dashboard and post edit screens. Complete Faktury domain now fully production-ready with no remaining blockers.
 - **2025-06-27**: [maintenance] COMPREHENSIVE BUNDLE AUDIT - Audited all .repomix bundles for accuracy against current codebase structure. Removed obsolete file references (domain-specific StatusManager/AdminAssetManager files consolidated into Services). Added missing DebugLogger.php to Services bundles. Fixed duplicate template references. Ensured full-stack-architecture bundle has complete coverage: all 59 PHP files in src/App/, all 20 JavaScript files in src/js/, all template files, key integration files (CLAUDE.md, functions.php, etc.). No SCSS files correctly excluded. All bundles now accurately reflect consolidated services architecture.
 - **2025-06-26**: [chore] BUNDLE MANAGEMENT CLEANUP - Updated .repomix/bundles.json to remove deleted StatusDropdownManager.js references from all bundles. Added Services directory files (StatusManager.php, AdminAssetManager.php) to base-architecture and full-stack-architecture bundles. Updated lastUsed timestamps for affected bundles to maintain accurate project state tracking.
-- **2025-06-26**: [feature] DEDICATED REJECT/REVOKE BUTTON SYSTEM COMPLETE - Revolutionary UX improvement replacing problematic status dropdown with context-aware button system. Three distinct states: pending posts show red "Odmítnout" button, published posts show orange "Zrušit schválení" button, rejected posts show grey "Odmítnuto" disabled button. Fixed critical AJAX action bug (window.pagenow → window.typenow). Enhanced confirmation dialogs with context-appropriate messages. Integrated StatusManager to add "Odmítnuto" option to WordPress native dropdown. Completely removed StatusDropdownManager.js and related PHP localization code. System eliminates validation gatekeeper conflicts and provides intuitive admin workflow.
+- **2025-06-26**: [feature] DEDICATED REJECT/REVOKE BUTTON SYSTEM COMPLETE - Replaced problematic status dropdown with context-aware button system. Three distinct states: pending posts show red "Odmítnout" button, published posts show orange "Zrušit schválení" button, rejected posts show grey "Odmítnuto" disabled button. Fixed AJAX action bug (window.pagenow → window.typenow). Enhanced confirmation dialogs with context-appropriate messages. Integrated StatusManager to add "Odmítnuto" option to WordPress native dropdown. Removed StatusDropdownManager.js and related PHP localization code. System eliminates validation gatekeeper conflicts and provides intuitive admin workflow.
 - **2025-06-26**: [cleanup] DEBUG LOGGING REMOVAL - Cleaned up debug logging from ValidationService to prepare for production deployment. Removed verbose logging statements while maintaining error handling and critical debugging information.
 - **2025-07-01**: [docs] INVOICE POINTS CALCULATION DOCUMENTATION - Updated CLAUDE.md documentation to reflect actual implementation of floor(value/10) formula for Faktury points calculation. Business rule: 10 CZK = 1 point. Documentation now accurately matches the production codebase implementation in PointsHandler.php.
 - **2025-06-26**: [feature] INVOICE PRE-PUBLISH DATE VALIDATION - Implemented comprehensive date validation for Faktury domain requiring invoices to be from current year only. Enhanced ValidationService with isDateValid() method supporting both Ymd and Y-m-d date formats. Validation integrates with AdminController pre-publish gatekeeper to prevent invalid invoice submissions. Business rule enforces current year restriction for invoice dates.
 - **2025-06-26**: [fix] AJAX PARAMETER FORMAT SUPPORT - Enhanced AdminControllerBase to support multiple AJAX parameter naming conventions. Added backward compatibility for both legacy parameters (realizace_action) and new format ({post_type}_action). Improved parameter detection with fallback chain supporting domain-specific action parameters. Eliminates AJAX 403 errors from parameter format mismatches.
-- **2025-06-26**: [refactor] PHASE 1 SERVICES CONSOLIDATION - Massive architectural improvement consolidating 6 domain-specific files into 2 unified services. Created Services/StatusManager.php as configurable status management service. Created Services/AdminAssetManager.php as unified asset management service. Eliminated code duplication across Realizace and Faktury domains while maintaining full customization capability. Reduced maintenance overhead and established patterns for rapid domain scaling.
+- **2025-06-26**: [refactor] PHASE 1 SERVICES CONSOLIDATION - Consolidated 6 domain-specific files into 2 unified services. Created Services/StatusManager.php as configurable status management service. Created Services/AdminAssetManager.php as unified asset management service. Eliminated code duplication across Realizace and Faktury domains while maintaining full customization capability. Reduced maintenance overhead and established patterns for domain scaling.
 - **2025-06-25**: [refactor] ENGLISH SLUG MIGRATION COMPLETE - Successfully completed 3-phase refactoring to eliminate Czech language complexity. Updated 40+ files across PHP backend and JavaScript frontend to use English post types ('realization', 'invoice'). Removed DomainRegistry system entirely, replacing with direct string concatenation. All FieldService classes use English field names, all Management classes return English post types, and AJAX endpoints are perfectly aligned. System now uses predictable patterns: getPostType() returns English, WordPress post type remains Czech for URL compatibility. Zero AJAX 403 errors, simplified maintenance, future-proof architecture.
 - **2025-06-25**: [fix] STATUS DROPDOWN TIMING FIX - Fixed missing "Odmítnuto" status option in realizace post edit dropdowns by resolving script localization timing issue. Changed from admin_footer-post.php to admin_enqueue_scripts hook with priority 20 to ensure wp_localize_script runs before JavaScript execution. Fixed script enqueuing from wp_register_script to wp_enqueue_script in functions.php. StatusDropdownManager.js now properly initializes with mistrFachmanStatusDropdown configuration object. Cleaned up debug logging from production code.
 - **2025-06-25**: [refactor] COMPLETE DOMAIN ABSTRACTION - Created StatusManagerBase (210 lines) and AdminAssetManagerBase (165 lines) for reusable domain patterns. Refactored Realizace StatusManager from 230→76 lines (67% reduction) and AdminAssetManager from 132→94 lines (29% reduction). Integrated StatusDropdownManager.js into webpack build system. Enhanced AdminControllerBase with users table integration. Removed JavaScript conflicts and achieved clean separation of concerns. Realizace domain reduced from 1100+ to 766 lines (30% total reduction) while establishing patterns for rapid Faktury implementation.
@@ -105,7 +106,7 @@ WordPress child theme development with enterprise-grade architecture. **ALL MAJO
 
 ## User Registration System
 
-### **Complete Three-Stage Registration Flow** ✅
+### Complete Three-Stage Registration Flow
 1. **Stage 1: Guest → Prospect (Automated)**
    - User registers via SMS OTP on `/prihlaseni` page
    - System assigns `pending_approval` role + `needs_form` meta status
@@ -131,7 +132,7 @@ WordPress child theme development with enterprise-grade architecture. **ALL MAJO
 
 ## Centralized Field Access System
 
-### **RealizaceFieldService - Single Source of Truth** ✅
+### RealizaceFieldService - Single Source of Truth
 **Location**: `src/App/Realizace/RealizaceFieldService.php`
 
 **Pattern**: All ACF field access must use centralized service methods:
@@ -154,7 +155,7 @@ update_field('realizace_duvod_zamitnuti', $reason, $post_id);
 
 **Architecture**: Abstract base classes delegate to field service for true abstraction without hardcoded dependencies.
 
-### **Manual Validation Commands** ⚡
+### Manual Validation Commands
 Quick architecture compliance checks:
 ```bash
 # Check all patterns at once
@@ -169,15 +170,16 @@ Quick architecture compliance checks:
 **Usage**: Run before major commits or when reviewing architecture changes. Simple, reliable validation without complex hook dependencies.
 
 ## Active Decisions
-- **Dedicated reject button system** (2025-06-26): PRODUCTION-READY SOLUTION - Eliminated problematic status dropdown with context-aware button system in post editor publish box. Three distinct states: pending posts (red "Odmítnout"), published posts (orange "Zrušit schválení"), rejected posts (grey "Odmítnuto" disabled). Integrates with WordPress native dropdown via StatusManager JavaScript injection. Eliminates validation gatekeeper conflicts, provides intuitive admin workflow, and resolves all AJAX timing issues. StatusDropdownManager.js completely removed in favor of unified AdminControllerBase implementation.
-- **Consolidated services architecture** (2025-06-26): UNIFIED SERVICE PATTERN - Created configurable Services/StatusManager.php and Services/AdminAssetManager.php eliminating domain-specific service duplication. Services accept configuration arrays enabling full customization while sharing core functionality. Reduced 6 domain-specific files to 2 reusable services. Established pattern for rapid domain scaling with zero code duplication. Services integrate seamlessly with existing base class architecture.
-- **Faktury domain implementation** (2025-06-26): COMPLETE PRODUCTION ARCHITECTURE - Full invoice management domain with dynamic points calculation (floor(value/10)), comprehensive ValidationService with date validation, form integration, and admin interface. Complete domain architecture established: Manager, AdminController, PointsHandler, ValidationService, FakturaFieldService, FormHandler. Business rules implemented for current-year date validation. ACF field population issue resolved - fully production ready.
-- **English slug architecture** (2025-06-25): FINAL ARCHITECTURE - Eliminated DomainRegistry complexity entirely. All PHP classes return English post types ('realization', 'invoice'), JavaScript uses English slugs, AJAX endpoints use direct string concatenation. WordPress post type slugs remain Czech ('realizace', 'faktura') for URL compatibility. FieldService classes use English field names (points_assigned, rejection_reason). System achieved perfect PHP/JavaScript alignment with zero AJAX 403 errors. Predictable, maintainable, future-proof architecture.
-- **Complete domain abstraction** (2025-06-25): Created StatusManagerBase and AdminAssetManagerBase for true cross-domain reusability. Integrated StatusDropdownManager.js into webpack build system with clean AdminApp module initialization. Enhanced AdminControllerBase with users table integration. Achieved 30% overall code reduction while establishing patterns for rapid Faktury implementation. JavaScript system now fully generic and configuration-driven.
-- **Template system architecture** (2025-06-25): Complete MVC separation with template-based rendering for all admin cards - 84% code reduction with zero HTML in PHP classes. Template loading system enables rapid domain expansion with zero code duplication
+- **CF7 relational selects architecture** (2025-07-01): Contact Form 7 integration with dynamic taxonomy filtering. CF7FormTagBase establishes foundation for future form tag development. Alpine.js reactive components provide frontend reactivity with AJAX material filtering. Dual shortcode system supports CF7 custom tags ([realizace_construction_types], [realizace_materials]) and regular WordPress shortcodes. TaxonomyManager handles data relationships with term meta storage. ACF JSON import pattern with Czech admin labels and English slugs for maintainable localization. Enhanced with XSS protection using esc_attr()/esc_html(), input validation for taxonomy term IDs, user-facing error messages for network failures, loading states with visual feedback, extracted hardcoded strings to constants for localization, JSDoc documentation, optimized Alpine.js structure with shared error configuration. System replaces static text areas with relational selects, enforcing data quality through guided user selection of valid construction type and material combinations.
+- **Dedicated reject button system** (2025-06-26): Replaced problematic status dropdown with context-aware button system in post editor publish box. Three distinct states: pending posts (red "Odmítnout"), published posts (orange "Zrušit schválení"), rejected posts (grey "Odmítnuto" disabled). Integrates with WordPress native dropdown via StatusManager JavaScript injection. Eliminates validation gatekeeper conflicts, provides admin workflow, and resolves AJAX timing issues. StatusDropdownManager.js removed in favor of unified AdminControllerBase implementation.
+- **Consolidated services architecture** (2025-06-26): Created configurable Services/StatusManager.php and Services/AdminAssetManager.php eliminating domain-specific service duplication. Services accept configuration arrays enabling full customization while sharing core functionality. Reduced 6 domain-specific files to 2 reusable services. Established pattern for domain scaling with zero code duplication. Services integrate with existing base class architecture.
+- **Faktury domain implementation** (2025-06-26): Invoice management domain with dynamic points calculation (floor(value/10)), ValidationService with date validation, form integration, and admin interface. Domain architecture: Manager, AdminController, PointsHandler, ValidationService, FakturaFieldService, FormHandler. Business rules implemented for current-year date validation. ACF field population issue resolved - production ready.
+- **English slug architecture** (2025-06-25): Eliminated DomainRegistry complexity. All PHP classes return English post types ('realization', 'invoice'), JavaScript uses English slugs, AJAX endpoints use direct string concatenation. WordPress post type slugs remain Czech ('realizace', 'faktura') for URL compatibility. FieldService classes use English field names (points_assigned, rejection_reason). System achieved PHP/JavaScript alignment with zero AJAX 403 errors. Predictable, maintainable architecture.
+- **Complete domain abstraction** (2025-06-25): Created StatusManagerBase and AdminAssetManagerBase for cross-domain reusability. Integrated StatusDropdownManager.js into webpack build system with AdminApp module initialization. Enhanced AdminControllerBase with users table integration. Achieved 30% code reduction while establishing patterns for Faktury implementation. JavaScript system generic and configuration-driven.
+- **Template system architecture** (2025-06-25): MVC separation with template-based rendering for all admin cards - 84% code reduction with zero HTML in PHP classes. Template loading system enables domain expansion with zero code duplication
 - **Centralized field access**: All ACF field access through RealizaceFieldService - eliminates hardcoded field names and synchronization bugs
-- **Enterprise architecture**: Domain-driven structure with PSR-4 autoloading and single bootstrap
-- **Abstract base class architecture** (2025-06-23): Created PostTypeManagerBase, AdminControllerBase, PointsHandlerBase, and FormHandlerBase for domain abstraction. Enables rapid creation of new domains (Faktury, Certifikace) by extending proven patterns
+- **Domain-driven architecture**: Domain structure with PSR-4 autoloading and single bootstrap
+- **Abstract base class architecture** (2025-06-23): Created PostTypeManagerBase, AdminControllerBase, PointsHandlerBase, and FormHandlerBase for domain abstraction. Enables creation of new domains (Faktury, Certifikace) by extending patterns
 - **Fixed default points system** (2025-06-23): Realizace awards fixed 2500 points with admin override capability. Single source of truth through ACF fields with automatic population. Simplifies admin workflow while maintaining flexibility
 - **Functional JavaScript patterns**: setupFunction() approach for all feature modules with isolated state
 - **Component-based shortcodes**: React-style reusable components with auto-discovery
@@ -191,9 +193,9 @@ Quick architecture compliance checks:
 - **Frontend-only Tailwind CSS** (2025-06-23): Tailwind CSS only loaded on frontend via wp_enqueue_scripts to prevent admin class conflicts with WordPress core
 
 ## Known Issues
-*No known issues - all systems production-ready.*
+No known issues - all systems production-ready.
 
-*All major systems fully operational: Dedicated reject button system with context-aware states, complete Faktury invoice domain with ACF field population resolved, consolidated services architecture, English slug architecture with perfect PHP/JavaScript alignment, template system with complete MVC separation. System ready for full production deployment.*
+All major systems operational: Dedicated reject button system with context-aware states, Faktury invoice domain with ACF field population resolved, consolidated services architecture, English slug architecture with PHP/JavaScript alignment, template system with MVC separation. System ready for production deployment.
 
 ## Archive
 
@@ -221,4 +223,4 @@ Quick architecture compliance checks:
 
 
 ## Last Updated
-2025-07-01 (Documentation updated to reflect correct Faktury points calculation formula: floor(value/10) = 10 CZK per point)
+2025-07-01 (CF7 relational selects implementation complete with Alpine.js reactive components and ACF JSON taxonomy imports)
