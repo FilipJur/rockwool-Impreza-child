@@ -20,7 +20,7 @@ Version:        0.1.0
 // Components
 @use 'components/file-upload';
 @use 'components/woocommerce';
-@use 'components/user-debug';
+// User debug component removed for staging
 @use 'components/business-data-modal';
 @use 'components/ares-form';
 @use 'components/cf7-relational-selects';

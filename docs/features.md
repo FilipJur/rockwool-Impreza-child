@@ -24,7 +24,7 @@ This document details the implemented features and their technical specification
 
 ### Integration Points
 - **E-Commerce Domain**: Role checking integrated with cart and checkout validation
-- **Shortcode System**: User status displayed in UserHeaderShortcode and UserDebugShortcode
+- **Shortcode System**: User status displayed in UserHeaderShortcode
 - **WordPress Core**: Seamless integration with WordPress user system and capabilities
 
 ## File Upload Enhancement
