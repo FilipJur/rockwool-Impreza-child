@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\MyCred\ECommerce;
 
+use MistrFachman\Services\UserDetectionService;
+
 
 /**
  * MyCred Manager Class
@@ -31,16 +33,20 @@ class Manager {
     public UiModifier $ui_modifier;
 
     /**
-     * Get singleton instance
+     * Get singleton instance with dependency injection
      */
-    public static function get_instance(): self {
-        return self::$instance ??= new self();
+    public static function get_instance(?UserDetectionService $user_detection_service = null): self {
+        if (self::$instance === null) {
+            self::$instance = new self($user_detection_service);
+        }
+        return self::$instance;
     }
 
     /**
      * Private constructor to prevent direct instantiation
+     * Now accepts shared services via dependency injection
      */
-    private function __construct() {
+    private function __construct(?UserDetectionService $user_detection_service = null) {
         // Initialize components in dependency order
         $cart_calculator = new CartCalculator();
         $this->cart_context = new CartContext($cart_calculator);

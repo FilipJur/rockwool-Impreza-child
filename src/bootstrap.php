@@ -118,28 +118,38 @@ add_action('init', function () {
 
     // === SERVICE LAYER INITIALIZATION (DI-Lite Pattern) ===
     // Create shared services that will be used across multiple domains
-    
+
     // Core user services
     $RoleManager = \MistrFachman\Users\RoleManager::class;
     $role_manager = class_exists($RoleManager) ? new $RoleManager() : null;
-    
+
     $UserDetectionService = \MistrFachman\Services\UserDetectionService::class;
-    $user_detection_service = (class_exists($UserDetectionService) && $role_manager) 
-        ? new $UserDetectionService($role_manager) 
+    $user_detection_service = (class_exists($UserDetectionService) && $role_manager)
+        ? new $UserDetectionService($role_manager)
         : null;
-    
+
+    // Additional shared services for Users domain
+    $AresApiClient = \MistrFachman\Users\AresApiClient::class;
+    $ares_api_client = class_exists($AresApiClient) ? new $AresApiClient() : null;
+
     // Future shared services will be created here:
     // $sms_service = new SmsNotificationService();
     // $leaderboard_service = new LeaderboardService();
 
     // 1. Initialize the Users System (first, as other domains may depend on it)
-    if (class_exists($UsersManager)) {
-        $users_manager = $UsersManager::get_instance();
-        
+    if (class_exists($UsersManager) && $role_manager && $user_detection_service && $ares_api_client) {
+        $users_manager = $UsersManager::get_instance($role_manager, $user_detection_service, $ares_api_client);
+
         // Form configuration is now handled by RegistrationConfig class
         // No need to manually configure form ID - it's centralized in RegistrationConfig::FINAL_REGISTRATION_FORM_ID
+        mycred_debug('Users Manager initialized with injected dependencies', null, 'bootstrap', 'info');
     } else {
-        mycred_debug('Users Manager class not found.', null, 'bootstrap', 'error');
+        mycred_debug('Users Manager class not found or dependencies unavailable.', [
+            'UsersManager' => class_exists($UsersManager),
+            'RoleManager' => (bool)$role_manager,
+            'UserDetectionService' => (bool)$user_detection_service,
+            'AresApiClient' => (bool)$ares_api_client
+        ], 'bootstrap', 'error');
     }
 
     // 1.5. Initialize the Realizace System with injected dependencies
@@ -160,13 +170,13 @@ add_action('init', function () {
         mycred_debug('Faktury Manager class not found or UserDetectionService unavailable.', null, 'bootstrap', 'error');
     }
 
-    // 2. Initialize the E-Commerce System
-    $ecommerce_manager = $ECommerceManager::get_instance();
+    // 2. Initialize the E-Commerce System with injected dependencies
+    $ecommerce_manager = $ECommerceManager::get_instance($user_detection_service);
 
     // 3. Initialize the Services Layer, injecting the dependencies they need
     $product_service = new $ProductService($ecommerce_manager);
     $user_service = isset($users_manager) ? $users_manager->get_user_service() : null;
-    
+
     // 4. Initialize the Shortcode System, injecting all necessary services
     if (class_exists($ShortcodeManager) && $user_service) {
         $shortcode_manager = new $ShortcodeManager($ecommerce_manager, $product_service, $user_service);
@@ -180,44 +190,6 @@ add_action('init', function () {
         'domains' => ['Users', 'Realizace', 'Faktury', 'ECommerce', 'Shortcodes', 'Services'],
         'pattern' => 'decoupled with service injection'
     ]);
-}, 20); // Later priority to ensure plugins are loaded
+}, 5); // Early priority to ensure services are available before wp_enqueue_scripts
 
-// Debug helper available via URL parameter: ?debug_mycred_cart=1
-// To clear cart: ?clear_mycred_cart=1
-if (defined('WP_DEBUG') && WP_DEBUG) {
-    add_action('wp_footer', function () {
-        if (isset($_GET['debug_mycred_cart']) && current_user_can('manage_options')) {
-            if (class_exists('MistrFachman\\MyCred\\ECommerce\\Manager') && function_exists('WC') && WC()->cart) {
-                $manager = \MistrFachman\MyCred\ECommerce\Manager::get_instance();
-                $cart_total = $manager->cart_context->get_current_cart_total();
-                $available_points = $manager->get_available_points();
-                $user_balance = $manager->get_user_balance();
-                $is_overcommitted = $cart_total > $user_balance;
-                // Shortcodes are now decoupled - we can't access them from the manager
-                $shortcode_count = 'decoupled';
-
-                echo '<div style="position:fixed;top:10px;right:10px;background:white;border:2px solid ' . ($is_overcommitted ? 'red' : 'green') . ';padding:10px;z-index:99999;font-family:monospace;font-size:12px;max-width:400px;">';
-                echo '<h4>myCred Debug (PSR-4)</h4>';
-                echo "<strong>Balance:</strong> $user_balance<br>";
-                echo "<strong>Cart Total:</strong> $cart_total<br>";
-                echo "<strong>Available:</strong> $available_points<br>";
-                echo "<strong>Shortcodes:</strong> $shortcode_count<br>";
-                if ($is_overcommitted) {
-                    echo '<strong style="color:red;">OVERCOMMITTED</strong><br>';
-                    echo '<a href="?clear_mycred_cart=1" style="background:red;color:white;padding:2px 5px;text-decoration:none;font-size:10px;">Clear</a>';
-                }
-                echo '</div>';
-            }
-        }
-    });
-
-    add_action('init', function () {
-        if (isset($_GET['clear_mycred_cart']) && current_user_can('manage_options')) {
-            if (function_exists('WC') && WC()->cart) {
-                WC()->cart->empty_cart();
-                wp_redirect(remove_query_arg('clear_mycred_cart'));
-                exit;
-            }
-        }
-    });
-}
+// Legacy debug helpers removed for staging deployment

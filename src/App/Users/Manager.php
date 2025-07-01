@@ -44,26 +44,41 @@ class Manager {
     public AdminInterface $admin_interface;
 
     /**
-     * Get singleton instance
+     * Get singleton instance with dependency injection
+     * For backward compatibility, parameters are optional if instance already exists
      */
-    public static function get_instance(): self {
-        return self::$instance ??= new self();
+    public static function get_instance(
+        ?RoleManager $role_manager = null,
+        ?UserDetectionService $user_detection_service = null,
+        ?AresApiClient $ares_api_client = null
+    ): self {
+        if (self::$instance === null) {
+            if ($role_manager === null || $user_detection_service === null || $ares_api_client === null) {
+                throw new \InvalidArgumentException('All dependencies must be provided on first call to Users Manager');
+            }
+            self::$instance = new self($role_manager, $user_detection_service, $ares_api_client);
+        }
+        return self::$instance;
     }
 
     /**
      * Private constructor to prevent direct instantiation
+     * Now accepts shared services via dependency injection
      */
-    private function __construct() {
-        // Initialize components in dependency order
-        $this->role_manager = new RoleManager();
+    private function __construct(
+        RoleManager $role_manager,
+        UserDetectionService $user_detection_service,
+        AresApiClient $ares_api_client
+    ) {
+        // Store injected dependencies
+        $this->role_manager = $role_manager;
+        $this->user_detection_service = $user_detection_service;
         $this->user_service = new UserService($this->role_manager);
-        $this->user_detection_service = new UserDetectionService($this->role_manager);
         
         // Initialize business data components
         $this->business_manager = new BusinessDataManager();
         
-        // Initialize extracted service classes
-        $ares_api_client = new AresApiClient();
+        // Use injected ARES client and create dependent services
         $this->business_validator = new BusinessDataValidator($this->business_manager, $ares_api_client);
         $business_data_processor = new BusinessDataProcessor($ares_api_client, $this->business_manager);
         $profile_sync = new UserProfileSync();
