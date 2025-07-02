@@ -1,8 +1,8 @@
 /**
- * Tailwind CSS Utilities
+ * Tailwind CSS v4
  *
- * Separate file for Tailwind utilities only.
+ * Full Tailwind CSS import including all utilities like gap, flex, grid, etc.
  * This will be compiled to tailwind.css and enqueued before custom styles.
  */
 
-@tailwind utilities;
+@import "tailwindcss";

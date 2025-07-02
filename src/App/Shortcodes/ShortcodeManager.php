@@ -145,7 +145,7 @@ class ShortcodeManager {
         $filename = basename($file_path, '.php');
         
         // Skip base classes and manager
-        if (in_array($filename, ['ShortcodeBase', 'ShortcodeManager'], true)) {
+        if (in_array($filename, ['ShortcodeBase', 'ShortcodeManager', 'CF7FormTagBase', 'CF7AssetManager'], true)) {
             return;
         }
 

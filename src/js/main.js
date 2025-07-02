@@ -7,6 +7,7 @@ import { setupAresForm } from './features/ares/handler.js';
 import { setupFileUpload } from './features/file-upload/index.js';
 import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAccessControl } from './features/access-control/index.js';
+import { setupZebricek } from './features/zebricek/index.js';
 import { app as firebaseApp } from './firebase/config.js';
 
 /**
@@ -19,7 +20,8 @@ class ThemeApp {
       aresHandler: null,
       fileUpload: null,
       businessModal: null,
-      accessControl: null
+      accessControl: null,
+      zebricek: null
     };
     this.firebase = firebaseApp;
     this.isInitialized = false;
@@ -116,6 +118,16 @@ class ThemeApp {
         console.log('Business data modal initialized for admin');
       } catch (error) {
         console.error('Failed to initialize business data modal:', error);
+      }
+    }
+
+    // Initialize zebricek (leaderboard) functionality
+    if (document.querySelector('.mycred-zebricek-leaderboard')) {
+      try {
+        this.modules.zebricek = setupZebricek();
+        console.log('Žebříček module initialized');
+      } catch (error) {
+        console.error('Failed to initialize žebříček module:', error);
       }
     }
 

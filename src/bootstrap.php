@@ -181,6 +181,14 @@ add_action('init', function () {
     if (class_exists($ShortcodeManager) && $user_service) {
         $shortcode_manager = new $ShortcodeManager($ecommerce_manager, $product_service, $user_service);
         $shortcode_manager->init_shortcodes(); // Explicitly initialize
+        
+        // 4.1. Initialize Žebříček AJAX Handler
+        $ZebricekAjaxHandler = \MistrFachman\Shortcodes\ZebricekAjaxHandler::class;
+        if (class_exists($ZebricekAjaxHandler)) {
+            $zebricek_ajax = new $ZebricekAjaxHandler($ecommerce_manager, $product_service, $user_service);
+            $zebricek_ajax->register_hooks();
+            mycred_debug('Žebříček AJAX Handler initialized', null, 'bootstrap', 'info');
+        }
     } else {
         mycred_debug('Shortcode Manager class not found or UserService unavailable.', null, 'bootstrap', 'error');
     }
