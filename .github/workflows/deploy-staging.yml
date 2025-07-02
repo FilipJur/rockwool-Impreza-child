@@ -1,0 +1,102 @@
+name: Deploy to Staging
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Manual trigger option
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, curl, zip, intl
+          coverage: none
+          
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader
+        
+      - name: Install Node dependencies
+        run: npm ci
+        
+      - name: Build production assets
+        run: npm run build
+        
+      - name: Verify build output
+        run: |
+          test -f style.css || (echo "❌ style.css missing" && exit 1)
+          test -f tailwind.css || (echo "❌ tailwind.css missing" && exit 1) 
+          test -f build/js/main.js || (echo "❌ main.js missing" && exit 1)
+          test -f build/js/admin.js || (echo "❌ admin.js missing" && exit 1)
+          test -f build/js/main.asset.php || (echo "❌ main.asset.php missing" && exit 1)
+          test -f build/js/admin.asset.php || (echo "❌ admin.asset.php missing" && exit 1)
+          echo "✅ All required files built successfully"
+          
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy-package
+          
+          # Copy built assets
+          cp style.css deploy-package/ 2>/dev/null || echo "⚠️ style.css not found"
+          cp tailwind.css deploy-package/ 2>/dev/null || echo "⚠️ tailwind.css not found"
+          
+          # Copy JavaScript bundles and WordPress asset files
+          if [ -d "build/js" ]; then
+            mkdir -p deploy-package/build
+            cp -r build/js deploy-package/build/
+          fi
+          
+          # Copy PHP application and core files
+          cp -r lib src templates includes acf-json deploy-package/ 2>/dev/null || true
+          cp functions.php deploy-package/
+          
+          # Copy any additional theme files (style.css, index.php, etc.)
+          cp *.php deploy-package/ 2>/dev/null || true
+          
+          echo "📦 Deployment package created with contents:"
+          ls -la deploy-package/
+          
+      - name: Deploy to staging via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.STAGING_FTP_HOST }}
+          username: ${{ secrets.STAGING_FTP_USER }}
+          password: ${{ secrets.STAGING_FTP_PASSWORD }}
+          local-dir: ./deploy-package/
+          server-dir: ${{ secrets.STAGING_FTP_PATH }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/src/js/**
+            **/src/scss/**
+            **/build/css/**
+            **/*.map
+            **/package*.json
+            **/webpack.config.js
+            **/postcss.config.js
+            **/tailwind.config.js
+            **/composer.json
+            **/composer.lock
+            **/.nvmrc
+            
+      - name: Deployment complete
+        run: |
+          echo "🚀 Deployment to staging completed successfully!"
+          echo "🌐 Check your staging site to verify the update"
+          echo "📊 Build summary:"
+          echo "   - Node.js version: $(node -v)"
+          echo "   - PHP version: $(php -v | head -n 1)"
+          echo "   - Build time: $(date)"
