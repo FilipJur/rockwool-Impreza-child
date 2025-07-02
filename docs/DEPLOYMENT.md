@@ -24,12 +24,12 @@ You need to add these secrets to your GitHub repository for the deployment to wo
 
 Add each of these secrets one by one:
 
-| Secret Name | Description | Example |
-|-------------|-------------|---------|
+| Secret Name | Description | Example Value |
+|-------------|-------------|---------------|
 | `STAGING_FTP_HOST` | Your FTP server hostname | `ftp.yourserver.com` |
-| `STAGING_FTP_USER` | Your FTP username | `staging_user` |
+| `STAGING_FTP_USER` | Your FTP username | `your_ftp_username` |
 | `STAGING_FTP_PASSWORD` | Your FTP password | `your_secure_password` |
-| `STAGING_FTP_PATH` | Path to theme directory on server | `/public_html/wp-content/themes/Impreza-child/` |
+| `STAGING_FTP_PATH` | Path to theme directory on server | `/subdomains/yoursite/wp-content/themes/Impreza-child/` |
 
 ### 3. Getting FTP Credentials
 
@@ -40,10 +40,42 @@ Add each of these secrets one by one:
 3. **Set permissions** to allow access to WordPress directory
 4. **Note down**: hostname, username, password, and path
 
-**Common hosting paths:**
-- **Shared hosting**: `/public_html/wp-content/themes/Impreza-child/`
-- **VPS/Dedicated**: `/var/www/html/wp-content/themes/Impreza-child/`
-- **Subdomain staging**: `/staging/wp-content/themes/Impreza-child/`
+**Typical staging server structure:**
+- **Staging server path**: `/subdomains/yoursite/wp-content/themes/Impreza-child/`
+- **WordPress root**: `/subdomains/yoursite/`
+- **FTP server**: Different from web server (common setup)
+- **Web URL**: `yoursite.yourdomain.com`
+
+## Current Staging Server Analysis
+
+### ✅ What's Already Set Up
+
+**WordPress Installation**: ✅ Complete
+- WordPress core files present
+- Multiple wp-config files for different environments
+- Database configured (mfachman_18625.sql present)
+
+**Theme Structure**: ✅ Ready for CI/CD
+- Impreza parent theme installed
+- Impreza-child directory exists
+- Current theme files already deployed
+
+**FTP Access**: ✅ Working
+- FTP credentials tested and verified
+- Full directory structure accessible
+- Proper permissions for deployment
+- Test file upload/download successful
+
+### ⚠️ Issues to Address
+
+**HTTP 500 Error**: The website returns a server error
+- Likely wp-config.php database configuration issue
+- Possible PHP errors (check debug.log)
+- May need to activate proper wp-config file for staging
+
+**SSL Certificate**: HTTPS not working for subdomain
+- Certificate doesn't cover mistrfachman.jsagentura.cz
+- FTP deployment will work, but website access limited
 
 ## How the Deployment Works
 
