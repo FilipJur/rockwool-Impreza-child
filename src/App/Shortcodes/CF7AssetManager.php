@@ -60,11 +60,15 @@ class CF7AssetManager {
      */
     private static function enqueue_cf7_components_script(): void {
         if (!wp_script_is('cf7-alpine-components', 'enqueued')) {
+            // Use built version with WordPress asset system
+            $asset_file = get_stylesheet_directory() . '/build/js/cf7-components.asset.php';
+            $asset = file_exists($asset_file) ? include $asset_file : ['dependencies' => [], 'version' => '1.0.0'];
+            
             wp_enqueue_script(
                 'cf7-alpine-components',
-                get_stylesheet_directory_uri() . '/src/js/cf7-alpine-components.js',
-                [],
-                filemtime(get_stylesheet_directory() . '/src/js/cf7-alpine-components.js'),
+                get_stylesheet_directory_uri() . '/build/js/cf7-components.js',
+                $asset['dependencies'],
+                $asset['version'],
                 true
             );
         }
