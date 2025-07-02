@@ -1,0 +1,8 @@
+/**
+ * Tailwind CSS Utilities
+ *
+ * Separate file for Tailwind utilities only.
+ * This will be compiled to tailwind.css and enqueued before custom styles.
+ */
+
+@tailwind utilities;
