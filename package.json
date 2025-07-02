@@ -9,7 +9,7 @@
     "build": "npm run build:css:prod && npm run build:js",
     "dev": "npm run build:css && npm run build:js:dev",
     "watch": "npm run watch:css & npm run watch:js",
-    "clean": "rm -rf build/ style.css* tailwind.css*",
+    "clean": "rm -rf build/ style.css* && rm -f tailwind.css tailwind.css.map",
     "prebuild": "npm run clean",
     "postbuild": "npm run verify-build",
     "verify-build": "test -f style.css && test -f tailwind.css && test -f build/js/main.js && test -f build/js/admin.js && test -f build/js/main.asset.php && test -f build/js/admin.asset.php && echo '✅ Build verification passed'",
