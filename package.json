@@ -13,7 +13,7 @@
     "prebuild": "npm run clean",
     "postbuild": "npm run verify-build",
     "verify-build": "test -f style.css && test -f tailwind.css && test -f build/js/main.js && test -f build/js/admin.js && test -f build/js/main.asset.php && test -f build/js/admin.asset.php && echo '✅ Build verification passed'",
-    "build:fallback": "sass src/scss/main.scss:style.css --style=compressed --no-source-map && cp src/tailwind.css tailwind.css && npm run build:js",
+    "build:fallback": "sass src/scss/main.scss:style.css --style=compressed --no-source-map && cp src/tailwind.css tailwind.css && npm run build:js"
   },
   "dependencies": {
     "firebase": "^11.9.1",
