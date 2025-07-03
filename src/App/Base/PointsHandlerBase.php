@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Base;
 
+use MistrFachman\Services\DualPointsManager;
+
 /**
  * Base Points Handler - Abstract Foundation
  *
@@ -26,6 +28,21 @@ if (!defined('ABSPATH')) {
 }
 
 abstract class PointsHandlerBase {
+
+    /**
+     * @var DualPointsManager|null
+     */
+    private ?DualPointsManager $dualPointsManager = null;
+
+    /**
+     * Get or create DualPointsManager instance
+     */
+    protected function getDualPointsManager(): DualPointsManager {
+        if ($this->dualPointsManager === null) {
+            $this->dualPointsManager = new DualPointsManager();
+        }
+        return $this->dualPointsManager;
+    }
 
     /**
      * Get the post type slug for this domain (English, for internal logic)
@@ -115,15 +132,10 @@ abstract class PointsHandlerBase {
     }
 
     /**
-     * The PUBLIC service for awarding points - used by both pathways.
-     * Handles point differences and audit trail updates.
+     * The PUBLIC service for awarding points - now uses DualPointsManager for atomic transactions.
+     * Handles point differences and audit trail updates for both spendable and leaderboard points.
      */
     public function award_points(int $post_id, int $user_id, int $points_to_award): bool {
-        if (!function_exists('mycred_add')) {
-            error_log("[{$this->getPostType()}:ERROR] myCred not available for points processing");
-            return false;
-        }
-
         if (!$this->validate_points_value($points_to_award)) {
             error_log("[{$this->getPostType()}:ERROR] Invalid points value '{$points_to_award}' for post {$post_id}");
             return false;
@@ -134,23 +146,58 @@ abstract class PointsHandlerBase {
 
         // Only process if there's a change
         if ($point_difference !== 0) {
-            $log_message = $this->get_log_message($post_id, 'award', $point_difference);
+            $dual_manager = $this->getDualPointsManager();
             
-            if (mycred_add($this->getMyCredReference(), $user_id, $point_difference, $log_message, $post_id)) {
+            if ($point_difference > 0) {
+                // Award additional points
+                $log_message = $this->get_log_message($post_id, 'award', $point_difference);
+                $result = $dual_manager->awardDualPoints(
+                    $user_id,
+                    $point_difference,
+                    $this->getMyCredReference(),
+                    $log_message,
+                    $post_id
+                );
+            } else {
+                // Revoke excess points (negative difference)
+                $points_to_revoke = abs($point_difference);
+                $log_message = $this->get_log_message($post_id, 'save', $point_difference);
+                $result = $dual_manager->revokeDualPoints(
+                    $user_id,
+                    $points_to_revoke,
+                    $this->getMyCredReference(),
+                    $log_message,
+                    $post_id
+                );
+            }
+            
+            if ($result) {
                 update_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", $points_to_award);
                 
-                error_log(sprintf(
-                    '[%s:INFO] Points awarded for post %d: %+d points (total: %d)',
-                    strtoupper($this->getPostType()),
-                    $post_id,
-                    $point_difference,
-                    $points_to_award
-                ));
+                if ($point_difference > 0) {
+                    error_log(sprintf(
+                        '[%s:INFO] Dual points awarded for post %d: +%d points (total: %d)',
+                        strtoupper($this->getPostType()),
+                        $post_id,
+                        $point_difference,
+                        $points_to_award
+                    ));
+                } else {
+                    error_log(sprintf(
+                        '[%s:INFO] Dual points adjusted for post %d: %d points (total: %d)',
+                        strtoupper($this->getPostType()),
+                        $post_id,
+                        $point_difference,
+                        $points_to_award
+                    ));
+                }
                 return true;
             } else {
+                $operation = $point_difference > 0 ? 'award' : 'revoke';
                 error_log(sprintf(
-                    '[%s:ERROR] Failed to award points for post %d: %+d points',
+                    '[%s:ERROR] Failed to %s dual points for post %d: %+d points',
                     strtoupper($this->getPostType()),
+                    $operation,
                     $post_id,
                     $point_difference
                 ));
@@ -180,48 +227,41 @@ abstract class PointsHandlerBase {
     }
 
     /**
-     * Revoke points with "No Debt" policy
+     * Revoke points using DualPointsManager with different policies for each point type
      */
     protected function revoke_points(int $post_id, int $user_id, string $new_status): void {
-        if (!function_exists('mycred_add') || !function_exists('mycred_get_users_balance')) {
-            return;
-        }
-
         $points_awarded = (int)get_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", true);
         
         if ($points_awarded > 0) {
-            // Get user's current balance to implement "No Debt" policy
-            $current_balance = (int)mycred_get_users_balance($user_id);
+            // Get post title for better user experience
+            $post_title = get_the_title($post_id) ?: "{$this->getDomainDisplayName()} #{$post_id}";
+            $description = sprintf('Odebrání bodů: %s změněna na stav "%s"', $post_title, $this->get_status_label($new_status));
             
-            // Calculate maximum points we can revoke without creating debt
-            $points_to_revoke = min($points_awarded, $current_balance);
+            // Use DualPointsManager for coordinated dual-point revocation
+            $dual_manager = $this->getDualPointsManager();
+            $result = $dual_manager->revokeDualPoints(
+                $user_id,
+                $points_awarded,
+                $this->getMyCredReference(),
+                $description,
+                $post_id
+            );
             
-            if ($points_to_revoke > 0) {
-                // Get post title for better user experience
-                $post_title = get_the_title($post_id) ?: "{$this->getDomainDisplayName()} #{$post_id}";
+            if ($result) {
+                // Get actual revoked amounts for tracking
+                $balances = $dual_manager->getUserBalances($user_id);
                 
-                // Revoke only the amount that won't create negative balance
-                $result = mycred_add(
-                    'revoke_' . $this->getPostType() . '_points',
-                    $user_id,
-                    -$points_to_revoke,
-                    sprintf('Odebrání bodů: %s změněna na stav "%s"', $post_title, $this->get_status_label($new_status)),
-                    $post_id
-                );
+                // For spendable points, we need to calculate how much was actually revoked
+                // due to "no debt policy". For leaderboard points, the full amount is always revoked.
+                $spendable_revoked = min($points_awarded, $balances['spendable'] + $points_awarded) - $balances['spendable'];
                 
-                if ($result) {
-                    // Update tracking to reflect actual points revoked
-                    update_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", $points_awarded - $points_to_revoke);
-                    
-                    if ($points_to_revoke < $points_awarded) {
-                        error_log("[{$this->getPostType()}:INFO] No Debt Policy: Revoked {$points_to_revoke}/{$points_awarded} points from post {$post_id} (balance: {$current_balance}, status: {$new_status})");
-                    } else {
-                        error_log("[{$this->getPostType()}:INFO] Revoked {$points_to_revoke} points from post {$post_id} (status: {$new_status})");
-                    }
-                }
+                // Update tracking to reflect actual points revoked from spendable balance
+                // Note: Leaderboard points are tracked separately by myCred
+                update_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", $points_awarded - $spendable_revoked);
+                
+                error_log("[{$this->getPostType()}:INFO] Dual points revoked from post {$post_id}: spendable={$spendable_revoked}/{$points_awarded}, leaderboard={$points_awarded}/{$points_awarded} (status: {$new_status})");
             } else {
-                // User has insufficient balance - log but don't revoke
-                error_log("[{$this->getPostType()}:INFO] No Debt Policy: Cannot revoke {$points_awarded} points from post {$post_id} - user balance too low ({$current_balance})");
+                error_log("[{$this->getPostType()}:ERROR] Failed to revoke dual points for post {$post_id}");
             }
         }
     }

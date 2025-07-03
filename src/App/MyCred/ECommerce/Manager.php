@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\MyCred\ECommerce;
 
 use MistrFachman\Services\UserDetectionService;
+use MistrFachman\Services\PointTypeConstants;
 
 
 /**
@@ -131,7 +132,7 @@ class Manager {
         $point_type = match (true) {
             isset($gateway_settings['point_type']) => $gateway_settings['point_type'],
             defined('MYCRED_DEFAULT_TYPE_KEY') => MYCRED_DEFAULT_TYPE_KEY,
-            default => 'mycred_default'
+            default => PointTypeConstants::getDefaultPointType()
         };
 
         // Cache the result

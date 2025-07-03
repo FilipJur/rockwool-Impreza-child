@@ -7,6 +7,7 @@ namespace MistrFachman\Shortcodes;
 use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
 use MistrFachman\Services\UserService;
+use MistrFachman\Services\ZebricekDataService;
 
 /**
  * Shortcode Manager Class
@@ -28,16 +29,19 @@ class ShortcodeManager {
     private Manager $ecommerce_manager;
     private ProductService $product_service;
     private UserService $user_service;
+    private ZebricekDataService $zebricek_service;
     private array $registered_shortcodes = [];
 
     public function __construct(
         Manager $ecommerce_manager, 
         ProductService $product_service, 
-        UserService $user_service
+        UserService $user_service,
+        ZebricekDataService $zebricek_service
     ) {
         $this->ecommerce_manager = $ecommerce_manager;
         $this->product_service = $product_service;
         $this->user_service = $user_service;
+        $this->zebricek_service = $zebricek_service;
     }
 
     /**
@@ -158,7 +162,12 @@ class ShortcodeManager {
                 
                 // Only register concrete classes that extend ShortcodeBase
                 if (!$reflection->isAbstract() && $reflection->isSubclassOf(ShortcodeBase::class)) {
-                    $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service);
+                    // Special handling for zebricek shortcodes that need ZebricekDataService
+                    if (str_contains($class_name, 'Zebricek')) {
+                        $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service, $this->zebricek_service);
+                    } else {
+                        $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service);
+                    }
                     $this->register_shortcode($shortcode_instance);
                 }
             }

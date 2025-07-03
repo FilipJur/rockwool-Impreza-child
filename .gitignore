@@ -82,3 +82,6 @@ coverage/
 uploads/
 repomix-output.txt
 .repomix/bundles.json
+# Debug Log Files
+debug*.log
+*.log.*.bak

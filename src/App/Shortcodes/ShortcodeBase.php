@@ -174,4 +174,30 @@ abstract class ShortcodeBase {
         return implode(' ', $classes);
     }
 
+    /**
+     * Load template with data - unified template loading system
+     * 
+     * @param string $template_name Template file name (e.g., 'zebricek/leaderboard.php')
+     * @param array $data Data to extract as variables for the template
+     * @return string Rendered template content
+     */
+    protected function load_template(string $template_name, array $data = []): string
+    {
+        $template_path = get_stylesheet_directory() . '/templates/' . $template_name;
+        
+        if (!file_exists($template_path)) {
+            if (current_user_can('manage_options')) {
+                return $this->render_error("Template not found: {$template_name}");
+            }
+            return '<div class="mycred-shortcode-error">Došlo k chybě při načítání obsahu.</div>';
+        }
+
+        // Extract data to variables for template
+        extract($data, EXTR_SKIP);
+        
+        ob_start();
+        include $template_path;
+        return ob_get_clean();
+    }
+
 }

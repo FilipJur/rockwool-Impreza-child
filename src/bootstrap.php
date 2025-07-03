@@ -93,6 +93,35 @@ if (!function_exists('mycred') || !class_exists('WooCommerce')) {
     return;
 }
 
+// Register leaderboard point type for dual-point system
+// TEMPORARILY DISABLED: Create manually through admin interface due to myCred bug
+/*
+function register_leaderboard_point_type() {
+    // Check if function exists and point type doesn't already exist
+    if (!function_exists('mycred_register_point_type')) {
+        return;
+    }
+    
+    $existing_types = mycred_get_types();
+    if (isset($existing_types['leaderboard_points'])) {
+        return; // Already registered
+    }
+    
+    // Register the point type using myCred's official function
+    mycred_register_point_type('leaderboard_points', array(
+        'label' => 'Body žebříček',
+        'plural' => 'Body žebříček',
+        'before' => '',
+        'after' => ' bodů'
+    ));
+    
+    if (WP_DEBUG) {
+        error_log('[BOOTSTRAP] Successfully registered leaderboard_points point type using mycred_register_point_type');
+    }
+}
+add_action('mycred_ready', 'register_leaderboard_point_type');
+*/
+
 // Load the Composer autoloader (the one and only require statement needed!)
 $autoloader_path = get_stylesheet_directory() . '/lib/autoload.php';
 if (file_exists($autoloader_path)) {
@@ -176,21 +205,29 @@ add_action('init', function () {
     // 3. Initialize the Services Layer, injecting the dependencies they need
     $product_service = new $ProductService($ecommerce_manager);
     $user_service = isset($users_manager) ? $users_manager->get_user_service() : null;
+    
+    // 3.1. Initialize ZebricekDataService (no dependencies)
+    $ZebricekDataService = \MistrFachman\Services\ZebricekDataService::class;
+    $zebricek_data_service = class_exists($ZebricekDataService) ? new $ZebricekDataService() : null;
 
     // 4. Initialize the Shortcode System, injecting all necessary services
-    if (class_exists($ShortcodeManager) && $user_service) {
-        $shortcode_manager = new $ShortcodeManager($ecommerce_manager, $product_service, $user_service);
+    if (class_exists($ShortcodeManager) && $user_service && $zebricek_data_service) {
+        $shortcode_manager = new $ShortcodeManager($ecommerce_manager, $product_service, $user_service, $zebricek_data_service);
         $shortcode_manager->init_shortcodes(); // Explicitly initialize
         
-        // 4.1. Initialize Žebříček AJAX Handler
-        $ZebricekAjaxHandler = \MistrFachman\Shortcodes\ZebricekAjaxHandler::class;
-        if (class_exists($ZebricekAjaxHandler)) {
-            $zebricek_ajax = new $ZebricekAjaxHandler($ecommerce_manager, $product_service, $user_service);
+        // 4.1. Initialize Žebříček AJAX Service
+        $ZebricekAjaxService = \MistrFachman\Services\ZebricekAjaxService::class;
+        if (class_exists($ZebricekAjaxService)) {
+            $zebricek_ajax = new $ZebricekAjaxService($user_service, $zebricek_data_service);
             $zebricek_ajax->register_hooks();
-            mycred_debug('Žebříček AJAX Handler initialized', null, 'bootstrap', 'info');
+            mycred_debug('Žebříček AJAX Service initialized', null, 'bootstrap', 'info');
         }
     } else {
-        mycred_debug('Shortcode Manager class not found or UserService unavailable.', null, 'bootstrap', 'error');
+        mycred_debug('Shortcode Manager class not found or required services unavailable.', [
+            'shortcode_manager_exists' => class_exists($ShortcodeManager),
+            'user_service_available' => isset($user_service),
+            'zebricek_service_available' => isset($zebricek_data_service)
+        ], 'bootstrap', 'error');
     }
 
     mycred_log_architecture_event('PSR-4 Application Initialized with Service Layer', [
