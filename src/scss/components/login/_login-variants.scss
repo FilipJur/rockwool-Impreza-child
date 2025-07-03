@@ -1,0 +1,30 @@
+/**
+ * Login User State Variants
+ * Content variations based on user authentication status using JavaScript
+ * Domain: Authentication/User States
+ * Design: w6FJkgIwZWiFb2nYyDbzaj
+ * New user (node: 63-15149) vs Existing user (node: 63-16080)
+ */
+
+// User state specific styling differences only (not content)
+
+// New User Styles (user-status-logged_out)
+body.user-status-logged_out {
+  // New user disclaimer uses 16px font size
+  .accept_terms_and_conditions a {
+    font-size: 16px; // style_GO8SNP fontSize
+    line-height: 1.375; // style_GO8SNP lineHeight
+  }
+}
+
+// Existing User Styles (all other authenticated states)
+body.user-status-pending_approval,
+body.user-status-full_member,
+body.user-status-awaiting_review,
+body.user-status-needs_form {
+  // Existing user disclaimer uses 14px font size and different line-height
+  .accept_terms_and_conditions a {
+    font-size: 14px; // style_2YY03K fontSize
+    line-height: 1.2857142857142858; // style_2YY03K lineHeight
+  }
+}

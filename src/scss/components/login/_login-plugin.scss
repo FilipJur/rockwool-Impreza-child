@@ -1,0 +1,206 @@
+/**
+ * Login Plugin Integration
+ * Styles for login-with-phone-number plugin integration
+ * Domain: Plugin Integration/Third-party
+ */
+
+// Plugin form wrapper targeting
+.lwp_verification_form,
+#lwp_form {
+  .login-card__form & {
+    width: 100%;
+  }
+}
+
+// Phone number input field
+#phone {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background: transparent;
+  
+  &:focus {
+    outline: none;
+  }
+}
+
+// International telephone input library overrides
+.iti {
+  width: 100% !important;
+  
+  &__country-list {
+    z-index: 1000;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &__country {
+    padding: 8px 12px;
+    
+    &:hover {
+      background: var(--color-content-bg-alt);
+    }
+    
+    &.iti__highlight {
+      background: var(--color-content-primary);
+      color: white;
+    }
+  }
+  
+  &__flag-container {
+    border: none;
+    background: transparent;
+  }
+  
+  &__selected-flag {
+    border: none;
+    background: transparent;
+    padding: 0;
+    
+    &:hover,
+    &:focus {
+      background: transparent;
+    }
+  }
+  
+  &__arrow {
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid #999;
+  }
+}
+
+// Plugin button styling override
+.lwp_verification_form input[type="submit"],
+#lwp_form input[type="submit"] {
+  @extend .login-form__button;
+  
+  // Override plugin styles
+  font-size: 18px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+// Plugin loading states
+.lwp_loading {
+  .login-form__button {
+    opacity: 0.7;
+    cursor: not-allowed;
+    
+    &::after {
+      content: "";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-left: 8px;
+      border: 2px solid transparent;
+      border-top: 2px solid currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Plugin error states
+.lwp_error {
+  color: #dc3545;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.lwp_success {
+  color: #28a745;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+// Plugin modal/popup overrides
+.lwp_modal {
+  z-index: 9999;
+  
+  .lwp_modal_content {
+    background: var(--color-content-bg);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// OTP input field styling
+.lwp_otp_input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 18px;
+  text-align: center;
+  letter-spacing: 8px;
+  
+  &:focus {
+    border-color: var(--color-content-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(219, 6, 38, 0.1);
+  }
+}
+
+// Timer/countdown styling
+.lwp_timer {
+  font-size: 14px;
+  color: var(--color-content-faded);
+  text-align: center;
+  margin-top: 8px;
+}
+
+// Resend button styling
+.lwp_resend {
+  background: none;
+  border: none;
+  color: var(--color-content-link);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  
+  &:hover {
+    color: var(--color-content-link-hover);
+  }
+  
+  &:disabled {
+    color: var(--color-content-faded);
+    cursor: not-allowed;
+    text-decoration: none;
+  }
+}
+
+// Hide original plugin styling
+.idehweb-lwp-wrapper {
+  // Override any unwanted plugin container styles
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+// Terms and conditions link
+.accept_terms_and_conditions {
+  text-align: center;
+  
+  input {
+    display: none;
+  }
+  
+  a {
+    color: var(--color-content-link);
+    text-decoration: underline;
+    
+    &:hover {
+      color: var(--color-content-link-hover);
+    }
+  }
+}

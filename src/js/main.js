@@ -8,6 +8,7 @@ import { setupFileUpload } from './features/file-upload/index.js';
 import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAccessControl } from './features/access-control/index.js';
 import { setupZebricek } from './features/zebricek/index.js';
+import { setupLoginContentVariants } from './features/login-content-variants.js';
 import { app as firebaseApp } from './firebase/config.js';
 
 /**
@@ -21,7 +22,8 @@ class ThemeApp {
       fileUpload: null,
       businessModal: null,
       accessControl: null,
-      zebricek: null
+      zebricek: null,
+      loginContentVariants: null
     };
     this.firebase = firebaseApp;
     this.isInitialized = false;
@@ -128,6 +130,16 @@ class ThemeApp {
         console.log('Žebříček module initialized');
       } catch (error) {
         console.error('Failed to initialize žebříček module:', error);
+      }
+    }
+
+    // Initialize login content variants for authentication pages
+    if (document.querySelector('.lwp_forms_login')) {
+      try {
+        this.modules.loginContentVariants = setupLoginContentVariants();
+        console.log('Login content variants initialized');
+      } catch (error) {
+        console.error('Failed to initialize login content variants:', error);
       }
     }
 

@@ -1,0 +1,24 @@
+/**
+ * Login Components - Main Import File
+ * Domain-based architecture following backend patterns
+ * 
+ * Domain: Authentication/Login
+ * Design: w6FJkgIwZWiFb2nYyDbzaj (Figma)
+ * Plugin: login-with-phone-number
+ */
+
+// Import all login domain partials
+@use 'login-base';      // Core styles targeting plugin HTML
+@use 'login-variants';  // User state content variations
+@use 'login-plugin';    // Plugin integration overrides  
+@use 'login-activation'; // Activation/OTP form styles
+@use 'login-responsive'; // Responsive adjustments
+
+// Legacy styles (to be removed after migration)
+#page-content .accept_terms_and_conditions {
+  text-align: center;
+  
+  input {
+    display: none;
+  }
+}

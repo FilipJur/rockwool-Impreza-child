@@ -131,6 +131,159 @@ function impreza_child_enqueue_admin_assets()
 
 
 /**
+ * Login Page Content Output Buffering
+ * 
+ * Intercepts and modifies login page content based on user status
+ * without JavaScript DOM manipulation to avoid blink effects.
+ */
+add_action('template_redirect', 'lwp_init_login_content_modification');
+function lwp_init_login_content_modification() {
+    // Debug: check current page
+    if (is_admin()) {
+        return; // Don't run in admin
+    }
+    
+    // Check if we're on the login page (try different approaches)
+    $is_login_page = is_page('prihlaseni') || 
+                     is_page('přihlášení') || 
+                     strpos($_SERVER['REQUEST_URI'], '/prihlaseni') !== false ||
+                     strpos($_SERVER['REQUEST_URI'], '/prihlaseni/') !== false;
+    
+    if (!$is_login_page) {
+        return;
+    }
+    
+    // Start output buffering
+    ob_start('lwp_modify_login_content');
+}
+
+function lwp_modify_login_content($buffer) {
+    // Get user status
+    $users_manager = \MistrFachman\Users\Manager::get_instance();
+    $user_status = $users_manager->user_service->get_user_registration_status();
+    
+    // Check if we're on the activation step (form#lwp_activate is visible)
+    $is_activation_step = strpos($buffer, 'id="lwp_activate"') !== false && strpos($buffer, 'style="display: block;"') !== false;
+    
+    if ($is_activation_step) {
+        // Handle activation form content
+        return lwp_modify_activation_content($buffer);
+    }
+    
+    // Define content variations for login form
+    $content_variants = [
+        'logged_out' => [
+            'title' => 'Registrujte se, získáte tak přístup k výhodám, které mají jen Mistři.',
+            'subtitle' => 'Stačí zadat číslo a kód vám hned přistane v mobilu.',
+            'button' => 'Poslat ověřovací kód',
+            'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s podmínkami programu.'
+        ],
+        'existing_user' => [
+            'title' => 'Zadejte své telefonní číslo a v apce jste raz dva',
+            'subtitle' => 'Pošleme vám jednorázový kód pro rychlé přihlášení.',
+            'button' => 'Poslat ověřovací kód',
+            'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti.'
+        ]
+    ];
+    
+    // Determine which content to use
+    $is_existing_user = in_array($user_status, ['pending_approval', 'full_member', 'awaiting_review', 'needs_form']);
+    $content = $is_existing_user ? $content_variants['existing_user'] : $content_variants['logged_out'];
+    
+    // Add SVG icon to button text
+    $button_with_icon = $content['button'] . ' <img src="data:image/svg+xml,%3Csvg%20width%3D%2227%22%20height%3D%2226%22%20viewBox%3D%220%200%2027%2026%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22m25.5%201-8.4%2024-4.8-10.8M25.5%201l-24%208.4%2010.8%204.8M25.5%201%2012.3%2014.2%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.333%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E" style="width: 24px; height: 24px; display: inline-flex;" alt="">';
+    
+    // Replace title
+    $buffer = preg_replace(
+        '/<div class="lh1">.*?<\/div>/s',
+        '<div class="lh1">' . esc_html($content['title']) . '</div>',
+        $buffer
+    );
+    
+    // Replace subtitle
+    $buffer = preg_replace(
+        '/<label class="lwp_labels"[^>]*>.*?<\/label>/s',
+        '<label class="lwp_labels" for="lwp_username">' . esc_html($content['subtitle']) . '</label>',
+        $buffer
+    );
+    
+    // Replace button text and add icon (matches exact structure from HTML)
+    $buffer = preg_replace(
+        '/<button class="submit_button auth_phoneNumber" type="submit">\s*Submit\s*<\/button>/s',
+        '<button class="submit_button auth_phoneNumber" type="submit">' . $button_with_icon . '</button>',
+        $buffer
+    );
+    
+    // Replace disclaimer text
+    $buffer = preg_replace(
+        '/<span class="accept_terms_and_conditions_text">.*?<\/span>/s',
+        '<span class="accept_terms_and_conditions_text">' . esc_html($content['disclaimer']) . '</span>',
+        $buffer
+    );
+    
+    return $buffer;
+}
+
+/**
+ * Modify activation form content based on Figma design
+ */
+function lwp_modify_activation_content($buffer) {
+    // Activation form content from Figma
+    $activation_content = [
+        'title' => 'Zadejte kód, který jsme vám poslali',
+        'subtitle' => 'Nic vám nepřišlo? Stačí kliknout a <a href="#" class="lwp_didnt_r_c">kód pošleme znovu</a>.',
+        'button' => 'Registrovat',
+        'resend_button' => 'Znovu odeslat kód',
+        'login_link' => 'Registraci už mám - Chci se přihlásit',
+        'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s podmínkami programu.'
+    ];
+    
+    // Replace activation form title
+    $buffer = preg_replace(
+        '/<div class="lh1">.*?<\/div>/s',
+        '<div class="lh1">' . esc_html($activation_content['title']) . '</div>',
+        $buffer
+    );
+    
+    // Replace activation form subtitle with inline link
+    $buffer = preg_replace(
+        '/<label class="lwp_labels"[^>]*>.*?<\/label>/s',
+        '<label class="lwp_labels" for="lwp_username">' . $activation_content['subtitle'] . '</label>',
+        $buffer
+    );
+    
+    // Replace main button text (Registrovat)
+    $buffer = preg_replace(
+        '/<button class="submit_button auth_secCode"[^>]*>.*?<\/button>/s',
+        '<button class="submit_button auth_secCode">' . esc_html($activation_content['button']) . '</button>',
+        $buffer
+    );
+    
+    // Replace resend button text
+    $buffer = preg_replace(
+        '/<button class="submit_button lwp_didnt_r_c[^"]*"[^>]*>.*?<\/button>/s',
+        '<button class="submit_button lwp_didnt_r_c lwp_disable firebase" type="button">' . esc_html($activation_content['resend_button']) . '</button>',
+        $buffer
+    );
+    
+    // Replace "Change phone number" link with "Registraci už mám - Chci se přihlásit"
+    $buffer = preg_replace(
+        '/<a class="lwp_change_pn"[^>]*>.*?<\/a>/s',
+        '<a class="lwp_change_pn" href="#" style="display: block;">' . esc_html($activation_content['login_link']) . '</a>',
+        $buffer
+    );
+    
+    // Hide recaptcha status message
+    $buffer = preg_replace(
+        '/<p class="status">running recaptcha\.\.\.<\/p>/s',
+        '<p class="status" style="display: none;">running recaptcha...</p>',
+        $buffer
+    );
+    
+    return $buffer;
+}
+
+/**
  * Application Bootstrap
  *
  * Load the main application bootstrap file.
