@@ -175,7 +175,7 @@ function lwp_modify_login_content($buffer) {
             'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s podmínkami programu.'
         ],
         'existing_user' => [
-            'title' => 'Zadejte své telefonní číslo a v apce jste raz dva',
+            'title' => 'Zadejte své telefonní číslo a v appce jste raz dva',
             'subtitle' => 'Pošleme vám jednorázový kód pro rychlé přihlášení.',
             'button' => 'Poslat ověřovací kód',
             'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti.'
