@@ -164,7 +164,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 		ob_start(); ?>
 		<div class="bg-blue-50 border border-blue-200 p-4 text-center">
 			<p class="text-blue-700">
-				Pro zobrazení vašich realizací se musíte 
+				Pro zobrazení vašich realizací se musíte
 				<a href="<?php echo esc_url($login_url); ?>" class="text-blue-800 underline hover:text-blue-900">přihlásit</a>.
 			</p>
 		</div>
@@ -196,19 +196,19 @@ class MyRealizaceShortcode extends ShortcodeBase
 	{
 		$nonce = wp_create_nonce('my_realizace_nonce');
 		$enable_pagination = $attributes['enable_pagination'] === 'true';
-		
+
 		ob_start(); ?>
-		<div class="my-realizace-shortcode" 
+		<div class="my-realizace-shortcode"
 			 data-nonce="<?php echo esc_attr($nonce); ?>"
 			 data-posts-per-page="<?php echo esc_attr($attributes['posts_per_page']); ?>"
 			 data-show-content="<?php echo esc_attr($attributes['show_content']); ?>"
 			 data-enable-pagination="<?php echo esc_attr($attributes['enable_pagination']); ?>"
 			 data-total-pages="<?php echo esc_attr($query->max_num_pages); ?>">
-			
+
 			<div class="my-realizace-posts grid grid-cols-1 md:grid-cols-2 gap-4">
 				<?php echo $this->render_posts_list($query, $attributes); ?>
 			</div>
-			
+
 			<?php if ($enable_pagination && $query->max_num_pages > 1) : ?>
 				<div class="my-realizace-pagination mt-6 text-center">
 					<!-- Pagination will be rendered by JavaScript -->
@@ -235,7 +235,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 		// Reset post index counter for new page and store total posts
 		wp_cache_set('my_realizace_post_index', 0, 'shortcode');
 		wp_cache_set('my_realizace_total_posts', $query->post_count, 'shortcode');
-		
+
 		ob_start(); ?>
 		<?php while ($query->have_posts()) : $query->the_post(); ?>
 			<?php echo $this->render_single_post($attributes); ?>
@@ -262,15 +262,15 @@ class MyRealizaceShortcode extends ShortcodeBase
 		ob_start(); ?>
 		<div class="bg-white border <?php echo esc_attr($status_colors['border']); ?> p-4 shadow-sm <?php echo $column_span; ?>" data-debug-span="<?php echo esc_attr($column_span); ?>">
 			<h3 class="text-lg font-semibold text-gray-900 mb-2"><?php echo esc_html($title); ?></h3>
-			
+
 			<div class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium <?php echo esc_attr($status_colors['badge']); ?> mb-2">
 				<?php echo esc_html($status_label); ?>
 			</div>
-			
+
 			<div class="text-sm text-gray-500 mb-2">
 				Přidáno: <?php echo esc_html($date); ?>
 			</div>
-			
+
 			<?php if ($status === 'publish') : ?>
 				<?php $points = \MistrFachman\Realizace\RealizaceFieldService::getPoints($post_id); ?>
 				<?php if ($points > 0) : ?>
@@ -279,7 +279,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 					</div>
 				<?php endif; ?>
 			<?php endif; ?>
-			
+
 			<?php if ($status === 'rejected') : ?>
 				<?php $rejection_reason = \MistrFachman\Realizace\RealizaceFieldService::getRejectionReason($post_id); ?>
 				<?php if ($rejection_reason) : ?>
@@ -289,7 +289,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 					</div>
 				<?php endif; ?>
 			<?php endif; ?>
-			
+
 			<?php if ($attributes['show_content'] === 'true') : ?>
 				<?php $content_preview = wp_trim_words(get_the_content(), 30, '...'); ?>
 				<div class="text-sm text-gray-600 mt-3 pt-3 border-t border-gray-200">
@@ -360,17 +360,17 @@ class MyRealizaceShortcode extends ShortcodeBase
 		$total_posts = wp_cache_get('my_realizace_total_posts', 'shortcode') ?: 1;
 		$post_index = wp_cache_get('my_realizace_post_index', 'shortcode') ?: 0;
 		$current_post = $post_index + 1;
-		
+
 		// Increment post index for next call
 		wp_cache_set('my_realizace_post_index', $current_post, 'shortcode');
-		
+
 		// Logic: 1 item = 2 columns, 2 items = 1 column each, 3 items = 1+1+2, etc.
 		// When odd number of posts, the last item spans 2 columns
 		if ($total_posts % 2 === 1 && $current_post === $total_posts) {
 			// Last item of odd count spans full width
 			return 'md:col-span-2';
 		}
-		
+
 		// All other items get 1 column
 		return '';
 	}

@@ -33,8 +33,8 @@ class ShortcodeManager {
     private array $registered_shortcodes = [];
 
     public function __construct(
-        Manager $ecommerce_manager, 
-        ProductService $product_service, 
+        Manager $ecommerce_manager,
+        ProductService $product_service,
         UserService $user_service,
         ZebricekDataService $zebricek_service
     ) {
@@ -57,15 +57,22 @@ class ShortcodeManager {
      */
     private function discover_and_register_shortcodes(): void {
         $shortcode_directory = get_stylesheet_directory() . '/src/App/Shortcodes/';
-        
+
         if (!is_dir($shortcode_directory)) {
             mycred_debug('Shortcode directory not found', $shortcode_directory, 'shortcode_manager', 'warning');
             return;
         }
 
-        // Get all PHP files in the shortcodes directory
+        // Get all PHP files in the main shortcodes directory
         $files = glob($shortcode_directory . '*.php');
-        
+
+        // Also get files from subdirectories (Account, etc.)
+        $subdirectories = glob($shortcode_directory . '*/', GLOB_ONLYDIR);
+        foreach ($subdirectories as $subdir) {
+            $subdir_files = glob($subdir . '*.php');
+            $files = array_merge($files, $subdir_files);
+        }
+
         foreach ($files as $file) {
             $this->try_register_shortcode_from_file($file);
         }
@@ -87,7 +94,7 @@ class ShortcodeManager {
         }
 
         $shortcode_directory = get_stylesheet_directory() . '/src/App/Shortcodes/';
-        
+
         if (!is_dir($shortcode_directory)) {
             mycred_debug('Shortcode directory not found for CF7 tags', $shortcode_directory, 'shortcode_manager', 'warning');
             return;
@@ -95,7 +102,7 @@ class ShortcodeManager {
 
         // Get all PHP files in the shortcodes directory
         $files = glob($shortcode_directory . '*CF7Tag.php');
-        
+
         foreach ($files as $file) {
             $this->try_register_cf7_tag_from_file($file);
         }
@@ -107,24 +114,24 @@ class ShortcodeManager {
 
     /**
      * Try to register a CF7 form tag from a file
-     * 
+     *
      * @param string $file_path Path to PHP file
      */
     private function try_register_cf7_tag_from_file(string $file_path): void {
         $filename = basename($file_path, '.php');
-        
+
         // Build class name from filename
         $class_name = 'MistrFachman\\Shortcodes\\' . $filename;
-        
+
         try {
             if (class_exists($class_name)) {
                 $reflection = new \ReflectionClass($class_name);
-                
+
                 // Only register concrete classes that extend CF7FormTagBase
                 if (!$reflection->isAbstract() && $reflection->isSubclassOf('MistrFachman\\Shortcodes\\CF7FormTagBase')) {
                     $cf7_tag_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service);
                     $cf7_tag_instance->register_cf7_tag();
-                    
+
                     mycred_debug('CF7 tag registered', [
                         'tag' => $cf7_tag_instance->get_cf7_tag(),
                         'class' => $class_name
@@ -142,28 +149,39 @@ class ShortcodeManager {
 
     /**
      * Try to register a shortcode from a file
-     * 
+     *
      * @param string $file_path Path to PHP file
      */
     private function try_register_shortcode_from_file(string $file_path): void {
         $filename = basename($file_path, '.php');
-        
+
         // Skip base classes and manager
         if (in_array($filename, ['ShortcodeBase', 'ShortcodeManager', 'CF7FormTagBase', 'CF7AssetManager'], true)) {
             return;
         }
 
-        // Build class name from filename
-        $class_name = 'MistrFachman\\Shortcodes\\' . $filename;
-        
+        // Determine if file is in subdirectory to build correct namespace
+        $shortcode_directory = get_stylesheet_directory() . '/src/App/Shortcodes/';
+        $relative_path = str_replace($shortcode_directory, '', $file_path);
+        $path_parts = pathinfo($relative_path);
+
+        if ($path_parts['dirname'] !== '.') {
+            // File is in subdirectory (e.g., Account/UserProgressGuideShortcode.php)
+            $namespace_suffix = str_replace('/', '\\', $path_parts['dirname']);
+            $class_name = 'MistrFachman\\Shortcodes\\' . $namespace_suffix . '\\' . $filename;
+        } else {
+            // File is in root shortcodes directory
+            $class_name = 'MistrFachman\\Shortcodes\\' . $filename;
+        }
+
         try {
             if (class_exists($class_name)) {
                 $reflection = new \ReflectionClass($class_name);
-                
+
                 // Only register concrete classes that extend ShortcodeBase
                 if (!$reflection->isAbstract() && $reflection->isSubclassOf(ShortcodeBase::class)) {
-                    // Special handling for zebricek shortcodes that need ZebricekDataService
-                    if (str_contains($class_name, 'Zebricek')) {
+                    // Special handling for shortcodes that need ZebricekDataService
+                    if (str_contains($class_name, 'Zebricek') || str_contains($class_name, 'Account')) {
                         $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service, $this->zebricek_service);
                     } else {
                         $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service);
@@ -182,12 +200,12 @@ class ShortcodeManager {
 
     /**
      * Register a shortcode instance with WordPress
-     * 
+     *
      * @param ShortcodeBase $shortcode Shortcode instance
      */
     private function register_shortcode(ShortcodeBase $shortcode): void {
         $tag = $shortcode->get_tag();
-        
+
         if (shortcode_exists($tag)) {
             mycred_debug('Shortcode tag already exists', [
                 'tag' => $tag,
@@ -198,13 +216,13 @@ class ShortcodeManager {
 
         // Register with WordPress
         add_shortcode($tag, [$shortcode, 'handle_shortcode']);
-        
+
         // Register AJAX hooks if the shortcode has any
         $shortcode->register_ajax_hooks();
-        
+
         // Store in our registry
         $this->registered_shortcodes[$tag] = $shortcode;
-        
+
         mycred_debug('Shortcode registered with AJAX hooks', [
             'tag' => $tag,
             'class' => get_class($shortcode)
@@ -213,7 +231,7 @@ class ShortcodeManager {
 
     /**
      * Manually register a shortcode instance
-     * 
+     *
      * @param ShortcodeBase $shortcode Shortcode instance
      */
     public function add_shortcode(ShortcodeBase $shortcode): void {
@@ -222,7 +240,7 @@ class ShortcodeManager {
 
     /**
      * Get all registered shortcodes
-     * 
+     *
      * @return array Array of registered shortcode instances
      */
     public function get_registered_shortcodes(): array {
@@ -231,7 +249,7 @@ class ShortcodeManager {
 
     /**
      * Get a specific shortcode instance by tag
-     * 
+     *
      * @param string $tag Shortcode tag
      * @return ShortcodeBase|null Shortcode instance or null if not found
      */
@@ -241,7 +259,7 @@ class ShortcodeManager {
 
     /**
      * Check if a shortcode is registered
-     * 
+     *
      * @param string $tag Shortcode tag
      * @return bool True if shortcode is registered
      */
@@ -251,14 +269,14 @@ class ShortcodeManager {
 
     /**
      * Unregister a shortcode
-     * 
+     *
      * @param string $tag Shortcode tag
      */
     public function remove_shortcode(string $tag): void {
         if ($this->has_shortcode($tag)) {
             remove_shortcode($tag);
             unset($this->registered_shortcodes[$tag]);
-            
+
             mycred_debug('Shortcode unregistered', ['tag' => $tag], 'shortcode_manager', 'info');
         }
     }

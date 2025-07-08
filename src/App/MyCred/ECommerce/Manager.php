@@ -107,6 +107,32 @@ class Manager {
     }
 
     /**
+     * Check if user has made any purchases (convenience method)
+     *
+     * @param int|null $user_id User ID (defaults to current user)
+     * @return bool True if user has made at least one purchase
+     */
+    public function has_user_made_purchase(?int $user_id = null): bool {
+        if (!$user_id) {
+            $user_id = get_current_user_id();
+        }
+        
+        if (!$user_id || !function_exists('wc_get_orders')) {
+            return false;
+        }
+
+        // Check for completed orders
+        $orders = wc_get_orders([
+            'customer' => $user_id,
+            'status' => ['completed', 'processing'],
+            'limit' => 1,
+            'return' => 'ids'
+        ]);
+
+        return !empty($orders);
+    }
+
+    /**
      * Get myCred point type for WooCommerce
      *
      * Handles fallback logic for determining the correct point type.
