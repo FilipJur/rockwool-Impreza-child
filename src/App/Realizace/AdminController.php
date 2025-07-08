@@ -488,11 +488,11 @@ class AdminController extends AdminControllerBase {
     }
 
     /**
-     * Get the calculated points for realizace (fixed 2500)
+     * Get the calculated points for realizace
+     * Uses centralized points calculation service
      */
     protected function getCalculatedPoints(int $post_id = 0): int {
-        // Fixed value for Realizace domain - $post_id parameter not used
-        return 2500;
+        return \MistrFachman\Services\PointsCalculationService::calculatePoints('realization', $post_id);
     }
 
     /**

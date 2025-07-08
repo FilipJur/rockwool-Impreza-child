@@ -59,34 +59,17 @@ class Manager extends PostTypeManagerBase {
         // Initialize form handler with injected dependencies
         $this->form_handler = new NewFakturyFormHandler($this->user_detection_service, $this);
         
-        // Initialize admin components with consolidated architecture
+        // Initialize admin components with centralized configuration
         $card_renderer = new FakturyCardRenderer();
-        $asset_manager = new \MistrFachman\Services\AdminAssetManager([
-            'script_handle_prefix' => 'invoice',
-            'localization_object_name' => 'mistrFakturyAdmin',
-            'admin_screen_ids' => ['user-edit', 'profile', 'users', 'post', 'faktura'],
-            'post_type' => 'invoice',
-            'wordpress_post_type' => 'faktura',
-            'domain_localization_data' => [
-                'field_names' => [
-                    'rejection_reason' => FakturaFieldService::getRejectionReasonFieldSelector(),
-                    'points' => FakturaFieldService::getPointsFieldSelector(),
-                    'invoice_number' => FakturaFieldService::getInvoiceNumberFieldSelector(),
-                    'value' => FakturaFieldService::getValueFieldSelector(),
-                    'file' => FakturaFieldService::getFileFieldSelector(),
-                    'invoice_date' => FakturaFieldService::getInvoiceDateFieldSelector()
-                ],
-                'default_values' => [
-                    'points' => 100 // Different default for invoices
-                ],
-                'messages' => [
-                    'confirm_approve' => __('Opravdu chcete schválit tuto fakturu?', 'mistr-fachman'),
-                    'confirm_reject' => __('Opravdu chcete odmítnout tuto fakturu?', 'mistr-fachman'),
-                    'confirm_bulk_approve' => __('Opravdu chcete hromadně schválit všechny čekající faktury tohoto uživatele?', 'mistr-fachman')
-                ]
-            ]
-        ]);
-        $status_manager = new \MistrFachman\Services\StatusManager('invoice', 'rejected', 'Odmítnuto');
+        $asset_config = \MistrFachman\Services\DomainConfigurationService::getAssetConfig('invoice');
+        $asset_manager = new \MistrFachman\Services\AdminAssetManager($asset_config);
+        
+        $status_config = \MistrFachman\Services\DomainConfigurationService::getStatusConfig('invoice');
+        $status_manager = new \MistrFachman\Services\StatusManager(
+            $status_config['post_type'],
+            $status_config['rejected_status'],
+            $status_config['rejected_label']
+        );
         
         // Create consolidated admin controller
         $admin_controller = new AdminController($status_manager, $card_renderer, $asset_manager);
@@ -120,18 +103,17 @@ class Manager extends PostTypeManagerBase {
 
     /**
      * Get the calculated points for this domain
-     * Delegates to PointsHandler for consistency
+     * Uses centralized points calculation service
      */
     protected function getCalculatedPoints(int $post_id = 0): int {
-        $points_handler = new PointsHandler();
-        return $points_handler->getCalculatedPoints($post_id);
+        return \MistrFachman\Services\PointsCalculationService::calculatePoints('invoice', $post_id);
     }
 
     /**
      * Get the points field selector
      */
     protected function getPointsFieldSelector(): string {
-        return FakturaFieldService::getPointsFieldSelector();
+        return \MistrFachman\Services\DomainConfigurationService::getFieldSelector('invoice', 'points');
     }
 
 }

@@ -329,21 +329,11 @@ class AdminController extends AdminControllerBase {
     }
 
     /**
-     * Get the calculated points for faktury (dynamic calculation)
-     * Core business requirement: floor(invoice_value / 10) - 10 CZK = 1 bod
+     * Get the calculated points for faktury
+     * Uses centralized points calculation service
      */
     protected function getCalculatedPoints(int $post_id = 0): int {
-        if ($post_id === 0) {
-            return 0; // No post ID provided
-        }
-
-        $invoice_value = FakturaFieldService::getValue($post_id);
-        if ($invoice_value <= 0) {
-            return 0; // No valid invoice value
-        }
-
-        // Core business logic: floor(value / 10) - 10 CZK = 1 bod
-        return (int) floor($invoice_value / 10);
+        return \MistrFachman\Services\PointsCalculationService::calculatePoints('invoice', $post_id);
     }
 
     /**

@@ -65,6 +65,7 @@ class PointsHandler extends PointsHandlerBase {
     /**
      * Get the calculated points for faktury - CORE BUSINESS LOGIC
      * 
+     * Uses PointsCalculationService for centralized calculation logic
      * Dynamic calculation: floor(invoice_value / 10) - 10 CZK = 1 bod
      * This is the key differentiator from Realizace (which has fixed 2500 points)
      *
@@ -77,17 +78,10 @@ class PointsHandler extends PointsHandlerBase {
             return 0;
         }
         
-        $invoice_value = FakturaFieldService::getValue($post_id);
+        // Use centralized points calculation service
+        $calculated_points = \MistrFachman\Services\PointsCalculationService::calculatePoints('invoice', $post_id);
         
-        if ($invoice_value <= 0) {
-            error_log("[FAKTURY:WARNING] Invalid invoice value for post {$post_id}: {$invoice_value}");
-            return 0;
-        }
-        
-        // CORE BUSINESS LOGIC: floor(value / 10) - 10 CZK = 1 bod
-        $calculated_points = (int) floor($invoice_value / 10);
-        
-        error_log("[FAKTURY:DEBUG] Points calculation for post {$post_id}: {$invoice_value} CZK / 10 = {$calculated_points} points");
+        error_log("[FAKTURY:DEBUG] Points calculation for post {$post_id}: {$calculated_points} points (via PointsCalculationService)");
         
         return $calculated_points;
     }
@@ -130,9 +124,9 @@ class PointsHandler extends PointsHandlerBase {
             return;
         }
 
-        // Step 2: Calculate points directly from the new value passed by the hook.
+        // Step 2: Calculate points using centralized service
         $new_invoice_value = (int) $meta_value;
-        $new_points = ($new_invoice_value > 0) ? (int) floor($new_invoice_value / 10) : 0;
+        $new_points = \MistrFachman\Services\PointsCalculationService::calculatePoints('invoice', $post_id);
         
         // Step 3: Get the currently stored points to see if an update is needed.
         $current_points = FakturaFieldService::getPoints($post_id);

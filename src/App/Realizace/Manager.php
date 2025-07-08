@@ -61,34 +61,17 @@ class Manager extends PostTypeManagerBase {
         // Initialize form handler with injected dependencies
         $this->form_handler = new NewRealizaceFormHandler($this->user_detection_service, $this);
         
-        // Initialize admin components with consolidated architecture
+        // Initialize admin components with centralized configuration
         $card_renderer = new RealizaceCardRenderer();
-        $asset_manager = new \MistrFachman\Services\AdminAssetManager([
-            'script_handle_prefix' => 'realization',
-            'localization_object_name' => 'mistrRealizaceAdmin',
-            'admin_screen_ids' => ['user-edit', 'profile', 'users', 'post', 'realizace'],
-            'post_type' => 'realization',
-            'wordpress_post_type' => 'realizace',
-            'domain_localization_data' => [
-                'field_names' => [
-                    'rejection_reason' => RealizaceFieldService::getRejectionReasonFieldSelector(),
-                    'points' => RealizaceFieldService::getPointsFieldSelector(),
-                    'gallery' => RealizaceFieldService::getGalleryFieldSelector(),
-                    'area' => RealizaceFieldService::getAreaFieldSelector(),
-                    'construction_type' => RealizaceFieldService::getConstructionTypeFieldSelector(),
-                    'materials' => RealizaceFieldService::getMaterialsFieldSelector()
-                ],
-                'default_values' => [
-                    'points' => 2500
-                ],
-                'messages' => [
-                    'confirm_approve' => __('Opravdu chcete schválit tuto realizaci?', 'mistr-fachman'),
-                    'confirm_reject' => __('Opravdu chcete odmítnout tuto realizaci?', 'mistr-fachman'),
-                    'confirm_bulk_approve' => __('Opravdu chcete hromadně schválit všechny čekající realizace tohoto uživatele?', 'mistr-fachman')
-                ]
-            ]
-        ]);
-        $status_manager = new \MistrFachman\Services\StatusManager('realization', 'rejected', 'Odmítnuto');
+        $asset_config = \MistrFachman\Services\DomainConfigurationService::getAssetConfig('realization');
+        $asset_manager = new \MistrFachman\Services\AdminAssetManager($asset_config);
+        
+        $status_config = \MistrFachman\Services\DomainConfigurationService::getStatusConfig('realization');
+        $status_manager = new \MistrFachman\Services\StatusManager(
+            $status_config['post_type'],
+            $status_config['rejected_status'],
+            $status_config['rejected_label']
+        );
         
         // Create consolidated admin controller
         $admin_controller = new AdminController($status_manager, $card_renderer, $asset_manager);
@@ -242,20 +225,19 @@ class Manager extends PostTypeManagerBase {
     }
 
     /**
-     * Get the calculated points value for realizace (fixed 2500)
+     * Get the calculated points value for realizace
+     * Uses centralized points calculation service
      */
     public function getCalculatedPoints(int $post_id = 0): int {
-        // Fixed value for Realizace domain
-        unset($post_id); // Suppress unused parameter warning
-        return 2500;
+        return \MistrFachman\Services\PointsCalculationService::calculatePoints('realization', $post_id);
     }
 
     /**
      * Get the ACF field selector that stores points
-     * Delegates to centralized field service
+     * Uses centralized configuration service
      */
     public function getPointsFieldSelector(): string {
-        return RealizaceFieldService::getPointsFieldSelector();
+        return \MistrFachman\Services\DomainConfigurationService::getFieldSelector('realization', 'points');
     }
 
     /**

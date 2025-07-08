@@ -134,6 +134,13 @@ if (file_exists($autoloader_path)) {
 
 // Initialize systems with service layer using dependency injection
 add_action('init', function () {
+    // === ARCHITECTURE SERVICES INITIALIZATION ===
+    // Initialize core configuration and abstraction services first
+    \MistrFachman\Services\DomainConfigurationService::initialize();
+    \MistrFachman\Services\ValidationRulesRegistry::initialize();
+    
+    mycred_debug('Architecture services initialized (DomainConfiguration, ValidationRules)', null, 'bootstrap', 'info');
+
     // Namespace aliases for clarity
     $ECommerceManager = \MistrFachman\MyCred\ECommerce\Manager::class;
     $ShortcodeManager = \MistrFachman\Shortcodes\ShortcodeManager::class;

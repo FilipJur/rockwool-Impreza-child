@@ -47,11 +47,12 @@ class PointsHandler extends PointsHandlerBase {
     }
 
     /**
-     * Get the calculated points for realizace (fixed 2500)
+     * Get the calculated points for realizace
+     * Uses PointsCalculationService for centralized calculation logic
      */
     public function getCalculatedPoints(int $post_id = 0): int {
-        // Fixed value for Realizace domain - $post_id parameter not used
-        return 2500;
+        // Use centralized points calculation service
+        return \MistrFachman\Services\PointsCalculationService::calculatePoints('realization', $post_id);
     }
 
     /**

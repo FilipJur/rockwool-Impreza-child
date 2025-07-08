@@ -9,6 +9,9 @@
 	flex-grow:1;
 	    box-sizing: border-box;
     min-width: 0;
+	br{
+		display: none;
+	}
 }
 p:has(input[for="fotky-realizace"]){
 	margin-bottom: 0;
