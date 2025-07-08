@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace MistrFachman\Shortcodes;
 
 /**
- * My Realizace Shortcode - User Submission View
+ * My Faktury Shortcode - User Invoice View
  *
- * Provides the user-facing view of their realizace submissions.
+ * Provides the user-facing view of their invoice submissions.
  * Shows submission status, rejection reasons, and points awarded.
  *
- * Usage: [my_realizace]
+ * Usage: [my_faktury]
  *
  * @package mistr-fachman
  * @since 1.0.0
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-class MyRealizaceShortcode extends ShortcodeBase
+class MyFakturyShortcode extends ShortcodeBase
 {
 
 	protected array $default_attributes = [
@@ -35,8 +35,8 @@ class MyRealizaceShortcode extends ShortcodeBase
 	 */
 	public function register_ajax_hooks(): void
 	{
-		add_action('wp_ajax_my_realizace_load_page', [$this, 'handle_load_page']);
-		add_action('wp_ajax_nopriv_my_realizace_load_page', [$this, 'handle_load_page']);
+		add_action('wp_ajax_my_faktury_load_page', [$this, 'handle_load_page']);
+		add_action('wp_ajax_nopriv_my_faktury_load_page', [$this, 'handle_load_page']);
 	}
 
 	/**
@@ -46,7 +46,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 	 */
 	public function get_tag(): string
 	{
-		return 'my_realizace';
+		return 'my_faktury';
 	}
 
 	/**
@@ -65,7 +65,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 
 		$user_id = get_current_user_id();
 
-		// Query user's realizace posts
+		// Query user's faktury posts
 		$query_args = $this->get_query_args($attributes, $user_id);
 		$query = new \WP_Query($query_args);
 
@@ -81,6 +81,39 @@ class MyRealizaceShortcode extends ShortcodeBase
 	}
 
 	/**
+	 * Render login message for non-logged-in users
+	 *
+	 * @return string HTML output
+	 */
+	private function render_login_message(): string
+	{
+		$login_url = wp_login_url(get_permalink());
+
+		ob_start(); ?>
+		<div class="bg-blue-50 border border-blue-200 p-4 text-center">
+			<p class="text-blue-700">
+				Pro zobrazení vašich faktur se musíte 
+				<a href="<?php echo esc_url($login_url); ?>" class="text-blue-800 underline hover:text-blue-900">přihlásit</a>.
+			</p>
+		</div>
+		<?php return ob_get_clean();
+	}
+
+	/**
+	 * Render message when user has no posts
+	 *
+	 * @return string HTML output
+	 */
+	private function render_no_posts_message(): string
+	{
+		ob_start(); ?>
+		<div class="bg-gray-50 border border-gray-200 p-6 text-center">
+			<p class="text-gray-600">Zatím jste nepřidali žádné faktury.</p>
+		</div>
+		<?php return ob_get_clean();
+	}
+
+	/**
 	 * Get query arguments for posts
 	 *
 	 * @param array $attributes Shortcode attributes
@@ -91,7 +124,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 	private function get_query_args(array $attributes, int $user_id, int $offset = 0): array
 	{
 		return [
-			'post_type' => 'realization',
+			'post_type' => 'invoice',
 			'author' => $user_id,
 			'post_status' => ['pending', 'publish', 'rejected'],
 			'posts_per_page' => (int) $attributes['posts_per_page'],
@@ -107,7 +140,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 	public function handle_load_page(): void
 	{
 		// Verify nonce
-		if (!check_ajax_referer('my_realizace_nonce', 'nonce', false)) {
+		if (!check_ajax_referer('my_faktury_nonce', 'nonce', false)) {
 			wp_send_json_error(['message' => 'Invalid nonce']);
 			return;
 		}
@@ -153,39 +186,6 @@ class MyRealizaceShortcode extends ShortcodeBase
 	}
 
 	/**
-	 * Render login message for non-logged-in users
-	 *
-	 * @return string HTML output
-	 */
-	private function render_login_message(): string
-	{
-		$login_url = wp_login_url(get_permalink());
-
-		ob_start(); ?>
-		<div class="bg-blue-50 border border-blue-200 p-4 text-center">
-			<p class="text-blue-700">
-				Pro zobrazení vašich realizací se musíte 
-				<a href="<?php echo esc_url($login_url); ?>" class="text-blue-800 underline hover:text-blue-900">přihlásit</a>.
-			</p>
-		</div>
-		<?php return ob_get_clean();
-	}
-
-	/**
-	 * Render message when user has no posts
-	 *
-	 * @return string HTML output
-	 */
-	private function render_no_posts_message(): string
-	{
-		ob_start(); ?>
-		<div class="bg-gray-50 border border-gray-200 p-6 text-center">
-			<p class="text-gray-600">Zatím jste nepřidali žádné realizace.</p>
-		</div>
-		<?php return ob_get_clean();
-	}
-
-	/**
 	 * Render the main posts container with pagination
 	 *
 	 * @param \WP_Query $query Query object
@@ -194,26 +194,26 @@ class MyRealizaceShortcode extends ShortcodeBase
 	 */
 	private function render_posts_container(\WP_Query $query, array $attributes): string
 	{
-		$nonce = wp_create_nonce('my_realizace_nonce');
+		$nonce = wp_create_nonce('my_faktury_nonce');
 		$enable_pagination = $attributes['enable_pagination'] === 'true';
 		
 		ob_start(); ?>
-		<div class="my-realizace-shortcode" 
+		<div class="my-faktury-shortcode" 
 			 data-nonce="<?php echo esc_attr($nonce); ?>"
 			 data-posts-per-page="<?php echo esc_attr($attributes['posts_per_page']); ?>"
 			 data-show-content="<?php echo esc_attr($attributes['show_content']); ?>"
 			 data-enable-pagination="<?php echo esc_attr($attributes['enable_pagination']); ?>"
 			 data-total-pages="<?php echo esc_attr($query->max_num_pages); ?>">
 			
-			<div class="my-realizace-posts grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div class="my-faktury-posts grid grid-cols-1 md:grid-cols-2 gap-4">
 				<?php echo $this->render_posts_list($query, $attributes); ?>
 			</div>
 			
 			<?php if ($enable_pagination && $query->max_num_pages > 1) : ?>
-				<div class="my-realizace-pagination mt-6 text-center">
+				<div class="my-faktury-pagination mt-6 text-center">
 					<!-- Pagination will be rendered by JavaScript -->
 				</div>
-				<div class="my-realizace-loading hidden text-center mt-4">
+				<div class="my-faktury-loading hidden text-center mt-4">
 					<div class="inline-flex items-center px-4 py-2 text-sm">
 						Načítání...
 					</div>
@@ -233,8 +233,8 @@ class MyRealizaceShortcode extends ShortcodeBase
 	private function render_posts_list(\WP_Query $query, array $attributes): string
 	{
 		// Reset post index counter for new page and store total posts
-		wp_cache_set('my_realizace_post_index', 0, 'shortcode');
-		wp_cache_set('my_realizace_total_posts', $query->post_count, 'shortcode');
+		wp_cache_set('my_faktury_post_index', 0, 'shortcode');
+		wp_cache_set('my_faktury_total_posts', $query->post_count, 'shortcode');
 		
 		ob_start(); ?>
 		<?php while ($query->have_posts()) : $query->the_post(); ?>
@@ -244,7 +244,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 	}
 
 	/**
-	 * Render a single realizace post
+	 * Render a single faktura post
 	 *
 	 * @param array $attributes Shortcode attributes
 	 * @return string HTML output
@@ -260,7 +260,7 @@ class MyRealizaceShortcode extends ShortcodeBase
 		$column_span = $this->get_post_column_span($attributes);
 
 		ob_start(); ?>
-		<div class="bg-white border <?php echo esc_attr($status_colors['border']); ?> p-4 shadow-sm <?php echo $column_span; ?>" data-debug-span="<?php echo esc_attr($column_span); ?>">
+		<div class="bg-white border <?php echo esc_attr($status_colors['border']); ?> p-4 shadow-sm <?php echo $column_span; ?>" data-debug-span="<?php echo esc_attr($column_span); ?>" data-debug-total="<?php echo esc_attr(wp_cache_get('my_faktury_total_posts', 'shortcode')); ?>" data-debug-current="<?php echo esc_attr(wp_cache_get('my_faktury_post_index', 'shortcode')); ?>">
 			<h3 class="text-lg font-semibold text-gray-900 mb-2"><?php echo esc_html($title); ?></h3>
 			
 			<div class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium <?php echo esc_attr($status_colors['badge']); ?> mb-2">
@@ -270,18 +270,25 @@ class MyRealizaceShortcode extends ShortcodeBase
 			<div class="text-sm text-gray-500 mb-2">
 				Přidáno: <?php echo esc_html($date); ?>
 			</div>
-			
+
 			<?php if ($status === 'publish') : ?>
-				<?php $points = \MistrFachman\Realizace\RealizaceFieldService::getPoints($post_id); ?>
+				<?php $points = \MistrFachman\Faktury\FakturaFieldService::getPoints($post_id); ?>
 				<?php if ($points > 0) : ?>
 					<div class="bg-green-50 border border-green-200 p-2 text-sm text-green-800 mb-2">
 						Získané body: <strong><?php echo esc_html($points); ?></strong>
 					</div>
 				<?php endif; ?>
+
+				<?php $invoice_amount = \MistrFachman\Faktury\FakturaFieldService::getValue($post_id); ?>
+				<?php if ($invoice_amount > 0) : ?>
+					<div class="bg-blue-50 border border-blue-200 p-2 text-sm text-blue-800 mb-2">
+						Částka faktury: <strong><?php echo esc_html(number_format($invoice_amount, 0, ',', ' ')); ?> Kč</strong>
+					</div>
+				<?php endif; ?>
 			<?php endif; ?>
 			
 			<?php if ($status === 'rejected') : ?>
-				<?php $rejection_reason = \MistrFachman\Realizace\RealizaceFieldService::getRejectionReason($post_id); ?>
+				<?php $rejection_reason = \MistrFachman\Faktury\FakturaFieldService::getRejectionReason($post_id); ?>
 				<?php if ($rejection_reason) : ?>
 					<div class="bg-red-50 border border-red-200 p-3 text-sm">
 						<strong class="text-red-800">Důvod zamítnutí:</strong><br class="mb-1">
@@ -357,12 +364,12 @@ class MyRealizaceShortcode extends ShortcodeBase
 	 */
 	private function get_post_column_span(array $attributes): string
 	{
-		$total_posts = wp_cache_get('my_realizace_total_posts', 'shortcode') ?: 1;
-		$post_index = wp_cache_get('my_realizace_post_index', 'shortcode') ?: 0;
+		$total_posts = wp_cache_get('my_faktury_total_posts', 'shortcode') ?: 1;
+		$post_index = wp_cache_get('my_faktury_post_index', 'shortcode') ?: 0;
 		$current_post = $post_index + 1;
 		
 		// Increment post index for next call
-		wp_cache_set('my_realizace_post_index', $current_post, 'shortcode');
+		wp_cache_set('my_faktury_post_index', $current_post, 'shortcode');
 		
 		// Logic: 1 item = 2 columns, 2 items = 1 column each, 3 items = 1+1+2, etc.
 		// When odd number of posts, the last item spans 2 columns

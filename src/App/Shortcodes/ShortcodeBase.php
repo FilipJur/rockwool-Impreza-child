@@ -200,4 +200,13 @@ abstract class ShortcodeBase {
         return ob_get_clean();
     }
 
+    /**
+     * Register AJAX hooks for this shortcode (optional method)
+     * Override this method in child classes that need AJAX functionality
+     */
+    public function register_ajax_hooks(): void {
+        // Default implementation - no AJAX hooks to register
+        // Child classes can override this method to register their specific AJAX hooks
+    }
+
 }

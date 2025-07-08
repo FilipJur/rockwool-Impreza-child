@@ -9,6 +9,7 @@ import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAccessControl } from './features/access-control/index.js';
 import { setupZebricek } from './features/zebricek/index.js';
 import { setupLoginContentVariants } from './features/login-content-variants.js';
+import { setupMyPostsPagination } from './features/my-posts-pagination.js';
 import { app as firebaseApp } from './firebase/config.js';
 
 /**
@@ -23,7 +24,8 @@ class ThemeApp {
       businessModal: null,
       accessControl: null,
       zebricek: null,
-      loginContentVariants: null
+      loginContentVariants: null,
+      myPostsPagination: null
     };
     this.firebase = firebaseApp;
     this.isInitialized = false;
@@ -140,6 +142,16 @@ class ThemeApp {
         console.log('Login content variants initialized');
       } catch (error) {
         console.error('Failed to initialize login content variants:', error);
+      }
+    }
+
+    // Initialize my-posts pagination for my-realizace and my-faktury shortcodes
+    if (document.querySelector('.my-realizace-shortcode, .my-faktury-shortcode')) {
+      try {
+        this.modules.myPostsPagination = setupMyPostsPagination();
+        console.log('My posts pagination initialized');
+      } catch (error) {
+        console.error('Failed to initialize my posts pagination:', error);
       }
     }
 

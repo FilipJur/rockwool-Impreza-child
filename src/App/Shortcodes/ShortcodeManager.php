@@ -199,10 +199,13 @@ class ShortcodeManager {
         // Register with WordPress
         add_shortcode($tag, [$shortcode, 'handle_shortcode']);
         
+        // Register AJAX hooks if the shortcode has any
+        $shortcode->register_ajax_hooks();
+        
         // Store in our registry
         $this->registered_shortcodes[$tag] = $shortcode;
         
-        mycred_debug('Shortcode registered', [
+        mycred_debug('Shortcode registered with AJAX hooks', [
             'tag' => $tag,
             'class' => get_class($shortcode)
         ], 'shortcode_manager', 'info');
