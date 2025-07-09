@@ -67,59 +67,42 @@ class UserPointsBalanceShortcode extends ShortcodeBase
      */
     private function get_balance_data(int $user_id, array $attributes): array
     {
-        // Get current balance info
-        $total_balance = (int) $this->ecommerce_manager->get_user_balance($user_id);
-        $available_points = (float) $this->ecommerce_manager->get_available_points($user_id);
-        $cart_reserved = (int) ($total_balance - $available_points);
+        // Get centralized balance summary
+        $balance_summary = $this->ecommerce_manager->get_balance_summary($user_id);
 
         // Get next affordable product info
         $next_product_data = null;
         if ($attributes['show_next_product'] === 'true') {
-            $next_product_data = $this->get_next_product_info($user_id, $available_points);
+            $next_product_data = $this->get_next_product_info($user_id, $balance_summary['available']);
         }
 
         return [
-            'total_balance' => $total_balance,
-            'available_points' => $available_points,
-            'cart_reserved' => $cart_reserved,
+            'total_balance' => (int) $balance_summary['total'],
+            'available_points' => (float) $balance_summary['available'],
+            'cart_reserved' => (int) $balance_summary['reserved'],
             'next_product' => $next_product_data
         ];
     }
 
     /**
-     * Get next affordable product information
+     * Get next unaffordable product information
+     * 
+     * Uses ProductService to find the next product in progression
+     * and calculates display data for the progress component.
      */
     private function get_next_product_info(int $user_id, float $available_points): ?array
     {
-        if (!function_exists('wc_get_products')) {
+        // Use ProductService to get the next unaffordable product
+        $next_product = $this->product_service->get_next_unaffordable_product($user_id);
+
+        if (!$next_product) {
+            // User can afford all products
             return null;
         }
 
-        // Get products that cost more than current available points
-        $products = wc_get_products([
-            'limit' => -1,
-            'status' => 'publish',
-            'meta_query' => [
-                [
-                    'key' => '_price',
-                    'value' => $available_points,
-                    'compare' => '>',
-                    'type' => 'NUMERIC'
-                ]
-            ],
-            'orderby' => 'meta_value_num',
-            'meta_key' => '_price',
-            'order' => 'ASC'
-        ]);
-
-        if (empty($products)) {
-            return null;
-        }
-
-        $next_product = $products[0];
         $price = (float) $next_product->get_price();
         $points_needed = (int) ($price - $available_points);
-        $progress_percentage = $available_points > 0 ? min(100, ($available_points / $price) * 100) : 0;
+        $progress_percentage = $price > 0 ? min(100, ($available_points / $price) * 100) : 0;
 
         return [
             'product' => $next_product,
@@ -214,9 +197,13 @@ class UserPointsBalanceShortcode extends ShortcodeBase
                         </div>
                     </div>
                 <?php else: ?>
-                    <div class="no-next-product border-t pt-4 text-center">
-                        <div class="text-sm text-gray-600">
-                            🎉 Máte dostatek bodů na všechny dostupné odměny!
+                    <div class="no-next-product border-t pt-4">
+                        <div class="all-products-affordable bg-green-50 rounded-lg p-4 text-center">
+                            <div class="celebration-icon text-2xl mb-2">🎉</div>
+                            <h4 class="text-sm font-medium text-green-800 mb-1">Gratulujeme!</h4>
+                            <p class="text-sm text-green-700">
+                                Máte dostatek bodů na všechny dostupné odměny!
+                            </p>
                         </div>
                     </div>
                 <?php endif; ?>

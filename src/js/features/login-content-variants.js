@@ -102,19 +102,37 @@ function updateActivationFormContent() {
     mainButton.textContent = 'Registrovat';
   }
 
-  // Update resend button text
+  // REMOVE the resend button (not in Figma)
   const resendButton = activationForm.querySelector('.submit_button.lwp_didnt_r_c');
   if (resendButton) {
-    resendButton.textContent = 'Znovu odeslat kód';
+    resendButton.remove();
   }
 
-  // Remove the "Registraci už mám" link completely
-  const changePhoneLink = activationForm.querySelector('.lwp_change_pn');
+  // REMOVE any separator lines (not in Figma)
+  const separators = activationForm.querySelectorAll('hr, .separator');
+  separators.forEach(sep => sep.remove());
+
+  // Move the "Registraci už mám" link to correct position (after main button)
+  const changePhoneLinks = activationForm.querySelectorAll('.lwp_change_pn');
+  
+  // Remove all but the first link to avoid duplicates
+  for (let i = 1; i < changePhoneLinks.length; i++) {
+    changePhoneLinks[i].remove();
+  }
+  
+  // Use the first link and position it correctly
+  const changePhoneLink = changePhoneLinks[0];
   if (changePhoneLink) {
-    changePhoneLink.style.display = 'none';
+    changePhoneLink.textContent = 'Registraci už mám - Chci se přihlásit';
+    
+    // Move it after the main button
+    const mainButton = activationForm.querySelector('.submit_button.auth_secCode');
+    if (mainButton && mainButton.parentNode) {
+      mainButton.parentNode.insertBefore(changePhoneLink, mainButton.nextSibling);
+    }
   }
 
-  // Add terms of service text if not exists
+  // Add terms of service text AFTER the change phone link
   addTermsOfServiceToActivation(activationForm);
 
   // Style the input to look like 6 individual boxes
@@ -133,11 +151,15 @@ function addTermsOfServiceToActivation(form) {
   const termsDiv = document.createElement('div');
   termsDiv.className = 'activation-terms';
   termsDiv.innerHTML = '<span class="activation-terms-text">Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s podmínkami programu.</span>';
+  
+  // Style the terms
+  termsDiv.style.textAlign = 'center';
+  termsDiv.style.marginTop = '32px';
 
-  // Insert before the bottom activation section
-  const bottomSection = form.querySelector('.lwp_bottom_activation');
-  if (bottomSection) {
-    form.insertBefore(termsDiv, bottomSection);
+  // Insert after the change phone link
+  const changePhoneLink = form.querySelector('.lwp_change_pn');
+  if (changePhoneLink && changePhoneLink.parentNode) {
+    changePhoneLink.parentNode.insertBefore(termsDiv, changePhoneLink.nextSibling);
   } else {
     // Fallback: add at the end
     form.appendChild(termsDiv);

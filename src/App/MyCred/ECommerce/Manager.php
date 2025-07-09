@@ -107,6 +107,27 @@ class Manager {
     }
 
     /**
+     * Get a comprehensive summary of the user's balance information
+     *
+     * Centralizes all balance-related calculations into a single method
+     * to avoid duplication across shortcodes and components.
+     *
+     * @param int|null $user_id User ID (defaults to current user)
+     * @return array{total: float, available: float, reserved: float}
+     */
+    public function get_balance_summary(?int $user_id = null): array {
+        $total_balance = $this->balance_calculator->get_user_balance($user_id);
+        $available_points = $this->balance_calculator->get_available_points($user_id);
+        $cart_reserved = $total_balance - $available_points;
+
+        return [
+            'total' => $total_balance,
+            'available' => $available_points,
+            'reserved' => $cart_reserved,
+        ];
+    }
+
+    /**
      * Check if user has made any purchases (convenience method)
      *
      * @param int|null $user_id User ID (defaults to current user)

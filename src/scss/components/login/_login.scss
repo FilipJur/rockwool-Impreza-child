@@ -13,12 +13,3 @@
 @use 'login-plugin';    // Plugin integration overrides  
 @use 'login-activation'; // Activation/OTP form styles
 @use 'login-responsive'; // Responsive adjustments
-
-// Legacy styles (to be removed after migration)
-#page-content .accept_terms_and_conditions {
-  text-align: center;
-  
-  input {
-    display: none;
-  }
-}

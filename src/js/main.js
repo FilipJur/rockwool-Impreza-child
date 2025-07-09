@@ -9,6 +9,7 @@ import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAccessControl } from './features/access-control/index.js';
 import { setupZebricek } from './features/zebricek/index.js';
 import { setupLoginContentVariants } from './features/login-content-variants.js';
+import { setupLoginToggle } from './features/login-toggle.js';
 import { setupMyPostsPagination } from './features/my-posts-pagination.js';
 import { app as firebaseApp } from './firebase/config.js';
 
@@ -25,6 +26,7 @@ class ThemeApp {
       accessControl: null,
       zebricek: null,
       loginContentVariants: null,
+      loginToggle: null,
       myPostsPagination: null
     };
     this.firebase = firebaseApp;
@@ -142,6 +144,16 @@ class ThemeApp {
         console.log('Login content variants initialized');
       } catch (error) {
         console.error('Failed to initialize login content variants:', error);
+      }
+    }
+
+    // Initialize login toggle for authentication pages
+    if (window.location.pathname.includes('/prihlaseni')) {
+      try {
+        this.modules.loginToggle = setupLoginToggle();
+        console.log('Login toggle initialized');
+      } catch (error) {
+        console.error('Failed to initialize login toggle:', error);
       }
     }
 

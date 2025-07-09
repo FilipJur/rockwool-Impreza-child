@@ -74,4 +74,29 @@ class ProductService {
 
         return $filtered_products;
     }
+
+    /**
+     * Gets the next product that the user cannot afford
+     *
+     * This represents the user's "next goal" and is determined by finding the
+     * cheapest product that is currently outside their points range.
+     * Used for progress tracking and motivation features.
+     *
+     * @param int|null $user_id User ID (defaults to current user)
+     * @return \WC_Product|null The product object or null if all products are affordable
+     */
+    public function get_next_unaffordable_product(?int $user_id = null): ?\WC_Product {
+        $unaffordable_products = $this->get_products_filtered_by_balance('unavailable');
+
+        if (empty($unaffordable_products)) {
+            return null;
+        }
+
+        // Sort by price ASC to find the cheapest unaffordable product
+        usort($unaffordable_products, function($a, $b) {
+            return (float)$a->get_price() <=> (float)$b->get_price();
+        });
+
+        return $unaffordable_products[0];
+    }
 }

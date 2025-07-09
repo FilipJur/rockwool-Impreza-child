@@ -187,20 +187,4 @@
   box-shadow: none !important;
 }
 
-// Terms and conditions link
-.accept_terms_and_conditions {
-  text-align: center;
-  
-  input {
-    display: none;
-  }
-  
-  a {
-    color: var(--color-content-link);
-    text-decoration: underline;
-    
-    &:hover {
-      color: var(--color-content-link-hover);
-    }
-  }
-}
+// Terms and conditions link - removed duplicate, handled in _login-base.scss

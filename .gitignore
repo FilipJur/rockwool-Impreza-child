@@ -85,3 +85,4 @@ repomix-output.txt
 # Debug Log Files
 debug*.log
 *.log.*.bak
+docs/subagent-research-output.md

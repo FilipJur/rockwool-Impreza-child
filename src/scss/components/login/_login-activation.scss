@@ -9,6 +9,10 @@
 
 // Activation form specific styles - extends base login styles
 #lwp_activate {
+  // Match the main container width from Figma design
+  width: 442px;
+  max-width: 442px;
+  margin: 0 auto;
   // Content variants for activation step
   .lh1 {
     // Title for activation step
@@ -72,7 +76,7 @@
     align-items: center;
     gap: 21px; // 21px gap from Figma design
     width: 100%;
-    max-width: 420px; // Total width to contain 6 inputs + gaps
+    max-width: 442px; // Match main container width
     margin: 0 auto;
     padding: 0;
   }
@@ -137,7 +141,7 @@
     margin-bottom: 16px;
     
     &:hover {
-      background: darken(#DB0626, 10%) !important;
+      background: #b8051f !important;
       box-shadow: 0 4px 12px rgba(219, 6, 38, 0.3);
     }
     
@@ -215,12 +219,12 @@
     // "Registraci už mám - Chci se přihlásit" link
     .lwp_change_pn {
       font-family: $font-primary;
-      font-size: 16px;
-      font-weight: $font-weight-normal;
-      line-height: 1.375;
+      font-size: 18px; // Match Figma design
+      font-weight: $font-weight-semibold; // 600 weight
+      line-height: 1.366;
       text-align: center;
       color: $color-black;
-      text-decoration: underline;
+      text-decoration: none; // No underline in Figma
       margin-bottom: 16px;
       
       &:hover {
@@ -232,6 +236,25 @@
     // Hide email change link (not in design)
     .lwp_change_el {
       display: none !important;
+    }
+  }
+  
+  // Repositioned "Registraci už mám" link (moved after main button by JavaScript)
+  .lwp_change_pn {
+    display: block;
+    font-family: $font-primary;
+    font-size: 18px; // Match Figma design
+    font-weight: $font-weight-semibold; // 600 weight
+    line-height: 1.366;
+    text-align: center;
+    color: $color-black;
+    text-decoration: none; // No underline in Figma
+    margin-top: 12px; // 12px gap from Figma
+    margin-bottom: 0;
+    
+    &:hover {
+      color: #DB0626;
+      text-decoration: none;
     }
   }
   
@@ -278,7 +301,7 @@
 // Terms of service for activation form (added by JavaScript)
 .activation-terms {
   text-align: center;
-  margin: 16px 0;
+  margin: 32px 0 16px 0;
   width: 100%;
   
   .activation-terms-text {
@@ -289,6 +312,17 @@
     text-align: center;
     color: $color-black;
     display: block;
+    
+    // Style inline links only
+    a {
+      color: $color-black;
+      text-decoration: underline;
+      
+      &:hover {
+        color: #DB0626;
+        text-decoration: underline;
+      }
+    }
   }
 }
 

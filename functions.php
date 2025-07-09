@@ -162,7 +162,7 @@ function lwp_modify_login_content($buffer) {
     $is_activation_step = strpos($buffer, 'id="lwp_activate"') !== false && strpos($buffer, 'style="display: block;"') !== false;
 
     if ($is_activation_step) {
-        // Handle activation form content
+        // Handle activation form content (no toggle link needed here)
         return lwp_modify_activation_content($buffer);
     }
 
@@ -172,13 +172,15 @@ function lwp_modify_login_content($buffer) {
             'title' => 'Registrujte se, získáte tak přístup k výhodám, které mají jen Mistři.',
             'subtitle' => 'Stačí zadat číslo a kód vám hned přistane v mobilu.',
             'button' => 'Poslat ověřovací kód',
-            'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s podmínkami programu.'
+            'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s podmínkami programu.',
+            'toggle_link' => 'Registraci už mám - Chci se přihlásit'
         ],
         'existing_user' => [
             'title' => 'Zadejte své telefonní číslo a v appce jste raz dva',
             'subtitle' => 'Pošleme vám jednorázový kód pro rychlé přihlášení.',
             'button' => 'Poslat ověřovací kód',
-            'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti.'
+            'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti.',
+            'toggle_link' => 'Ještě nemám registraci - Registrovat se'
         ]
     ];
 
@@ -203,17 +205,29 @@ function lwp_modify_login_content($buffer) {
         $buffer
     );
 
-    // Replace button text and add icon (matches exact structure from HTML)
+    // Replace button text and add icon
     $buffer = preg_replace(
         '/<button class="submit_button auth_phoneNumber" type="submit">\s*Submit\s*<\/button>/s',
         '<button class="submit_button auth_phoneNumber" type="submit">' . $button_with_icon . '</button>',
         $buffer
     );
 
-    // Replace disclaimer text
+    // Replace entire terms section with proper structure like OTP
+    $disclaimer_with_link = 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s <a href="#">podmínkami programu</a>.';
+    $terms_html = '<div class="accept_terms_and_conditions">' . $disclaimer_with_link . '</div>';
+    
+    // Remove the entire broken terms section and replace with clean version
     $buffer = preg_replace(
-        '/<span class="accept_terms_and_conditions_text">.*?<\/span>/s',
-        '<span class="accept_terms_and_conditions_text">' . esc_html($content['disclaimer']) . '</span>',
+        '/<div class="accept_terms_and_conditions">.*?<\/div>/s',
+        $terms_html,
+        $buffer
+    );
+
+    // Add toggle link after submit button
+    $toggle_link_html = '<a href="#" class="lwp_change_pn">' . esc_html($content['toggle_link']) . '</a>';
+    $buffer = preg_replace(
+        '/(<button class="submit_button auth_phoneNumber"[^>]*>.*?<\/button>)/s',
+        '$1' . $toggle_link_html,
         $buffer
     );
 
@@ -231,7 +245,7 @@ function lwp_modify_activation_content($buffer) {
         'button' => 'Registrovat',
         'resend_button' => 'Znovu odeslat kód',
         'login_link' => 'Registraci už mám - Chci se přihlásit',
-        'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s podmínkami programu.'
+        'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s <a href="#">podmínkami programu</a>.'
     ];
 
     // Replace activation form title
@@ -265,7 +279,15 @@ function lwp_modify_activation_content($buffer) {
     // Replace "Change phone number" link with "Registraci už mám - Chci se přihlásit"
     $buffer = preg_replace(
         '/<a class="lwp_change_pn"[^>]*>.*?<\/a>/s',
-        '<a class="lwp_change_pn" href="#" style="display: block;">' . esc_html($activation_content['login_link']) . '</a>',
+        '<a class="lwp_change_pn" href="#">' . esc_html($activation_content['login_link']) . '</a>',
+        $buffer
+    );
+
+    // Add proper terms disclaimer after the form (remove inline style and add link)
+    $terms_html = '<div class="activation-terms"><span class="activation-terms-text">' . $activation_content['disclaimer'] . '</span></div>';
+    $buffer = preg_replace(
+        '/<\/form>/i',
+        $terms_html . '</form>',
         $buffer
     );
 
