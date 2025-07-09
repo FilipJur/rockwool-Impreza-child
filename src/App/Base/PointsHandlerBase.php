@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Base;
 
 use MistrFachman\Services\DualPointsManager;
+use MistrFachman\Services\DomainConfigurationService;
 
 /**
  * Base Points Handler - Abstract Foundation
@@ -141,7 +142,7 @@ abstract class PointsHandlerBase {
             return false;
         }
 
-        $points_already_awarded = (int)get_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", true);
+        $points_already_awarded = (int)get_post_meta($post_id, DomainConfigurationService::getFieldName($this->getPostType(), 'awarded_points_meta'), true);
         $point_difference = $points_to_award - $points_already_awarded;
 
         // Only process if there's a change
@@ -230,7 +231,7 @@ abstract class PointsHandlerBase {
      * Revoke points using DualPointsManager with different policies for each point type
      */
     protected function revoke_points(int $post_id, int $user_id, string $new_status): void {
-        $points_awarded = (int)get_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", true);
+        $points_awarded = (int)get_post_meta($post_id, DomainConfigurationService::getFieldName($this->getPostType(), 'awarded_points_meta'), true);
         
         if ($points_awarded > 0) {
             // Get post title for better user experience

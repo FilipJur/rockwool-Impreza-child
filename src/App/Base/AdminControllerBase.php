@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Base;
 
+use MistrFachman\Services\DomainConfigurationService;
+
 
 /**
  * Base Admin Controller - Abstract Foundation
@@ -220,7 +222,7 @@ abstract class AdminControllerBase {
      */
     protected function render_points_column(int $post_id): void {
         $points_assigned = $this->get_current_points($post_id);
-        $points_awarded = (int)get_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", true);
+        $points_awarded = (int)get_post_meta($post_id, DomainConfigurationService::getFieldName($this->getPostType(), 'awarded_points_meta'), true);
 
         if ($points_assigned > 0) {
             echo '<strong>' . esc_html((string)$points_assigned) . '</strong>';

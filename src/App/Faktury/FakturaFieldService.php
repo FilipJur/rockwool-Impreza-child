@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Faktury;
 
 use MistrFachman\Base\FieldServiceBase;
+use MistrFachman\Services\DomainConfigurationService;
 
 /**
  * Faktura Field Service - Centralized Field Access
@@ -30,23 +31,10 @@ if (!defined('ABSPATH')) {
 class FakturaFieldService extends FieldServiceBase {
 
     /**
-     * Field selector constants - Single source of truth
-     * Following Realizace pattern with domain-specific naming
-     * Uses full group_field pattern to match Realizace architecture
+     * Domain key for configuration access
      */
-    private const POINTS_FIELD = 'admin_management_invoice_points_assigned';
-    private const REJECTION_REASON_FIELD = 'admin_management_invoice_rejection_reason';
-    private const VALUE_FIELD = 'invoice_value';
-    private const FILE_FIELD = 'invoice_file';
-    private const INVOICE_NUMBER_ADMIN_FIELD = 'invoice_number';
-    private const INVOICE_DATE_ADMIN_FIELD = 'invoice_date';
+    private const DOMAIN_KEY = 'invoice';
 
-    /**
-     * ACF Field key constants for $_POST data access
-     * These are used by the gatekeeper validation to access fresh form data
-     */
-    private const INVOICE_DATE_FIELD_KEY = 'field_invoice_date_2025';
-    private const VALUE_FIELD_KEY = 'field_invoice_value_2025';
 
     /**
      * Get points value for a faktura post
@@ -55,7 +43,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return int Points value
      */
     public static function getPoints(int $post_id): int {
-        $value = self::getFieldValue(self::POINTS_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'points'), $post_id);
         return is_numeric($value) ? (int)$value : 0;
     }
 
@@ -67,7 +55,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return bool Success status
      */
     public static function setPoints(int $post_id, int $points): bool {
-        return self::setFieldValueInternal(self::POINTS_FIELD, $post_id, $points);
+        return self::setFieldValueInternal(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'points'), $post_id, $points);
     }
 
     /**
@@ -77,7 +65,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return string Rejection reason
      */
     public static function getRejectionReason(int $post_id): string {
-        $value = self::getFieldValue(self::REJECTION_REASON_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'rejection_reason'), $post_id);
         return is_string($value) ? $value : '';
     }
 
@@ -89,7 +77,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return bool Success status
      */
     public static function setRejectionReason(int $post_id, string $reason): bool {
-        return self::setFieldValueInternal(self::REJECTION_REASON_FIELD, $post_id, $reason);
+        return self::setFieldValueInternal(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'rejection_reason'), $post_id, $reason);
     }
 
     /**
@@ -99,7 +87,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return int Invoice value in CZK
      */
     public static function getValue(int $post_id): int {
-        $value = self::getFieldValue(self::VALUE_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'value'), $post_id);
         return is_numeric($value) ? (int)$value : 0;
     }
 
@@ -111,7 +99,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return bool Success status
      */
     public static function setValue(int $post_id, int $value): bool {
-        return self::setFieldValueInternal(self::VALUE_FIELD, $post_id, $value);
+        return self::setFieldValueInternal(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'value'), $post_id, $value);
     }
 
     /**
@@ -121,7 +109,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return array|null File attachment data
      */
     public static function getFile(int $post_id): ?array {
-        $value = self::getFieldValue(self::FILE_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'file'), $post_id);
         return is_array($value) ? $value : null;
     }
 
@@ -133,7 +121,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return bool Success status
      */
     public static function setFile(int $post_id, int $attachment_id): bool {
-        return self::setFieldValueInternal(self::FILE_FIELD, $post_id, $attachment_id);
+        return self::setFieldValueInternal(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'file'), $post_id, $attachment_id);
     }
 
     /**
@@ -143,7 +131,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return string Invoice number
      */
     public static function getInvoiceNumber(int $post_id): string {
-        $value = self::getFieldValue(self::INVOICE_NUMBER_ADMIN_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'invoice_number'), $post_id);
         return is_string($value) ? $value : '';
     }
 
@@ -155,7 +143,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return bool Success status
      */
     public static function setInvoiceNumber(int $post_id, string $number): bool {
-        return self::setFieldValueInternal(self::INVOICE_NUMBER_ADMIN_FIELD, $post_id, $number);
+        return self::setFieldValueInternal(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'invoice_number'), $post_id, $number);
     }
 
     /**
@@ -165,7 +153,7 @@ class FakturaFieldService extends FieldServiceBase {
      * @return string Invoice date
      */
     public static function getInvoiceDate(int $post_id): string {
-        $value = self::getFieldValue(self::INVOICE_DATE_ADMIN_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'invoice_date'), $post_id);
         return is_string($value) ? $value : '';
     }
 
@@ -177,34 +165,34 @@ class FakturaFieldService extends FieldServiceBase {
      * @return bool Success status
      */
     public static function setInvoiceDate(int $post_id, string $date): bool {
-        return self::setFieldValueInternal(self::INVOICE_DATE_ADMIN_FIELD, $post_id, $date);
+        return self::setFieldValueInternal(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'invoice_date'), $post_id, $date);
     }
 
     /**
      * Get field selector constants for use in other classes
      */
     public static function getPointsFieldSelector(): string {
-        return self::POINTS_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'points');
     }
 
     public static function getRejectionReasonFieldSelector(): string {
-        return self::REJECTION_REASON_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'rejection_reason');
     }
 
     public static function getValueFieldSelector(bool $get_key = false): string {
-        return $get_key ? self::VALUE_FIELD_KEY : self::VALUE_FIELD;
+        return $get_key ? DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'value_field_key') : DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'value');
     }
 
     public static function getFileFieldSelector(): string {
-        return self::FILE_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'file');
     }
 
     public static function getInvoiceNumberFieldSelector(): string {
-        return self::INVOICE_NUMBER_ADMIN_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'invoice_number');
     }
 
     public static function getInvoiceDateFieldSelector(bool $get_key = false): string {
-        return $get_key ? self::INVOICE_DATE_FIELD_KEY : self::INVOICE_DATE_ADMIN_FIELD;
+        return $get_key ? DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'invoice_date_field_key') : DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'invoice_date');
     }
 
 

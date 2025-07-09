@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Realizace;
 
 use MistrFachman\Base\FieldServiceBase;
+use MistrFachman\Services\DomainConfigurationService;
 
 /**
  * Realizace Field Service - Centralized Field Access
@@ -29,19 +30,9 @@ if (!defined('ABSPATH')) {
 class RealizaceFieldService extends FieldServiceBase {
 
     /**
-     * Field selector constants - Single source of truth
-     * Following Realizace pattern with domain-specific naming
-     * Uses full group_field pattern to match Realizace architecture
+     * Domain key for configuration access
      */
-    private const POINTS_FIELD = 'admin_management_realization_points_assigned';
-    private const REJECTION_REASON_FIELD = 'admin_management_realization_rejection_reason';
-    private const GALLERY_FIELD = 'realization_gallery';
-    private const AREA_FIELD = 'realization_area_sqm';
-    private const CONSTRUCTION_TYPE_FIELD = 'realization_construction_type';
-    private const MATERIALS_FIELD = 'realization_materials_used';
-    
-    // Legacy meta fields for MyCred integration
-    private const AWARDED_POINTS_META_FIELD = '_realizace_points_awarded';
+    private const DOMAIN_KEY = 'realization';
 
     /**
      * Get points value for a realizace post
@@ -50,7 +41,7 @@ class RealizaceFieldService extends FieldServiceBase {
      * @return int Points value
      */
     public static function getPoints(int $post_id): int {
-        $value = self::getFieldValue(self::POINTS_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'points'), $post_id);
         return is_numeric($value) ? (int)$value : 0;
     }
 
@@ -61,7 +52,7 @@ class RealizaceFieldService extends FieldServiceBase {
      * @return int Awarded points value
      */
     public static function getAwardedPoints(int $post_id): int {
-        $value = get_post_meta($post_id, self::AWARDED_POINTS_META_FIELD, true);
+        $value = get_post_meta($post_id, DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'awarded_points_meta'), true);
         return is_numeric($value) ? (int)$value : 0;
     }
 
@@ -73,7 +64,7 @@ class RealizaceFieldService extends FieldServiceBase {
      * @return bool Success status
      */
     public static function setPoints(int $post_id, int $points): bool {
-        return self::setFieldValueInternal(self::POINTS_FIELD, $post_id, $points);
+        return self::setFieldValueInternal(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'points'), $post_id, $points);
     }
 
     /**
@@ -83,7 +74,7 @@ class RealizaceFieldService extends FieldServiceBase {
      * @return string Rejection reason
      */
     public static function getRejectionReason(int $post_id): string {
-        $value = self::getFieldValue(self::REJECTION_REASON_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'rejection_reason'), $post_id);
         return is_string($value) ? $value : '';
     }
 
@@ -95,7 +86,7 @@ class RealizaceFieldService extends FieldServiceBase {
      * @return bool Success status
      */
     public static function setRejectionReason(int $post_id, string $reason): bool {
-        return self::setFieldValueInternal(self::REJECTION_REASON_FIELD, $post_id, $reason);
+        return self::setFieldValueInternal(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'rejection_reason'), $post_id, $reason);
     }
 
     /**
@@ -105,7 +96,7 @@ class RealizaceFieldService extends FieldServiceBase {
      * @return array Gallery images
      */
     public static function getGallery(int $post_id): array {
-        $value = self::getFieldValue(self::GALLERY_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'gallery'), $post_id);
         return is_array($value) ? $value : [];
     }
 
@@ -116,7 +107,7 @@ class RealizaceFieldService extends FieldServiceBase {
      * @return string Area value
      */
     public static function getArea(int $post_id): string {
-        $value = self::getFieldValue(self::AREA_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'area'), $post_id);
         return is_string($value) ? $value : '';
     }
 
@@ -138,7 +129,7 @@ class RealizaceFieldService extends FieldServiceBase {
      * @return array Array of term objects
      */
     public static function getConstructionTypes(int $post_id): array {
-        $value = self::getFieldValue(self::CONSTRUCTION_TYPE_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'construction_type'), $post_id);
         
         // Handle both ACF taxonomy field format and legacy string format
         if (is_array($value)) {
@@ -192,7 +183,7 @@ class RealizaceFieldService extends FieldServiceBase {
      * @return array Array of term objects
      */
     public static function getMaterialsArray(int $post_id): array {
-        $value = self::getFieldValue(self::MATERIALS_FIELD, $post_id);
+        $value = self::getFieldValue(DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'materials'), $post_id);
         
         // Handle both ACF taxonomy field format and legacy string format
         if (is_array($value)) {
@@ -238,31 +229,31 @@ class RealizaceFieldService extends FieldServiceBase {
      * Get field selector constants for use in other classes
      */
     public static function getPointsFieldSelector(): string {
-        return self::POINTS_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'points');
     }
 
     public static function getRejectionReasonFieldSelector(): string {
-        return self::REJECTION_REASON_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'rejection_reason');
     }
 
     public static function getGalleryFieldSelector(): string {
-        return self::GALLERY_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'gallery');
     }
 
     public static function getAreaFieldSelector(): string {
-        return self::AREA_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'area');
     }
 
     public static function getConstructionTypeFieldSelector(): string {
-        return self::CONSTRUCTION_TYPE_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'construction_type');
     }
 
     public static function getMaterialsFieldSelector(): string {
-        return self::MATERIALS_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'materials');
     }
 
     public static function getAwardedPointsFieldSelector(): string {
-        return self::AWARDED_POINTS_META_FIELD;
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'awarded_points_meta');
     }
 
 

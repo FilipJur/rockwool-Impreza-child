@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Faktury;
 
 use MistrFachman\Base\AdminCardRendererBase;
+use MistrFachman\Services\DomainConfigurationService;
 
 /**
  * Faktury Card Renderer - Domain-Specific Data Provider
@@ -88,10 +89,10 @@ class FakturyCardRenderer extends AdminCardRendererBase {
      */
     protected function getDomainFieldData(int $post_id): array {
         return [
-            'invoice_value' => FakturaFieldService::getValue($post_id),
-            'invoice_file' => FakturaFieldService::getFile($post_id),
-            'invoice_number' => FakturaFieldService::getInvoiceNumber($post_id),
-            'invoice_date' => FakturaFieldService::getInvoiceDate($post_id),
+            DomainConfigurationService::getColumnKey('invoice', 'invoice_value') => FakturaFieldService::getValue($post_id),
+            DomainConfigurationService::getColumnKey('invoice', 'invoice_file') => FakturaFieldService::getFile($post_id),
+            DomainConfigurationService::getColumnKey('invoice', 'invoice_number') => FakturaFieldService::getInvoiceNumber($post_id),
+            DomainConfigurationService::getColumnKey('invoice', 'invoice_date') => FakturaFieldService::getInvoiceDate($post_id),
         ];
     }
 

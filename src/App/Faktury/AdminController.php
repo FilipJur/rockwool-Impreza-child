@@ -7,6 +7,7 @@ namespace MistrFachman\Faktury;
 use MistrFachman\Base\AdminControllerBase;
 use MistrFachman\Base\AdminCardRendererBase;
 use MistrFachman\Services\DebugLogger;
+use MistrFachman\Services\DomainConfigurationService;
 
 /**
  * Faktury Admin Controller - Unified Admin Interface Controller
@@ -84,8 +85,8 @@ class AdminController extends AdminControllerBase {
         $new_columns['cb'] = $columns['cb'];
         $new_columns['title'] = $columns['title'];
         $new_columns['author'] = $columns['author'];
-        $new_columns['invoice_value'] = __('Hodnota faktury', 'mistr-fachman');
-        $new_columns['invoice_date'] = __('Datum faktury', 'mistr-fachman');
+        $new_columns[DomainConfigurationService::getColumnKey('invoice', 'invoice_value')] = __('Hodnota faktury', 'mistr-fachman');
+        $new_columns[DomainConfigurationService::getColumnKey('invoice', 'invoice_date')] = __('Datum faktury', 'mistr-fachman');
         $new_columns['status'] = __('Status', 'mistr-fachman'); // Using base class status column
         $new_columns['points'] = __('Body', 'mistr-fachman'); // Using base class points column
         $new_columns['date'] = $columns['date']; // Submission date
@@ -99,11 +100,11 @@ class AdminController extends AdminControllerBase {
         parent::render_custom_columns($column, $post_id); // Handles 'points' and 'status'
 
         switch ($column) {
-            case 'invoice_value':
+            case DomainConfigurationService::getColumnKey('invoice', 'invoice_value'):
                 $value = FakturaFieldService::getValue($post_id);
                 echo esc_html(number_format($value, 0, ',', ' ')) . ' Kč';
                 break;
-            case 'invoice_date':
+            case DomainConfigurationService::getColumnKey('invoice', 'invoice_date'):
                 $date_str = FakturaFieldService::getInvoiceDate($post_id);
                 if ($date_str) {
                     $date = \DateTime::createFromFormat('Ymd', $date_str);

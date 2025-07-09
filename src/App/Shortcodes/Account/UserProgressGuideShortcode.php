@@ -8,6 +8,7 @@ use MistrFachman\Shortcodes\ShortcodeBase;
 use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
 use MistrFachman\Services\UserService;
+use MistrFachman\Services\DomainConfigurationService;
 
 /**
  * User Progress Guide Shortcode Component
@@ -101,21 +102,14 @@ class UserProgressGuideShortcode extends ShortcodeBase
 
         // Registration step progress based on status
         $registration_completed = ($user_status === 'full_member');
-        $registration_progress = 0;
-        if ($user_status === 'needs_form') {
-            $registration_progress = 33; // Initial registration done, need form
-        } elseif ($user_status === 'awaiting_review') {
-            $registration_progress = 66; // Form submitted, awaiting approval
-        } elseif ($user_status === 'full_member') {
-            $registration_progress = 100; // Approved
-        }
+        $registration_progress = DomainConfigurationService::getUserProgressPercentage($user_status);
 
         // Check first project upload (only for full members)
         $first_project_uploaded = false;
         $project_progress = 0;
         if ($user_status === 'full_member') {
             $first_project_uploaded = $this->has_uploaded_first_project($user_id);
-            $project_progress = $first_project_uploaded ? 100 : $this->get_project_progress_percentage($user_id);
+            $project_progress = $first_project_uploaded ? DomainConfigurationService::PROGRESS_PROJECT_UPLOADED : $this->get_project_progress_percentage($user_id);
         }
 
         return [
@@ -123,7 +117,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
             'registration' => [
                 'completed' => $registration_completed,
                 'progress_percentage' => $registration_progress,
-                'points' => $registration_completed ? 1000 : 0
+                'points' => $registration_completed ? DomainConfigurationService::getUserWorkflowReward('registration_completed') : 0
             ],
             'first_project' => [
                 'completed' => $first_project_uploaded,

@@ -6,6 +6,7 @@ namespace MistrFachman\Faktury;
 
 use MistrFachman\Base\FormHandlerBase;
 use MistrFachman\Services\UserDetectionService;
+use MistrFachman\Services\DomainConfigurationService;
 
 /**
  * Faktury Form Handler - Domain-Specific Implementation
@@ -90,7 +91,7 @@ class NewFakturyFormHandler extends FormHandlerBase {
      * Faktury uses single file upload (not gallery like Realizace)
      */
     protected function getGalleryFieldName(): string {
-        return 'invoice_file';
+        return DomainConfigurationService::getFieldName('invoice', 'file');
     }
 
     /**
