@@ -7,6 +7,7 @@ import { setupBusinessModal } from './features/admin/business-data-modal.js';
 import { setupAresForm } from './features/ares/handler.js';
 import { setupRealizaceManagement } from './features/admin/RealizaceManagement.js';
 import { setupFakturyManagement } from './features/admin/FakturyManagement.js';
+import './features/acf-number-formatting.js';
 
 /**
  * Admin Application Class

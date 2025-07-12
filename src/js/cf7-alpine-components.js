@@ -8,6 +8,9 @@
  * @since 1.0.0
  */
 
+// Import CF7 number formatting functionality
+import './features/cf7-number-formatting.js';
+
 document.addEventListener('alpine:init', () => {
     console.log('[RealizaceAlpine] Alpine.js initializing CF7 components');
     

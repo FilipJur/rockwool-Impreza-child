@@ -11,6 +11,8 @@ import { setupZebricek } from './features/zebricek/index.js';
 import { setupLoginContentVariants } from './features/login-content-variants.js';
 import { setupLoginToggle } from './features/login-toggle.js';
 import { setupMyPostsPagination } from './features/my-posts-pagination.js';
+import './features/acf-number-formatting.js';
+import './features/cf7-number-formatting.js';
 import { app as firebaseApp } from './firebase/config.js';
 
 /**
