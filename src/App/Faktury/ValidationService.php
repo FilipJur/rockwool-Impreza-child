@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Faktury;
 
 use MistrFachman\Services\DebugLogger;
+use MistrFachman\Services\DomainConfigurationService;
 
 /**
  * Faktury Validation Service - Business Rules Validation
@@ -41,16 +42,17 @@ class ValidationService {
      * Simple validation check for publishing
      */
     public function isPublishable(): bool {
-        DebugLogger::log('ValidationService::isPublishable() - checking rules');
-        
         $date_valid = $this->isDateValid();
         $limit_ok = $this->isMonthlyLimitOk();
         
         $result = $date_valid && $limit_ok;
-        DebugLogger::log('Validation result:', [
+        
+        DebugLogger::logValidation('invoice', $this->post->ID, [
             'date_valid' => $date_valid,
-            'limit_ok' => $limit_ok,
-            'publishable' => $result
+            'monthly_limit_ok' => $limit_ok,
+            'publishable' => $result,
+            'user_id' => $this->user_id,
+            'source' => 'ValidationService::isPublishable'
         ]);
         
         return $result;
@@ -98,7 +100,7 @@ class ValidationService {
         
         // Check for existing invoices with same number for this user
         $args = [
-            'post_type' => 'invoice',
+            'post_type' => DomainConfigurationService::getWordPressPostType('invoice'),
             'post_status' => ['publish', 'pending', 'rejected'], // Check all statuses
             'author' => $this->user_id,
             'meta_key' => FakturaFieldService::getInvoiceNumberFieldSelector(),
@@ -201,9 +203,9 @@ class ValidationService {
             "SELECT SUM(value_meta.meta_value) FROM {$wpdb->posts} p " .
             "JOIN {$wpdb->postmeta} date_meta ON p.ID = date_meta.post_id AND date_meta.meta_key = %s " .
             "JOIN {$wpdb->postmeta} value_meta ON p.ID = value_meta.post_id AND value_meta.meta_key = %s " .
-            "WHERE p.post_type = 'invoice' AND p.post_author = %d AND p.post_status IN ('publish', 'pending') AND p.ID != %d " .
+            "WHERE p.post_type = %s AND p.post_author = %d AND p.post_status IN ('publish', 'pending') AND p.ID != %d " .
             "AND (date_meta.meta_value BETWEEN %s AND %s)",
-            $date_meta_key, $value_meta_key, $user_id, $exclude_post_id, $start_date, $end_date
+            $date_meta_key, $value_meta_key, DomainConfigurationService::getWordPressPostType('invoice'), $user_id, $exclude_post_id, $start_date, $end_date
         ));
     }
 
