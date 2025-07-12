@@ -7,6 +7,7 @@ namespace MistrFachman\Base;
 use MistrFachman\Services\DualPointsManager;
 use MistrFachman\Services\DomainConfigurationService;
 use MistrFachman\Services\ProjectStatusService;
+use MistrFachman\Services\DebugLogger;
 
 /**
  * Base Points Handler - Abstract Foundation
@@ -78,59 +79,103 @@ abstract class PointsHandlerBase {
     abstract protected function getMyCredReference(): string;
 
     /**
-     * Initialize dual-pathway hooks for different execution contexts
+     * Initialize centralized hooks for state-aware idempotent points system
+     * Gemini Solution: Combines status transitions with field update detection
      */
     public function init_hooks(): void {
-        // Path A: Handles the Post Editor workflow. Runs after ACF saves.
-        add_action('acf/save_post', [$this, 'handle_editor_save'], 20);
-
-        // Path B: Handles point REVOCATION for all workflows (AJAX and Editor).
-        add_action('transition_post_status', [$this, 'handle_points_revocation'], 15, 3);
+        // POST-INSERT HOOK - runs AFTER all post meta (including ACF) is completely saved
+        // This eliminates the race condition by ensuring ACF calculations are finished
+        add_action('wp_after_insert_post', [$this, 'handle_post_after_insert'], 10, 4);
         
         // Deletion handling
         add_action('before_delete_post', [$this, 'handle_permanent_deletion'], 5);
+        
+        DebugLogger::logPointsFlow('base_hooks_initialized', $this->getPostType(), 0, [
+            'hooks' => ['wp_after_insert_post at priority 10', 'before_delete_post at priority 5'],
+            'removed_hooks' => ['save_post_* (race condition)', 'transition_post_status (race condition)'],
+            'solution' => 'wp_after_insert_post - runs after ALL meta operations complete',
+            'source' => 'PointsHandlerBase::init_hooks (Final race condition fix)'
+        ]);
     }
 
     /**
-     * The callback for the Post Editor workflow.
-     * Uses acf/save_post to ensure ACF data is completely saved.
+     * Award points with duplicate prevention - Phase 2 Refactor
+     * Called by centralized status transition handler
      */
-    public function handle_editor_save($post_id): void {
-        $post_id = (int)$post_id;
-
-        // Prevent this from running during an AJAX request, which has its own logic.
-        if (wp_doing_ajax()) {
-            return;
-        }
-
-        // Verify this is the correct post type and status
-        if (get_post_type($post_id) !== $this->getPostType()) {
-            return;
-        }
-
-        if (get_post_status($post_id) !== 'publish') {
-            return;
-        }
-
-        $user_id = (int)get_post_field('post_author', $post_id);
-        if (!$user_id || !get_userdata($user_id)) {
-            return;
-        }
-
-        // By this point, get_field() is guaranteed to return the correct, final value from the editor.
-        $points_to_award = $this->get_points_to_award($post_id);
+    protected function award_points_with_duplicate_check(int $post_id, int $user_id): void {
+        // Get current points from the points field (should be calculated by ACF hooks)
+        $points_on_post = $this->get_current_points($post_id);
         
-        // If the field was empty, populate with calculated value.
-        if ($points_to_award <= 0) {
-            $points_to_award = $this->getCalculatedPoints($post_id);
-            $this->set_points($post_id, $points_to_award);
+        DebugLogger::logAssignment($this->getPostType(), $post_id, [
+            'operation' => 'award_check_start',
+            'points_on_post' => $points_on_post,
+            'user_id' => $user_id,
+            'source' => 'PointsHandlerBase::award_points_with_duplicate_check'
+        ]);
+        
+        if ($points_on_post <= 0) {
+            // If no points calculated, use getCalculatedPoints as fallback
+            $points_on_post = $this->getCalculatedPoints($post_id);
+            if ($points_on_post > 0) {
+                $this->set_points($post_id, $points_on_post);
+                DebugLogger::logCalculation($this->getPostType(), $post_id, [
+                    'trigger' => 'fallback_calculation',
+                    'calculated_points' => $points_on_post,
+                    'reason' => 'Points field was empty, using calculated value',
+                    'source' => 'PointsHandlerBase::award_points_with_duplicate_check'
+                ]);
+            }
+        }
+
+        if ($points_on_post > 0) {
+            // Check for duplicate awarding - Phase 2 Critical Fix
+            $awarded_meta_key = $this->getAwardedPointsMetaKey();
+            $already_awarded = get_post_meta($post_id, $awarded_meta_key, true);
+            // Prevent duplicate only if meta exists AND matches current points AND is not 0 (revoked)
+            $duplicate_prevention = !empty($already_awarded) && (int)$already_awarded === $points_on_post && (int)$already_awarded > 0;
             
-            error_log("[{$this->getPostType()}:EDITOR] Auto-populated calculated points: {$points_to_award} for post {$post_id}");
+            DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                'operation' => 'duplicate_check',
+                'points_to_award' => $points_on_post,
+                'already_awarded' => $already_awarded,
+                'duplicate_prevention' => $duplicate_prevention,
+                'user_id' => $user_id,
+                'source' => 'PointsHandlerBase::award_points_with_duplicate_check'
+            ]);
+            
+            if (!$duplicate_prevention) {
+                $success = $this->award_points($post_id, $user_id, $points_on_post);
+                
+                if ($success) {
+                    // Mark as awarded to prevent duplicates
+                    update_post_meta($post_id, $awarded_meta_key, $points_on_post);
+                    
+                    DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                        'operation' => 'award_success',
+                        'points_awarded' => $points_on_post,
+                        'user_id' => $user_id,
+                        'meta_updated' => true,
+                        'source' => 'PointsHandlerBase::award_points_with_duplicate_check'
+                    ]);
+                } else {
+                    DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                        'operation' => 'award_failed',
+                        'points_attempted' => $points_on_post,
+                        'user_id' => $user_id,
+                        'error' => 'award_points() returned false',
+                        'source' => 'PointsHandlerBase::award_points_with_duplicate_check'
+                    ]);
+                }
+            }
+        } else {
+            DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                'operation' => 'award_skipped',
+                'reason' => 'No points to award (points_on_post <= 0)',
+                'points_on_post' => $points_on_post,
+                'user_id' => $user_id,
+                'source' => 'PointsHandlerBase::award_points_with_duplicate_check'
+            ]);
         }
-
-        error_log("[{$this->getPostType()}:EDITOR] Processing post editor save for post {$post_id} with {$points_to_award} points");
-        
-        $this->award_points($post_id, $user_id, $points_to_award);
     }
 
     /**
@@ -211,21 +256,200 @@ abstract class PointsHandlerBase {
     }
 
     /**
-     * Handles REVOKING points when posts leave published status.
-     * Works for both AJAX and Editor workflows.
+     * Post-insert handler - Final Race Condition Fix
+     * Uses wp_after_insert_post which runs AFTER all meta operations (including ACF) complete
+     * This is the definitive solution to eliminate ACF calculation vs point awarding race conditions
      */
-    public function handle_points_revocation(string $new_status, string $old_status, \WP_Post $post): void {
-        if ($post->post_type !== $this->getPostType()) {
+    public function handle_post_after_insert(int $post_id, \WP_Post $post, bool $update, ?\WP_Post $post_before): void {
+        // Guard for correct post type
+        if ($post->post_type !== $this->getWordPressPostType()) {
             return;
         }
-        
-        // Only handle revocation when leaving 'publish' status
-        if ($old_status === 'publish' && $new_status !== 'publish') {
-            $user_id = (int)$post->post_author;
-            if ($user_id && get_userdata($user_id)) {
-                $this->revoke_points($post->ID, $user_id, $new_status);
+
+        $user_id = (int) $post->post_author;
+        if (!$user_id || !get_userdata($user_id)) {
+            return;
+        }
+
+        // Get state tracking meta field
+        $last_awarded_meta_key = $this->getLastAwardedPointsMetaKey();
+        $last_awarded_points = (int) get_post_meta($post_id, $last_awarded_meta_key, true);
+
+        // Handle based on current post status
+        if ($post->post_status === 'publish') {
+            // PUBLISHED POST: Award/adjust points based on current calculated value
+            // ACF calculations are now guaranteed to be complete
+            $current_points = $this->getCalculatedPoints($post_id);
+            
+            DebugLogger::logPointsFlow('post_after_insert_publish_check', $this->getPostType(), $post_id, [
+                'current_points' => $current_points,
+                'last_awarded_points' => $last_awarded_points,
+                'points_changed' => $current_points !== $last_awarded_points,
+                'is_update' => $update,
+                'is_initial_publish' => $last_awarded_points === 0,
+                'user_id' => $user_id,
+                'hook_used' => 'wp_after_insert_post',
+                'source' => 'PointsHandlerBase::handle_post_after_insert (Final fix)'
+            ]);
+
+            // Award/adjust points if they've changed
+            if ($current_points !== $last_awarded_points) {
+                $trigger = $last_awarded_points === 0 ? 'initial_publish_after_all_meta' : 'field_update_after_all_meta';
+                
+                DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                    'operation' => 'post_after_insert_point_adjustment',
+                    'old_points' => $last_awarded_points,
+                    'new_points' => $current_points,
+                    'point_difference' => $current_points - $last_awarded_points,
+                    'trigger' => $trigger,
+                    'source' => 'PointsHandlerBase::handle_post_after_insert'
+                ]);
+
+                $success = $this->award_points($post_id, $user_id, $current_points);
+                
+                if ($success) {
+                    update_post_meta($post_id, $last_awarded_meta_key, $current_points);
+                    
+                    DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                        'operation' => 'state_tracking_updated',
+                        'last_awarded_points' => $current_points,
+                        'meta_key' => $last_awarded_meta_key,
+                        'source' => 'PointsHandlerBase::handle_post_after_insert'
+                    ]);
+                }
+            }
+            
+        } else {
+            // UNPUBLISHED POST: Revoke any previously awarded points
+            if ($last_awarded_points > 0) {
+                DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                    'operation' => 'unpublish_revoke',
+                    'old_status' => $post_before ? $post_before->post_status : 'unknown',
+                    'new_status' => $post->post_status,
+                    'points_to_revoke' => $last_awarded_points,
+                    'user_id' => $user_id,
+                    'source' => 'PointsHandlerBase::handle_post_after_insert'
+                ]);
+                
+                $this->revoke_points($post_id, $user_id, $post->post_status);
+                
+                // Reset state tracking
+                update_post_meta($post_id, $last_awarded_meta_key, 0);
+                
+                DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                    'operation' => 'state_tracking_reset',
+                    'reason' => 'post_unpublished',
+                    'meta_key' => $last_awarded_meta_key,
+                    'source' => 'PointsHandlerBase::handle_post_after_insert'
+                ]);
             }
         }
+    }
+
+    /**
+     * Legacy post update handler - REPLACED
+     * This method has been replaced by handle_post_after_insert() to eliminate race conditions
+     */
+    public function handle_post_update(int $post_id, \WP_Post $post, bool $update): void {
+        // Guard for correct post type
+        if ($post->post_type !== $this->getWordPressPostType()) {
+            return;
+        }
+
+        $user_id = (int) $post->post_author;
+        if (!$user_id || !get_userdata($user_id)) {
+            return;
+        }
+
+        // Get state tracking meta field
+        $last_awarded_meta_key = $this->getLastAwardedPointsMetaKey();
+        $last_awarded_points = (int) get_post_meta($post_id, $last_awarded_meta_key, true);
+
+        // Handle based on current post status
+        if ($post->post_status === 'publish') {
+            // PUBLISHED POST: Award/adjust points based on current calculated value
+            $current_points = $this->getCalculatedPoints($post_id);
+            
+            DebugLogger::logPointsFlow('state_aware_publish_check', $this->getPostType(), $post_id, [
+                'current_points' => $current_points,
+                'last_awarded_points' => $last_awarded_points,
+                'points_changed' => $current_points !== $last_awarded_points,
+                'is_update' => $update,
+                'is_initial_publish' => $last_awarded_points === 0,
+                'user_id' => $user_id,
+                'source' => 'PointsHandlerBase::handle_post_update (consolidated awarding)'
+            ]);
+
+            // Award/adjust points if they've changed
+            if ($current_points !== $last_awarded_points) {
+                $trigger = $last_awarded_points === 0 ? 'initial_publish_after_acf' : 'field_value_change_on_published_post';
+                
+                DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                    'operation' => 'state_aware_point_adjustment',
+                    'old_points' => $last_awarded_points,
+                    'new_points' => $current_points,
+                    'point_difference' => $current_points - $last_awarded_points,
+                    'trigger' => $trigger,
+                    'source' => 'PointsHandlerBase::handle_post_update'
+                ]);
+
+                $success = $this->award_points($post_id, $user_id, $current_points);
+                
+                if ($success) {
+                    update_post_meta($post_id, $last_awarded_meta_key, $current_points);
+                    
+                    DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                        'operation' => 'state_tracking_updated',
+                        'last_awarded_points' => $current_points,
+                        'meta_key' => $last_awarded_meta_key,
+                        'source' => 'PointsHandlerBase::handle_post_update'
+                    ]);
+                }
+            }
+            
+        } else {
+            // UNPUBLISHED POST: Revoke any previously awarded points
+            if ($last_awarded_points > 0) {
+                DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                    'operation' => 'unpublish_revoke',
+                    'old_status' => 'publish',
+                    'new_status' => $post->post_status,
+                    'points_to_revoke' => $last_awarded_points,
+                    'user_id' => $user_id,
+                    'source' => 'PointsHandlerBase::handle_post_update'
+                ]);
+                
+                $this->revoke_points($post_id, $user_id, $post->post_status);
+                
+                // Reset state tracking
+                update_post_meta($post_id, $last_awarded_meta_key, 0);
+                
+                DebugLogger::logAssignment($this->getPostType(), $post_id, [
+                    'operation' => 'state_tracking_reset',
+                    'reason' => 'post_unpublished',
+                    'meta_key' => $last_awarded_meta_key,
+                    'source' => 'PointsHandlerBase::handle_post_update'
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Legacy status transition handler - DISABLED
+     * This method has been replaced by handle_post_update() to eliminate race conditions.
+     * The handle_post_update() method now handles all status transitions after ACF field updates.
+     */
+    public function handle_status_transition(string $new_status, string $old_status, \WP_Post $post): void {
+        // This method is intentionally disabled to prevent race conditions
+        // All point operations are now handled by handle_post_update() which runs after ACF
+        
+        DebugLogger::logPointsFlow('status_transition_disabled', $this->getPostType(), $post->ID, [
+            'old_status' => $old_status,
+            'new_status' => $new_status,
+            'message' => 'Status transition hook disabled - all logic moved to handle_post_update',
+            'reason' => 'Race condition prevention',
+            'source' => 'PointsHandlerBase::handle_status_transition (DISABLED)'
+        ]);
     }
 
     /**
@@ -257,9 +481,9 @@ abstract class PointsHandlerBase {
                 // due to "no debt policy". For leaderboard points, the full amount is always revoked.
                 $spendable_revoked = min($points_awarded, $balances['spendable'] + $points_awarded) - $balances['spendable'];
                 
-                // Update tracking to reflect actual points revoked from spendable balance
-                // Note: Leaderboard points are tracked separately by myCred
-                update_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", $points_awarded - $spendable_revoked);
+                // Phase 2 Critical Fix: Set meta to 0 to indicate points were revoked
+                // This allows proper duplicate prevention on republish
+                update_post_meta($post_id, "_{$this->getWordPressPostType()}_points_awarded", 0);
                 
                 error_log("[{$this->getPostType()}:INFO] Dual points revoked from post {$post_id}: spendable={$spendable_revoked}/{$points_awarded}, leaderboard={$points_awarded}/{$points_awarded} (status: {$new_status})");
             } else {
@@ -281,10 +505,10 @@ abstract class PointsHandlerBase {
     }
 
     /**
-     * Get points to award with ACF fallback
-     * This is now called from appropriate hooks for each context
+     * Get current points stored on post - Phase 2 Refactor
+     * Renamed for clarity in centralized system
      */
-    protected function get_points_to_award(int $post_id): int {
+    protected function get_current_points(int $post_id): int {
         // Use field selector for reliable ACF access
         if (function_exists('get_field')) {
             $acf_points = get_field($this->getPointsFieldSelector(), $post_id);
@@ -296,6 +520,22 @@ abstract class PointsHandlerBase {
         // Fallback to post meta
         $meta_points = get_post_meta($post_id, $this->getPointsFieldSelector(), true);
         return is_numeric($meta_points) ? (int)$meta_points : 0;
+    }
+
+    /**
+     * Get awarded points meta key - Phase 2 Refactor
+     * Centralized method for duplicate prevention
+     */
+    protected function getAwardedPointsMetaKey(): string {
+        return "_{$this->getWordPressPostType()}_points_awarded";
+    }
+
+    /**
+     * Get last awarded points meta key - Gemini State-Aware Solution
+     * Used for state tracking to detect field changes on published posts
+     */
+    protected function getLastAwardedPointsMetaKey(): string {
+        return "_{$this->getWordPressPostType()}_last_awarded_points";
     }
 
     /**
