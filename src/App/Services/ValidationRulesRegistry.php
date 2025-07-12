@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Services;
 
+use MistrFachman\Services\DomainConfigurationService;
+
 /**
  * Validation Rules Registry
  *
@@ -367,7 +369,7 @@ class ValidationRulesRegistry
         $exclude_id = $post ? $post->ID : 0;
 
         $existing_posts = get_posts([
-            'post_type' => 'faktura',
+            'post_type' => DomainConfigurationService::getWordPressPostType('invoice'),
             'meta_query' => [
                 [
                     'key' => 'invoice_number',

@@ -1,0 +1,546 @@
+{
+  "codebase_analysis": {
+    "generated_at": "2025-01-09T15:30:00Z",
+    "analysis_scope": "WordPress theme with enterprise-grade PSR-4 architecture",
+    "architecture_pattern": "Domain-Driven Design with Service Layer"
+  },
+  "namespace_structure": {
+    "root_namespace": "MistrFachman",
+    "psr4_mapping": {
+      "MistrFachman\\": "src/App/"
+    },
+    "autoloader_path": "lib/autoload.php",
+    "bootstrap_file": "src/bootstrap.php"
+  },
+  "directory_structure": {
+    "domains": [
+      {
+        "name": "Base",
+        "path": "src/App/Base/",
+        "purpose": "Abstract base classes and common patterns",
+        "files": [
+          "AdminCardRendererBase.php",
+          "AdminControllerBase.php",
+          "FieldServiceBase.php",
+          "FormHandlerBase.php",
+          "PointsHandlerBase.php",
+          "PostTypeManagerBase.php"
+        ]
+      },
+      {
+        "name": "Faktury",
+        "path": "src/App/Faktury/",
+        "purpose": "Invoice management domain",
+        "files": [
+          "AdminController.php",
+          "FakturaFieldService.php",
+          "FakturyCardRenderer.php",
+          "Manager.php",
+          "NewFakturyFormHandler.php",
+          "PointsHandler.php",
+          "ValidationService.php"
+        ]
+      },
+      {
+        "name": "Realizace",
+        "path": "src/App/Realizace/",
+        "purpose": "Project realization domain",
+        "files": [
+          "AdminController.php",
+          "DebugValidator.php",
+          "Manager.php",
+          "NewRealizaceFormHandler.php",
+          "PointsHandler.php",
+          "RealizaceCardRenderer.php",
+          "RealizaceFieldService.php",
+          "TaxonomyManager.php"
+        ]
+      },
+      {
+        "name": "Services",
+        "path": "src/App/Services/",
+        "purpose": "Centralized service layer",
+        "files": [
+          "AdminAssetManager.php",
+          "DomainConfigurationService.php",
+          "DualPointsManager.php",
+          "ErrorHandlingService.php",
+          "FieldAccessValidator.php",
+          "PointsCalculationService.php",
+          "ProductService.php",
+          "StatusManager.php",
+          "UserDetectionService.php",
+          "ValidationRulesRegistry.php"
+        ]
+      },
+      {
+        "name": "Shortcodes",
+        "path": "src/App/Shortcodes/",
+        "purpose": "WordPress shortcode components",
+        "files": [
+          "ShortcodeBase.php",
+          "ShortcodeManager.php",
+          "ProductGridShortcode.php",
+          "UserHeaderShortcode.php",
+          "CF7FormTagBase.php"
+        ]
+      },
+      {
+        "name": "Users",
+        "path": "src/App/Users/",
+        "purpose": "User management and registration",
+        "files": [
+          "Manager.php",
+          "RoleManager.php",
+          "RegistrationConfig.php",
+          "AresApiClient.php",
+          "BusinessDataManager.php"
+        ]
+      },
+      {
+        "name": "MyCred",
+        "path": "src/App/MyCred/",
+        "purpose": "E-commerce and points integration",
+        "files": [
+          "ECommerce/Manager.php",
+          "ECommerce/BalanceCalculator.php",
+          "ECommerce/CartCalculator.php"
+        ]
+      }
+    ]
+  },
+  "base_class_patterns": {
+    "PostTypeManagerBase": {
+      "extends": null,
+      "namespace": "MistrFachman\\Base",
+      "abstract_methods": [
+        "getPostType(): string",
+        "getCalculatedPoints(int $post_id = 0): int",
+        "getPointsFieldSelector(): string",
+        "getDomainDisplayName(): string"
+      ],
+      "concrete_methods": [
+        "init_common_hooks(): void",
+        "handle_post_save(int $post_id, \\WP_Post $post): void",
+        "handle_status_transition(string $new_status, string $old_status, \\WP_Post $post): void",
+        "populate_default_points(int $post_id, \\WP_Post $post, bool $update = false): void",
+        "get_domain_config(): array"
+      ],
+      "purpose": "Base class for domain-specific post type managers"
+    },
+    "AdminControllerBase": {
+      "extends": null,
+      "namespace": "MistrFachman\\Base",
+      "abstract_methods": [
+        "getPostType(): string",
+        "getWordPressPostType(): string",
+        "getDomainDisplayName(): string",
+        "getCalculatedPoints(int $post_id = 0): int",
+        "getPointsFieldSelector(): string",
+        "getRejectionReasonFieldSelector(): string",
+        "run_pre_publish_validation(\\WP_Post $post): array",
+        "render_user_profile_card(\\WP_User $user): void",
+        "process_approve_action(int $post_id): void",
+        "process_reject_action(int $post_id, \\WP_Post $post, string $rejection_reason = ''): void"
+      ],
+      "concrete_methods": [
+        "init_common_hooks(): void",
+        "add_admin_columns(array $columns): array",
+        "render_custom_columns(string $column, int $post_id): void",
+        "handle_quick_action_ajax(): void",
+        "handle_bulk_approve_ajax(): void",
+        "handle_editor_reject_ajax(): void",
+        "get_localized_data(): array"
+      ],
+      "purpose": "Base class for WordPress admin interface controllers"
+    },
+    "FieldServiceBase": {
+      "extends": null,
+      "namespace": "MistrFachman\\Base",
+      "abstract_methods": [],
+      "concrete_methods": [
+        "getFieldValue(string $field_selector, int $post_id): mixed",
+        "setFieldValueInternal(string $field_selector, int $post_id, mixed $value): bool",
+        "setFieldValue(string $field_selector, int $post_id, mixed $value): bool"
+      ],
+      "purpose": "Base class for ACF field access with meta fallback"
+    },
+    "ShortcodeBase": {
+      "extends": null,
+      "namespace": "MistrFachman\\Shortcodes",
+      "abstract_methods": [
+        "get_tag(): string",
+        "render(array $attributes, ?string $content = null): string"
+      ],
+      "concrete_methods": [
+        "handle_shortcode(array $attributes = [], ?string $content = null): string",
+        "validate_attributes(array $attributes): array",
+        "sanitize_attributes(array $attributes): array",
+        "render_error(string $error_message): string",
+        "load_template(string $template_name, array $data = []): string",
+        "register_ajax_hooks(): void"
+      ],
+      "purpose": "Base class for WordPress shortcode components"
+    }
+  },
+  "service_patterns": {
+    "dependency_injection": {
+      "pattern": "Constructor injection with optional dependencies",
+      "example": "Manager::get_instance(?UserDetectionService $user_detection_service = null)",
+      "singleton_pattern": "Static instance with DI on first call"
+    },
+    "configuration_service": {
+      "class": "DomainConfigurationService",
+      "pattern": "Centralized configuration registry",
+      "methods": [
+        "getDomainConfig(string $domain_key): array",
+        "getAssetConfig(string $domain_key): array",
+        "getStatusConfig(string $domain_key): array",
+        "getFieldSelector(string $domain_key, string $field_key): string"
+      ]
+    },
+    "service_locator": {
+      "bootstrap_file": "src/bootstrap.php",
+      "pattern": "Service registry with shared instances",
+      "services": [
+        "UserDetectionService",
+        "RoleManager",
+        "AresApiClient",
+        "ZebricekDataService",
+        "ProductService"
+      ]
+    }
+  },
+  "naming_conventions": {
+    "php_classes": {
+      "pattern": "PascalCase",
+      "examples": [
+        "AdminController",
+        "PostTypeManagerBase",
+        "UserDetectionService"
+      ]
+    },
+    "php_methods": {
+      "pattern": "camelCase",
+      "examples": [
+        "getPostType",
+        "handleQuickAction",
+        "initCommonHooks"
+      ]
+    },
+    "php_constants": {
+      "pattern": "SCREAMING_SNAKE_CASE",
+      "examples": [
+        "PROGRESS_INITIAL_REGISTRATION",
+        "REWARD_REGISTRATION_COMPLETED"
+      ]
+    },
+    "javascript_functions": {
+      "pattern": "camelCase",
+      "examples": [
+        "setupFileUpload",
+        "handleFormSuccess",
+        "initializeModules"
+      ]
+    },
+    "javascript_classes": {
+      "pattern": "PascalCase",
+      "examples": [
+        "ThemeApp",
+        "AdminManagementBase"
+      ]
+    },
+    "css_classes": {
+      "pattern": "kebab-case with BEM methodology",
+      "examples": [
+        "mycred-shortcode",
+        "status-indicator",
+        "mistr-realizace-disabled"
+      ]
+    }
+  },
+  "scss_organization": {
+    "main_file": "src/scss/main.scss",
+    "structure": {
+      "base": {
+        "path": "src/scss/base/",
+        "files": [
+          "_variables.scss",
+          "_mixins.scss",
+          "_reset.scss",
+          "_common.scss"
+        ]
+      },
+      "layout": {
+        "path": "src/scss/layout/",
+        "files": [
+          "_grid.scss",
+          "_inputs.scss"
+        ]
+      },
+      "components": {
+        "path": "src/scss/components/",
+        "files": [
+          "_file-upload.scss",
+          "_woocommerce.scss",
+          "_business-data-modal.scss",
+          "_cf7-relational-selects.scss",
+          "_registration-form.scss"
+        ]
+      },
+      "admin": {
+        "path": "src/scss/components/admin/",
+        "files": [
+          "_admin-mixins.scss",
+          "_base.scss",
+          "_layout.scss",
+          "_cards.scss",
+          "_status.scss",
+          "_summary.scss"
+        ]
+      },
+      "utilities": {
+        "path": "src/scss/utilities/",
+        "files": [
+          "_helpers.scss"
+        ]
+      }
+    },
+    "design_tokens": {
+      "colors": {
+        "primary": "#DB0626",
+        "primary_dark": "#D20014",
+        "success": "#28a745",
+        "danger": "#D32F2F",
+        "gray_dark": "#2B2B2B",
+        "gray_medium": "#666666",
+        "gray_light": "#999999",
+        "gray_border": "#CCCCCC"
+      },
+      "spacing": {
+        "xs": "5px",
+        "sm": "10px",
+        "md": "20px",
+        "lg": "30px",
+        "xl": "40px",
+        "2xl": "60px",
+        "3xl": "80px"
+      },
+      "typography": {
+        "font_primary": "'Avenir Next', sans-serif",
+        "font_secondary": "'General Sans', sans-serif",
+        "font_sizes": {
+          "xs": "12px",
+          "sm": "14px",
+          "base": "16px",
+          "lg": "18px",
+          "xl": "20px",
+          "2xl": "24px",
+          "3xl": "30px",
+          "hero": "48px"
+        }
+      }
+    }
+  },
+  "javascript_organization": {
+    "main_file": "src/js/main.js",
+    "architecture": "ES6 Modules with functional patterns",
+    "entry_points": {
+      "main": "./src/js/main.js",
+      "admin": "./src/js/admin.js",
+      "cf7-components": "./src/js/cf7-alpine-components.js"
+    },
+    "feature_modules": {
+      "path": "src/js/features/",
+      "pattern": "setupFunction() approach with isolated state",
+      "modules": [
+        "access-control/index.js",
+        "admin/base/AdminManagementBase.js",
+        "ares/handler.js",
+        "file-upload/index.js",
+        "zebricek/index.js"
+      ]
+    },
+    "utilities": {
+      "path": "src/js/utils/",
+      "files": [
+        "api.js",
+        "initialization-manager.js",
+        "logger.js",
+        "validation.js"
+      ]
+    }
+  },
+  "build_system": {
+    "css_pipeline": {
+      "preprocessor": "Sass/SCSS",
+      "postprocessor": "PostCSS with Autoprefixer",
+      "output": "style.css (theme root)",
+      "development": "npm run watch:css",
+      "production": "npm run build:css:prod"
+    },
+    "js_pipeline": {
+      "bundler": "WordPress Scripts (Webpack)",
+      "output_path": "build/js/",
+      "development": "npm run watch:js",
+      "production": "npm run build:js"
+    },
+    "tailwind_integration": {
+      "separate_file": "tailwind.css",
+      "source": "src/tailwind.css",
+      "frontend_only": true
+    }
+  },
+  "template_system": {
+    "admin_templates": {
+      "path": "templates/admin-cards/",
+      "pattern": "MVC separation with template components",
+      "files": [
+        "dashboard-wrapper.php",
+        "post-actions.php",
+        "post-card-compact.php",
+        "post-card-full.php",
+        "stats-header.php",
+        "status-section.php"
+      ]
+    },
+    "domain_templates": {
+      "path": "templates/admin-cards/domain-details/",
+      "files": [
+        "faktura-details.php",
+        "realizace-details.php"
+      ]
+    },
+    "shortcode_templates": {
+      "path": "templates/zebricek/",
+      "pattern": "Component-based rendering",
+      "files": [
+        "leaderboard.php",
+        "position.php",
+        "leaderboard-header.php",
+        "leaderboard-row.php"
+      ]
+    }
+  },
+  "domain_boundaries": {
+    "Realizace": {
+      "post_type": "realization",
+      "wordpress_post_type": "realizace",
+      "responsibilities": [
+        "Project realization management",
+        "File upload handling",
+        "Taxonomy management (construction types, materials)",
+        "CF7 form integration"
+      ]
+    },
+    "Faktury": {
+      "post_type": "invoice",
+      "wordpress_post_type": "faktura",
+      "responsibilities": [
+        "Invoice management",
+        "Dynamic points calculation",
+        "Date validation",
+        "Business rule enforcement"
+      ]
+    },
+    "Users": {
+      "responsibilities": [
+        "User registration workflow",
+        "Role management",
+        "ARES API integration",
+        "Business data validation"
+      ]
+    },
+    "MyCred": {
+      "responsibilities": [
+        "E-commerce integration",
+        "Points balance calculation",
+        "Cart management",
+        "Product affordability"
+      ]
+    }
+  },
+  "wordpress_integration": {
+    "hooks": {
+      "initialization": "init (priority 5)",
+      "post_save": "save_post_{post_type}",
+      "status_transition": "transition_post_status",
+      "admin_columns": "manage_{post_type}_posts_columns",
+      "ajax_actions": "wp_ajax_{action_name}"
+    },
+    "custom_post_types": [
+      "realizace",
+      "faktura"
+    ],
+    "user_roles": [
+      "pending_approval",
+      "full_member"
+    ],
+    "capabilities": [
+      "edit_posts",
+      "manage_options"
+    ]
+  },
+  "validation_patterns": {
+    "field_access": {
+      "pattern": "Centralized field services",
+      "example": "RealizaceFieldService::getPoints($post_id)",
+      "compliance_script": "scripts/validate-field-access.php"
+    },
+    "input_sanitization": {
+      "pattern": "WordPress-standard sanitization",
+      "functions": [
+        "sanitize_text_field()",
+        "sanitize_textarea_field()",
+        "wp_verify_nonce()"
+      ]
+    },
+    "acf_integration": {
+      "pattern": "ACF with meta fallback",
+      "example": "get_field() || get_post_meta()"
+    }
+  },
+  "error_handling": {
+    "logging": {
+      "function": "mycred_debug()",
+      "levels": ["error", "warning", "info", "verbose"],
+      "rate_limiting": true
+    },
+    "admin_notices": {
+      "pattern": "Transient-based validation errors",
+      "hook": "admin_notices"
+    },
+    "exception_handling": {
+      "pattern": "Try-catch with graceful degradation",
+      "user_facing": "Generic error messages for non-admins"
+    }
+  },
+  "performance_optimization": {
+    "caching": {
+      "user_posts": "Static cache in methods",
+      "zebricek_data": "Transient cache with collision prevention"
+    },
+    "lazy_loading": {
+      "services": "Singleton pattern with DI",
+      "modules": "Conditional initialization"
+    },
+    "database": {
+      "prepared_statements": "All queries use wpdb->prepare()",
+      "query_optimization": "Selective field loading"
+    }
+  },
+  "security_patterns": {
+    "nonce_verification": {
+      "pattern": "Unique nonces per action",
+      "example": "wp_verify_nonce($nonce, 'action_name_' . $post_id)"
+    },
+    "capability_checks": {
+      "pattern": "Role-based access control",
+      "example": "current_user_can('edit_posts')"
+    },
+    "input_validation": {
+      "pattern": "Validation before sanitization",
+      "example": "ValidationRulesRegistry::validate()"
+    }
+  }
+}

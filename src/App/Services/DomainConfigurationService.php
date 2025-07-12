@@ -59,7 +59,6 @@ class DomainConfigurationService
     {
         self::$configurations['realization'] = [
             'post_type' => 'realization',
-            'wordpress_post_type' => 'realizace',
             'display_name' => 'Realizace',
             'default_points' => 2500,
             'status_config' => [
@@ -103,7 +102,6 @@ class DomainConfigurationService
     {
         self::$configurations['invoice'] = [
             'post_type' => 'invoice',
-            'wordpress_post_type' => 'faktura',
             'display_name' => 'Faktura',
             'default_points' => 100, // Different default for invoices
             'calculation_rule' => 'floor_division_10', // Dynamic calculation rule
@@ -180,7 +178,7 @@ class DomainConfigurationService
             'localization_object_name' => $config['asset_config']['localization_object_name'],
             'admin_screen_ids' => $config['asset_config']['admin_screen_ids'],
             'post_type' => $config['post_type'],
-            'wordpress_post_type' => $config['wordpress_post_type'],
+            'wordpress_post_type' => $config['post_type'],
             'domain_localization_data' => [
                 'field_names' => $config['field_selectors'],
                 'default_values' => [
@@ -298,7 +296,7 @@ class DomainConfigurationService
     public static function getWordPressPostType(string $domain_key): string
     {
         $config = self::getDomainConfig($domain_key);
-        return $config['wordpress_post_type'];
+        return $config['post_type'];
     }
 
     /**

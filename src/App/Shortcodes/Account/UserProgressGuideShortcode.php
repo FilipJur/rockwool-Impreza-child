@@ -9,6 +9,7 @@ use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
 use MistrFachman\Services\UserService;
 use MistrFachman\Services\DomainConfigurationService;
+use MistrFachman\Services\ProjectStatusService;
 
 /**
  * User Progress Guide Shortcode Component
@@ -33,6 +34,18 @@ class UserProgressGuideShortcode extends ShortcodeBase
         'show_for_experienced' => 'false',
         'class' => ''
     ];
+
+    private ProjectStatusService $project_status_service;
+
+    public function __construct(
+        Manager $ecommerce_manager,
+        ProductService $product_service,
+        UserService $user_service,
+        ProjectStatusService $project_status_service
+    ) {
+        parent::__construct($ecommerce_manager, $product_service, $user_service);
+        $this->project_status_service = $project_status_service;
+    }
 
     public function get_tag(): string
     {
@@ -104,27 +117,29 @@ class UserProgressGuideShortcode extends ShortcodeBase
         $registration_completed = ($user_status === 'full_member');
         $registration_progress = DomainConfigurationService::getUserProgressPercentage($user_status);
 
-        // Use cached project data to avoid repeated database queries
-        $project_data = $this->get_cached_user_projects($user_id);
+        // Use ProjectStatusService for project data (includes rejected status handling)
+        $project_data = $this->project_status_service->getCachedUserProjects($user_id);
 
         // Check first project upload (only for full members)
         $first_project_uploaded = false;
         $project_progress = 0;
-        $project_status = 'none'; // none, draft, pending, published
+        $project_status = 'none'; // none, pending, published, rejected
 
         if ($user_status === 'full_member') {
             $first_project_uploaded = $project_data['has_uploaded'];
             $project_progress = $first_project_uploaded ? DomainConfigurationService::PROGRESS_PROJECT_UPLOADED : $project_data['progress_percentage'];
 
-            // Determine granular project status
-            if ($project_data['has_uploaded']) {
-                $project_status = $project_data['has_published'] ? 'published' : 'pending';
+            // Determine granular project status with rejected handling
+            if ($project_data['has_published']) {
+                $project_status = 'published';
+            } elseif ($project_data['has_uploaded']) {
+                // Check if has rejected projects
+                $project_status = $project_data['has_rejected'] ? 'rejected' : 'pending';
             } elseif ($project_data['progress_percentage'] > 0) {
                 $project_status = 'draft';
             } else {
                 $project_status = 'none';
             }
-
         }
 
         return [
@@ -144,114 +159,39 @@ class UserProgressGuideShortcode extends ShortcodeBase
     }
 
     /**
-     * Get cached user project data to avoid repeated database queries
+     * @deprecated Use ProjectStatusService::getCachedUserProjects() instead
+     * Kept for backward compatibility
      */
     private function get_cached_user_projects(int $user_id): array
     {
-        $cache_key = "user_projects_status_{$user_id}";
-
-        // Clear cache if in debug mode
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            delete_transient($cache_key);
-        }
-
-        $cached_data = get_transient($cache_key);
-        if ($cached_data !== false) {
-            return $cached_data;
-        }
-
-        $data = [
-            'has_uploaded' => $this->has_uploaded_first_project($user_id),
-            'has_published' => $this->has_published_first_project($user_id),
-            'progress_percentage' => $this->get_project_progress_percentage($user_id)
-        ];
-
-        // Cache for 5 minutes
-        set_transient($cache_key, $data, 300);
-
-        return $data;
+        return $this->project_status_service->getCachedUserProjects($user_id);
     }
 
     /**
-     * Check if user has uploaded first project (including realizace and faktury)
+     * @deprecated Use ProjectStatusService::hasUploadedFirstProject() instead
+     * Kept for backward compatibility
      */
     private function has_uploaded_first_project(int $user_id): bool
     {
-        $realizace = get_posts([
-            'post_type' => 'realizace',
-            'author' => $user_id,
-            'post_status' => ['publish', 'pending'],
-            'posts_per_page' => 1,
-            'fields' => 'ids'
-        ]);
-
-        $faktury = get_posts([
-            'post_type' => 'faktura',
-            'author' => $user_id,
-            'post_status' => ['publish', 'pending'],
-            'posts_per_page' => 1,
-            'fields' => 'ids'
-        ]);
-
-        return !empty($realizace) || !empty($faktury);
+        return $this->project_status_service->hasUploadedFirstProject($user_id);
     }
 
     /**
-     * Check if user has published first project (including realizace and faktury)
+     * @deprecated Use ProjectStatusService::hasPublishedFirstProject() instead
+     * Kept for backward compatibility
      */
     private function has_published_first_project(int $user_id): bool
     {
-        $realizace = get_posts([
-            'post_type' => 'realizace',
-            'author' => $user_id,
-            'post_status' => 'publish',
-            'posts_per_page' => 1,
-            'fields' => 'ids',
-            'suppress_filters' => true
-        ]);
-
-        $faktury = get_posts([
-            'post_type' => 'faktura',
-            'author' => $user_id,
-            'post_status' => 'publish',
-            'posts_per_page' => 1,
-            'fields' => 'ids',
-            'suppress_filters' => true
-        ]);
-
-
-        return !empty($realizace) || !empty($faktury);
+        return $this->project_status_service->hasPublishedFirstProject($user_id);
     }
 
     /**
-     * Get project upload progress percentage
+     * @deprecated Use ProjectStatusService::getProjectProgressPercentage() instead
+     * Kept for backward compatibility
      */
     private function get_project_progress_percentage(int $user_id): int
     {
-        // Check if user has any draft projects (realizace or faktury)
-        $realizace_drafts = get_posts([
-            'post_type' => 'realizace',
-            'author' => $user_id,
-            'post_status' => 'draft',
-            'posts_per_page' => 1,
-            'fields' => 'ids'
-        ]);
-
-        $faktury_drafts = get_posts([
-            'post_type' => 'faktura',
-            'author' => $user_id,
-            'post_status' => 'draft',
-            'posts_per_page' => 1,
-            'fields' => 'ids'
-        ]);
-
-        // If user has drafts, they're 50% there
-        if (!empty($realizace_drafts) || !empty($faktury_drafts)) {
-            return 50;
-        }
-
-        // Otherwise, no progress yet
-        return 0;
+        return $this->project_status_service->getProjectProgressPercentage($user_id);
     }
 
     /**

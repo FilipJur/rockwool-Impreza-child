@@ -8,6 +8,7 @@ use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
 use MistrFachman\Services\UserService;
 use MistrFachman\Services\ZebricekDataService;
+use MistrFachman\Services\ProjectStatusService;
 
 /**
  * Shortcode Manager Class
@@ -30,18 +31,21 @@ class ShortcodeManager {
     private ProductService $product_service;
     private UserService $user_service;
     private ZebricekDataService $zebricek_service;
+    private ProjectStatusService $project_status_service;
     private array $registered_shortcodes = [];
 
     public function __construct(
         Manager $ecommerce_manager,
         ProductService $product_service,
         UserService $user_service,
-        ZebricekDataService $zebricek_service
+        ZebricekDataService $zebricek_service,
+        ProjectStatusService $project_status_service
     ) {
         $this->ecommerce_manager = $ecommerce_manager;
         $this->product_service = $product_service;
         $this->user_service = $user_service;
         $this->zebricek_service = $zebricek_service;
+        $this->project_status_service = $project_status_service;
     }
 
     /**
@@ -180,10 +184,18 @@ class ShortcodeManager {
 
                 // Only register concrete classes that extend ShortcodeBase
                 if (!$reflection->isAbstract() && $reflection->isSubclassOf(ShortcodeBase::class)) {
-                    // Special handling for shortcodes that need ZebricekDataService
-                    if (str_contains($class_name, 'Zebricek') || str_contains($class_name, 'Account')) {
+                    // Special handling for different shortcode dependency needs
+                    if (str_contains($class_name, 'UserProgressGuide')) {
+                        // UserProgressGuideShortcode needs ProjectStatusService
+                        $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service, $this->project_status_service);
+                    } elseif (str_contains($class_name, 'MyRealizace') || str_contains($class_name, 'MyFaktury')) {
+                        // These shortcodes only need ProjectStatusService
+                        $shortcode_instance = new $class_name($this->project_status_service);
+                    } elseif (str_contains($class_name, 'Zebricek') || str_contains($class_name, 'Account')) {
+                        // Other Account shortcodes need ZebricekDataService
                         $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service, $this->zebricek_service);
                     } else {
+                        // Default shortcodes
                         $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service);
                     }
                     $this->register_shortcode($shortcode_instance);

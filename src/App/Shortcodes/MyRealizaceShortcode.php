@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MistrFachman\Shortcodes;
 
+use MistrFachman\Services\ProjectStatusService;
+use MistrFachman\Services\DomainConfigurationService;
+
 /**
  * My Realizace Shortcode - User Submission View
  *
@@ -29,6 +32,13 @@ class MyRealizaceShortcode extends ShortcodeBase
 		'show_content' => 'false',
 		'enable_pagination' => 'true',
 	];
+
+	private ProjectStatusService $project_status_service;
+
+	public function __construct(ProjectStatusService $project_status_service)
+	{
+		$this->project_status_service = $project_status_service;
+	}
 
 	/**
 	 * Register AJAX hooks for this shortcode
@@ -91,9 +101,9 @@ class MyRealizaceShortcode extends ShortcodeBase
 	private function get_query_args(array $attributes, int $user_id, int $offset = 0): array
 	{
 		return [
-			'post_type' => 'realization',
+			'post_type' => DomainConfigurationService::getWordPressPostType('realization'),
 			'author' => $user_id,
-			'post_status' => ['pending', 'publish', 'rejected'],
+			'post_status' => ProjectStatusService::getAllValidStatuses(),
 			'posts_per_page' => (int) $attributes['posts_per_page'],
 			'offset' => $offset,
 			'orderby' => 'date',
@@ -253,8 +263,8 @@ class MyRealizaceShortcode extends ShortcodeBase
 	{
 		$post_id = get_the_ID();
 		$status = get_post_status();
-		$status_label = $this->get_status_label($status);
-		$status_colors = $this->get_status_colors($status);
+		$status_label = ProjectStatusService::getStatusLabel($status);
+		$status_colors = ProjectStatusService::getStatusColors($status);
 		$title = get_the_title();
 		$date = get_the_date();
 		$column_span = $this->get_post_column_span($attributes);
@@ -301,53 +311,9 @@ class MyRealizaceShortcode extends ShortcodeBase
 	}
 
 	/**
-	 * Get localized status label
-	 *
-	 * @param string $status Post status
-	 * @return string Localized label
+	 * @deprecated Status methods moved to ProjectStatusService
+	 * Use ProjectStatusService::getStatusLabel() and ProjectStatusService::getStatusColors() instead
 	 */
-	private function get_status_label(string $status): string
-	{
-		return match ($status) {
-			'publish' => 'Schváleno',
-			'pending' => 'Čeká na schválení',
-			'rejected' => 'Odmítnuto',
-			'draft' => 'Koncept',
-			default => $status
-		};
-	}
-
-	/**
-	 * Get Tailwind colors for status
-	 *
-	 * @param string $status Post status
-	 * @return array Border and badge color classes
-	 */
-	private function get_status_colors(string $status): array
-	{
-		return match ($status) {
-			'publish' => [
-				'border' => 'border-green-200',
-				'badge' => 'bg-green-100 text-green-800'
-			],
-			'pending' => [
-				'border' => 'border-yellow-200',
-				'badge' => 'bg-yellow-100 text-yellow-800'
-			],
-			'rejected' => [
-				'border' => 'border-red-200',
-				'badge' => 'bg-red-100 text-red-800'
-			],
-			'draft' => [
-				'border' => 'border-gray-200',
-				'badge' => 'bg-gray-100 text-gray-800'
-			],
-			default => [
-				'border' => 'border-gray-200',
-				'badge' => 'bg-gray-100 text-gray-800'
-			]
-		};
-	}
 
 	/**
 	 * Get dynamic column span class for posts
