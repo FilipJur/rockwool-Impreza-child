@@ -69,4 +69,16 @@ class PointsHandler extends PointsHandlerBase {
     protected function getMyCredReference(): string {
         return 'approval_of_realization';
     }
+
+    /**
+     * Get the awarding hook configuration for Realizace domain
+     * Uses wp_after_insert_post which runs after all meta operations complete
+     */
+    protected function get_awarding_hook(): array {
+        return [
+            'name' => 'wp_after_insert_post',
+            'priority' => 10,
+            'accepted_args' => 4
+        ];
+    }
 }

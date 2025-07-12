@@ -79,23 +79,153 @@ abstract class PointsHandlerBase {
     abstract protected function getMyCredReference(): string;
 
     /**
-     * Initialize centralized hooks for state-aware idempotent points system
-     * Gemini Solution: Combines status transitions with field update detection
+     * Get the awarding hook configuration for this domain
+     * Subclasses must define their preferred hook for awarding points
+     * 
+     * @return array{name: string, priority: int, accepted_args: int}
      */
-    public function init_hooks(): void {
-        // POST-INSERT HOOK - runs AFTER all post meta (including ACF) is completely saved
-        // This eliminates the race condition by ensuring ACF calculations are finished
-        add_action('wp_after_insert_post', [$this, 'handle_post_after_insert'], 10, 4);
+    abstract protected function get_awarding_hook(): array;
+
+    /**
+     * Get the revocation hook configuration for this domain
+     * Default: transition_post_status, but subclasses can override
+     * 
+     * @return array{name: string, priority: int, accepted_args: int}
+     */
+    protected function get_revocation_hook(): array {
+        return [
+            'name' => 'transition_post_status',
+            'priority' => 10,
+            'accepted_args' => 3
+        ];
+    }
+
+    /**
+     * Initialize hooks using Template Method Pattern
+     * Subclasses define WHAT hooks to use, base class handles HOW to use them
+     * This method is now FINAL to prevent bypassing
+     */
+    final public function init_hooks(): void {
+        // Get awarding hook configuration from subclass
+        $awarding_hook = $this->get_awarding_hook();
+        add_action(
+            $awarding_hook['name'], 
+            [$this, 'handle_awarding_trigger'], 
+            $awarding_hook['priority'], 
+            $awarding_hook['accepted_args']
+        );
         
-        // Deletion handling
+        // Get revocation hook configuration (with default)
+        $revocation_hook = $this->get_revocation_hook();
+        add_action(
+            $revocation_hook['name'], 
+            [$this, 'handle_revocation_trigger'], 
+            $revocation_hook['priority'], 
+            $revocation_hook['accepted_args']
+        );
+        
+        // Deletion handling remains consistent
         add_action('before_delete_post', [$this, 'handle_permanent_deletion'], 5);
         
-        DebugLogger::logPointsFlow('base_hooks_initialized', $this->getPostType(), 0, [
-            'hooks' => ['wp_after_insert_post at priority 10', 'before_delete_post at priority 5'],
-            'removed_hooks' => ['save_post_* (race condition)', 'transition_post_status (race condition)'],
-            'solution' => 'wp_after_insert_post - runs after ALL meta operations complete',
-            'source' => 'PointsHandlerBase::init_hooks (Final race condition fix)'
+        DebugLogger::logPointsFlow('template_method_hooks_initialized', $this->getPostType(), 0, [
+            'awarding_hook' => $awarding_hook,
+            'revocation_hook' => $revocation_hook,
+            'deletion_hook' => ['name' => 'before_delete_post', 'priority' => 5],
+            'pattern' => 'Template Method Pattern - subclass defines hooks, base class implements logic',
+            'source' => 'PointsHandlerBase::init_hooks (Template Method refactor)'
         ]);
+    }
+
+    /**
+     * Unified awarding trigger handler - routes different hook signatures
+     * Extracts post_id from various hook argument patterns and delegates to core logic
+     */
+    public function handle_awarding_trigger(...$args): void {
+        // Extract post_id based on hook type
+        $hook_name = current_action();
+        $post_id = 0;
+        $post = null;
+        
+        // Handle different hook signatures
+        if ($hook_name === 'wp_after_insert_post') {
+            // Signature: int $post_id, WP_Post $post, bool $update, ?WP_Post $post_before
+            $post_id = $args[0] ?? 0;
+            $post = $args[1] ?? null;
+            $update = $args[2] ?? false;
+            $post_before = $args[3] ?? null;
+        } elseif ($hook_name === 'acf/save_post') {
+            // Signature: int|string $post_id
+            $post_id = is_numeric($args[0]) ? (int)$args[0] : 0;
+            $post = $post_id > 0 ? get_post($post_id) : null;
+            $update = true; // ACF save is always an update context
+            $post_before = null; // Not available in ACF context
+        } elseif ($hook_name === 'save_post') {
+            // Signature: int $post_id, WP_Post $post, bool $update
+            $post_id = $args[0] ?? 0;
+            $post = $args[1] ?? null;
+            $update = $args[2] ?? false;
+            $post_before = null; // Not available in save_post
+        }
+        
+        // Validate we have necessary data
+        if (!$post_id || !$post) {
+            return;
+        }
+        
+        // Delegate to existing logic (which already handles post type checks)
+        $this->handle_post_after_insert($post_id, $post, $update, $post_before);
+    }
+
+    /**
+     * Unified revocation trigger handler - routes different hook signatures
+     * Handles both transition_post_status and other potential revocation hooks
+     */
+    public function handle_revocation_trigger(...$args): void {
+        $hook_name = current_action();
+        
+        if ($hook_name === 'transition_post_status') {
+            // Signature: string $new_status, string $old_status, WP_Post $post
+            $new_status = $args[0] ?? '';
+            $old_status = $args[1] ?? '';
+            $post = $args[2] ?? null;
+            
+            if (!$post || !is_a($post, 'WP_Post')) {
+                return;
+            }
+            
+            // Guard for correct post type
+            if ($post->post_type !== $this->getWordPressPostType()) {
+                return;
+            }
+            
+            // Only handle revocations (publish -> other status)
+            if ($old_status === 'publish' && $new_status !== 'publish') {
+                $user_id = (int) $post->post_author;
+                if (!$user_id || !get_userdata($user_id)) {
+                    return;
+                }
+                
+                $last_awarded_meta_key = $this->getLastAwardedPointsMetaKey();
+                $last_awarded_points = (int) get_post_meta($post->ID, $last_awarded_meta_key, true);
+                
+                if ($last_awarded_points > 0) {
+                    DebugLogger::logAssignment($this->getPostType(), $post->ID, [
+                        'operation' => 'unified_revocation_trigger',
+                        'old_status' => $old_status,
+                        'new_status' => $new_status,
+                        'points_to_revoke' => $last_awarded_points,
+                        'user_id' => $user_id,
+                        'source' => 'PointsHandlerBase::handle_revocation_trigger'
+                    ]);
+                    
+                    $this->revoke_points($post->ID, $user_id, $new_status);
+                    
+                    // Reset state tracking
+                    update_post_meta($post->ID, $last_awarded_meta_key, 0);
+                }
+            }
+        }
+        // Add other revocation hook handling here if needed in the future
     }
 
     /**

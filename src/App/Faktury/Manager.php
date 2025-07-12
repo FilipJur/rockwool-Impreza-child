@@ -91,7 +91,12 @@ class Manager extends PostTypeManagerBase {
         
         // Initialize points handler for myCred integration
         $points_handler = new PointsHandler();
-        $points_handler->init_hooks();
+        $points_handler->init_hooks(); // Base class hooks (awarding/revocation/deletion)
+        
+        // Check if this domain has additional hooks to register
+        if (method_exists($points_handler, 'init_domain_hooks')) {
+            $points_handler->init_domain_hooks(); // Domain-specific hooks (calculation)
+        }
         
         \MistrFachman\Services\DebugLogger::logPointsFlow('domain_initialized', 'invoice', 0, [
             'message' => 'Faktury domain fully initialized',
