@@ -58,8 +58,8 @@ jobs:
             cp -r build/js deploy-package/build/
           fi
           
-          # Copy PHP application and core files
-          cp -r lib src templates includes acf-json deploy-package/ 2>/dev/null || true
+          # Copy PHP application and core files (exclude lib directory)
+          cp -r src templates includes acf-json deploy-package/ 2>/dev/null || true
           cp functions.php deploy-package/
           
           # Copy any additional theme files (style.css, index.php, etc.)
@@ -80,6 +80,7 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
+            **/lib/**
             **/src/js/**
             **/src/scss/**
             **/build/css/**
