@@ -364,6 +364,7 @@ class DomainConfigurationService
      * User workflow reward constants
      */
     public const REWARD_REGISTRATION_COMPLETED = 1000;
+    public const REWARD_FIRST_PROJECT_UPLOADED = 2500;
 
     /**
      * Get user workflow progress percentage
@@ -396,6 +397,8 @@ class DomainConfigurationService
         switch ($milestone) {
             case 'registration_completed':
                 return self::REWARD_REGISTRATION_COMPLETED;
+            case 'first_project_uploaded':
+                return self::REWARD_FIRST_PROJECT_UPLOADED;
             default:
                 return 0;
         }

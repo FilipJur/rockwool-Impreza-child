@@ -14,7 +14,8 @@
         "composer/installers": "^2.1",
         "wpackagist-plugin/user-role-editor": "*",
         "wpackagist-plugin/members": "*",
-        "wpackagist-plugin/login-with-phone-number": "^1.8"
+        "wpackagist-plugin/login-with-phone-number": "^1.8",
+        "nikic/php-parser": "^5.5"
     },
     "autoload": {
         "psr-4": {

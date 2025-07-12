@@ -30,7 +30,7 @@ wp-config-local.php
 .vscode/
 .idea/
 .cursor/
-.claude/
+
 *.swp
 *.swo
 *~
@@ -86,3 +86,8 @@ repomix-output.txt
 debug*.log
 *.log.*.bak
 docs/subagent-research-output.md
+.claude/legacy-system/
+.claude
+/docs
+!docs/claude.md
+.gitignore

@@ -1,0 +1,251 @@
+// User Progress Guide Component - Horizontal Layout with Progress Bars
+// Following Figma design specifications exactly
+@use '../base/variables' as *;
+@use '../base/mixins' as *;
+
+.user-progress-guide {
+  // Ensure no max-width constraints - should span full 1440px
+  width: 100%;
+  max-width: none;
+  
+  // Main title styling - Figma: Avenir Next 600, 30px, 1.2em line height, black
+  .progress-guide-title {
+    font-family: $font-primary;
+    font-weight: $font-weight-semibold;
+    font-size: $font-size-3xl;
+    line-height: 1.2;
+    color: $color-black;
+    margin-bottom: 0;
+  }
+
+  // Progress steps container - Figma: horizontal layout with 13px gaps
+  .progress-steps-container {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    width: 100%;
+    
+    // Step wrapper - contains badge and title inline
+    .progress-step-wrapper {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0; // Prevent shrinking
+      min-width: 0;
+    }
+    
+    // Progress bar container - fills space between steps
+    .progress-bar-container {
+      flex: 1; // Fill available space
+      display: flex;
+      align-items: center;
+      height: 4px;
+      min-width: 50px; // Minimum width for proper appearance
+      
+      .progress-bar {
+        width: 100%;
+        height: 4px;
+        transition: background-color $transition-base;
+        
+        // Default pending state - gray (#DADADA)
+        background-color: #DADADA;
+        
+        // Completed state - red (#DB0626)
+        &.completed {
+          background-color: $color-primary;
+        }
+        
+        // In-progress state - light pink (#FDF3F4)
+        &.in-progress {
+          background-color: #FDF3F4;
+        }
+      }
+    }
+  }
+
+  // Step badge styling - Figma: Different states with specific colors
+  .step-badge-completed {
+    // Completed state - red background (#DB0626), white text
+    background-color: $color-primary;
+    color: $color-white;
+    width: 127px;
+    height: 40px;
+    padding: 8px 16px 8px 8px;
+    font-family: $font-primary;
+    font-weight: $font-weight-bold;
+    font-size: $font-size-sm;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap; // Prevent text wrapping
+    opacity: 1;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+  }
+
+  .step-badge-in-progress {
+    // In-progress state - light pink background (#FDF3F4), black text
+    background-color: #FDF3F4;
+    color: $color-black;
+    width: 143px;
+    height: 40px;
+    padding: 8px 12px 8px 12px;
+    font-family: $font-primary;
+    font-weight: $font-weight-normal;
+    font-size: $font-size-sm;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap; // Prevent text wrapping
+    opacity: 1;
+    
+    svg {
+      width: 25px;
+      height: 25px;
+      flex-shrink: 0;
+    }
+  }
+
+  .step-badge-pending {
+    // Pending state - dashed gray border (#DADADA), gray text
+    border: 1px dashed #DADADA;
+    background-color: transparent;
+    color: $color-gray-medium;
+    padding: 8px 12px;
+    font-family: $font-primary;
+    font-weight: $font-weight-normal;
+    font-size: $font-size-sm;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap; // Prevent text wrapping
+    
+    svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+  }
+
+  .step-badge-future {
+    // Future state - dashed gray border (#DADADA), gray text
+    border: 1px dashed #DADADA;
+    background-color: transparent;
+    color: $color-gray-medium;
+    width: 40px;
+    height: 40px;
+    padding: 8px 12px;
+    font-family: $font-primary;
+    font-weight: $font-weight-normal;
+    font-size: $font-size-sm;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap; // Prevent text wrapping
+    opacity: 1;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+  }
+
+  .step-badge-none {
+    // None state (no project uploaded yet) - dashed border #909090
+    border: 1px dashed #909090;
+    background-color: transparent;
+    color: $color-gray-medium;
+    width: 40px;
+    height: 40px;
+    padding: 8px 12px;
+    font-family: $font-primary;
+    font-weight: $font-weight-normal;
+    font-size: $font-size-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
+    opacity: 1;
+    
+    span {
+      display: none; // Hide text in the small 40x40 box
+    }
+  }
+
+  // Step titles - Specific typography per title type
+  .step-title {
+    font-family: $font-primary; // Avenir Next
+    margin: 0;
+    padding: 0;
+    white-space: nowrap; // Prevent title text wrapping
+    line-height: 24px;
+    letter-spacing: 0%;
+    
+    // Default styling for completed states (Dokončená registrace, Vyberte si první odměny)
+    font-weight: 600; // Demi Bold
+    font-size: 18px;
+    color: $color-primary;
+  }
+  
+  // Specific styling for project status states
+  .step-title--project-pending {
+    font-weight: 400; // Regular
+    font-size: 16px;
+    color: $color-black;
+  }
+  
+  .step-title--project-none {
+    font-weight: 600; // Demi Bold  
+    font-size: 18px;
+    color: $color-black;
+  }
+  
+  // Specific styling for rewards status states  
+  .step-title--rewards-waiting {
+    font-weight: 400; // Regular
+    font-size: 18px;
+    color: $color-black;
+  }
+
+  // Badge container positioning - now inline with title
+  .step-badge-container {
+    display: flex;
+    align-items: center;
+    gap: 12px; // Space between badge and title
+    position: relative;
+    z-index: 2; // Above progress bars
+    flex-shrink: 0; // Prevent shrinking
+    
+    // Ensure badge and title are vertically aligned
+    .step-title {
+      margin: 0;
+      padding: 0;
+      line-height: 24px; // Consistent with main step-title styling
+    }
+  }
+
+  // Smooth transitions for state changes
+  .step-badge-completed,
+  .step-badge-in-progress,
+  .step-badge-pending,
+  .step-badge-future {
+    transition: all $transition-base;
+  }
+
+
+  // Add container styling for proper spacing and width
+  .progress-guide-container {
+    padding: 20px 30px 28px;
+    width: 100%;
+    max-width: none; // No max-width constraints
+    box-shadow: 0px 0px 20px 0px #00000014;
+    
+    // Ensure container spans full 1440px width
+    min-width: 1440px;
+  }
+}

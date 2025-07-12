@@ -94,7 +94,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
     }
 
     /**
-     * Get user's progress data
+     * Get user's progress data with caching optimization
      */
     private function get_progress_data(int $user_id): array
     {
@@ -104,12 +104,27 @@ class UserProgressGuideShortcode extends ShortcodeBase
         $registration_completed = ($user_status === 'full_member');
         $registration_progress = DomainConfigurationService::getUserProgressPercentage($user_status);
 
+        // Use cached project data to avoid repeated database queries
+        $project_data = $this->get_cached_user_projects($user_id);
+
         // Check first project upload (only for full members)
         $first_project_uploaded = false;
         $project_progress = 0;
+        $project_status = 'none'; // none, draft, pending, published
+
         if ($user_status === 'full_member') {
-            $first_project_uploaded = $this->has_uploaded_first_project($user_id);
-            $project_progress = $first_project_uploaded ? DomainConfigurationService::PROGRESS_PROJECT_UPLOADED : $this->get_project_progress_percentage($user_id);
+            $first_project_uploaded = $project_data['has_uploaded'];
+            $project_progress = $first_project_uploaded ? DomainConfigurationService::PROGRESS_PROJECT_UPLOADED : $project_data['progress_percentage'];
+
+            // Determine granular project status
+            if ($project_data['has_uploaded']) {
+                $project_status = $project_data['has_published'] ? 'published' : 'pending';
+            } elseif ($project_data['progress_percentage'] > 0) {
+                $project_status = 'draft';
+            } else {
+                $project_status = 'none';
+            }
+
         }
 
         return [
@@ -122,25 +137,90 @@ class UserProgressGuideShortcode extends ShortcodeBase
             'first_project' => [
                 'completed' => $first_project_uploaded,
                 'progress_percentage' => $project_progress,
-                'points' => $first_project_uploaded ? 2500 : 0
+                'points' => DomainConfigurationService::getUserWorkflowReward('first_project_uploaded'),
+                'status' => $project_status
             ]
         ];
     }
 
     /**
-     * Check if user has uploaded first project
+     * Get cached user project data to avoid repeated database queries
+     */
+    private function get_cached_user_projects(int $user_id): array
+    {
+        $cache_key = "user_projects_status_{$user_id}";
+
+        // Clear cache if in debug mode
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            delete_transient($cache_key);
+        }
+
+        $cached_data = get_transient($cache_key);
+        if ($cached_data !== false) {
+            return $cached_data;
+        }
+
+        $data = [
+            'has_uploaded' => $this->has_uploaded_first_project($user_id),
+            'has_published' => $this->has_published_first_project($user_id),
+            'progress_percentage' => $this->get_project_progress_percentage($user_id)
+        ];
+
+        // Cache for 5 minutes
+        set_transient($cache_key, $data, 300);
+
+        return $data;
+    }
+
+    /**
+     * Check if user has uploaded first project (including realizace and faktury)
      */
     private function has_uploaded_first_project(int $user_id): bool
     {
-        $projects = get_posts([
-            'post_type' => 'realization',
+        $realizace = get_posts([
+            'post_type' => 'realizace',
             'author' => $user_id,
             'post_status' => ['publish', 'pending'],
             'posts_per_page' => 1,
             'fields' => 'ids'
         ]);
 
-        return !empty($projects);
+        $faktury = get_posts([
+            'post_type' => 'faktura',
+            'author' => $user_id,
+            'post_status' => ['publish', 'pending'],
+            'posts_per_page' => 1,
+            'fields' => 'ids'
+        ]);
+
+        return !empty($realizace) || !empty($faktury);
+    }
+
+    /**
+     * Check if user has published first project (including realizace and faktury)
+     */
+    private function has_published_first_project(int $user_id): bool
+    {
+        $realizace = get_posts([
+            'post_type' => 'realizace',
+            'author' => $user_id,
+            'post_status' => 'publish',
+            'posts_per_page' => 1,
+            'fields' => 'ids',
+            'suppress_filters' => true
+        ]);
+
+        $faktury = get_posts([
+            'post_type' => 'faktura',
+            'author' => $user_id,
+            'post_status' => 'publish',
+            'posts_per_page' => 1,
+            'fields' => 'ids',
+            'suppress_filters' => true
+        ]);
+
+
+        return !empty($realizace) || !empty($faktury);
     }
 
     /**
@@ -148,9 +228,17 @@ class UserProgressGuideShortcode extends ShortcodeBase
      */
     private function get_project_progress_percentage(int $user_id): int
     {
-        // Check if user has any draft projects
-        $drafts = get_posts([
-            'post_type' => 'realization',
+        // Check if user has any draft projects (realizace or faktury)
+        $realizace_drafts = get_posts([
+            'post_type' => 'realizace',
+            'author' => $user_id,
+            'post_status' => 'draft',
+            'posts_per_page' => 1,
+            'fields' => 'ids'
+        ]);
+
+        $faktury_drafts = get_posts([
+            'post_type' => 'faktura',
             'author' => $user_id,
             'post_status' => 'draft',
             'posts_per_page' => 1,
@@ -158,7 +246,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
         ]);
 
         // If user has drafts, they're 50% there
-        if (!empty($drafts)) {
+        if (!empty($realizace_drafts) || !empty($faktury_drafts)) {
             return 50;
         }
 
@@ -167,112 +255,45 @@ class UserProgressGuideShortcode extends ShortcodeBase
     }
 
     /**
-     * Render progress guide component
+     * Get cached template path to avoid repeated file system checks
+     */
+    private function get_template_path(): string
+    {
+        static $template_path = null;
+
+        if ($template_path === null) {
+            // Check child theme first, then parent theme
+            $template_path = get_stylesheet_directory() . '/templates/shortcodes/user-progress-guide.php';
+
+            if (!file_exists($template_path)) {
+                $template_path = get_template_directory() . '/templates/shortcodes/user-progress-guide.php';
+            }
+        }
+
+        return $template_path;
+    }
+
+    /**
+     * Render progress guide component using template with caching
      */
     private function render_progress_guide(array $data): string
     {
-        extract($data);
+        $template_path = $this->get_template_path();
 
-        ob_start(); ?>
-        <div class="<?= esc_attr($wrapper_classes) ?> user-progress-guide bg-white shadow-sm rounded-lg p-6 mb-8">
-            <div class="progress-guide-header mb-6">
-                <h2 class="text-2xl font-semibold text-gray-900 mb-2">A je to! Co teď?</h2>
-            </div>
+        // If template doesn't exist, return error message
+        if (!file_exists($template_path)) {
+            return '<div class="user-progress-guide-error">Template not found: ' . esc_html($template_path) . '</div>';
+        }
 
-            <div class="progress-steps space-y-6">
-                <!-- Registration Step -->
-                <div class="progress-step registration-step">
-                    <div class="flex items-center gap-4 mb-3">
-                        <div class="step-indicator <?= $progress_data['registration']['completed'] ? 'completed' : 'pending' ?> flex items-center justify-center w-8 h-8 rounded-full <?= $progress_data['registration']['completed'] ? 'bg-red-600 text-white' : 'bg-gray-300 text-gray-600' ?>">
-                            <?php if ($progress_data['registration']['completed']): ?>
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                </svg>
-                            <?php else: ?>
-                                <span class="text-sm font-medium">1</span>
-                            <?php endif; ?>
-                        </div>
+        // Template system working correctly
 
-                        <div class="step-content flex-1">
-                            <h3 class="step-title text-lg font-semibold text-gray-900">Dokončená registrace</h3>
-                            <?php if ($progress_data['registration']['completed']): ?>
-                                <div class="points-awarded inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-800 text-sm font-medium rounded-full mt-1">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                    <?= number_format($progress_data['registration']['points']) ?> bodů
-                                </div>
-                            <?php else: ?>
-                                <div class="status-pending inline-flex items-center gap-1 px-3 py-1 bg-yellow-50 text-yellow-800 text-sm font-medium rounded-full mt-1">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                    </svg>
-                                    <?php
-                                    echo match($progress_data['user_status']) {
-                                        'needs_form' => 'Dokončete registrační formulář',
-                                        'awaiting_review' => 'Čeká na schválení',
-                                        default => 'V procesu'
-                                    };
-                                    ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+        // Start output buffering
+        ob_start();
 
-                    <div class="progress-bar-container ml-12">
-                        <div class="progress-bar-background bg-gray-200 h-2 rounded-full relative overflow-hidden">
-                            <div class="progress-bar-fill bg-red-600 h-full rounded-full transition-all duration-300"
-                                 style="width: <?= $progress_data['registration']['progress_percentage'] ?>%"></div>
-                        </div>
-                        <?php if (!$progress_data['registration']['completed']): ?>
-                            <div class="progress-text text-sm text-gray-600 mt-1">
-                                <?= $progress_data['registration']['progress_percentage'] ?>% dokončeno
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
+        // Include template with data available in template scope
+        include $template_path;
 
-                <!-- First Project Step -->
-                <div class="progress-step project-step">
-                    <div class="flex items-center gap-4 mb-3">
-                        <div class="step-indicator <?= $progress_data['first_project']['completed'] ? 'completed' : 'pending' ?> flex items-center justify-center w-8 h-8 rounded-full <?= $progress_data['first_project']['completed'] ? 'bg-red-600 text-white' : 'bg-gray-300 text-gray-600' ?>">
-                            <?php if ($progress_data['first_project']['completed']): ?>
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                </svg>
-                            <?php else: ?>
-                                <span class="text-sm font-medium">2</span>
-                            <?php endif; ?>
-                        </div>
-
-                        <div class="step-content flex-1">
-                            <h3 class="step-title text-lg font-semibold text-gray-900">První nahraná realizace</h3>
-                            <?php if ($progress_data['first_project']['completed']): ?>
-                                <div class="points-awarded inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-800 text-sm font-medium rounded-full mt-1">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                    <?= number_format($progress_data['first_project']['points']) ?> bodů
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <div class="progress-bar-container ml-12">
-                        <div class="progress-bar-background bg-gray-200 h-2 rounded-full relative overflow-hidden">
-                            <div class="progress-bar-fill bg-<?= $progress_data['first_project']['completed'] ? 'red-600' : 'gray-400' ?> h-full rounded-full transition-all duration-300"
-                                 style="width: <?= $progress_data['first_project']['progress_percentage'] ?>%"></div>
-                        </div>
-                        <?php if (!$progress_data['first_project']['completed'] && $progress_data['first_project']['progress_percentage'] > 0): ?>
-                            <div class="progress-text text-sm text-gray-600 mt-1">
-                                <?= $progress_data['first_project']['progress_percentage'] ?>% dokončeno
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php return ob_get_clean();
+        return ob_get_clean();
     }
 
     /**
@@ -282,7 +303,8 @@ class UserProgressGuideShortcode extends ShortcodeBase
     {
         $classes = [
             'mycred-shortcode',
-            'mycred-' . str_replace('_', '-', $this->get_tag())
+            'mycred-' . str_replace('_', '-', $this->get_tag()),
+            'user-progress-guide-wrapper'
         ];
 
         if (!empty($attributes['class'])) {
