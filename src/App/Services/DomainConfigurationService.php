@@ -361,7 +361,7 @@ class DomainConfigurationService
     /**
      * User workflow reward constants
      */
-    public const REWARD_REGISTRATION_COMPLETED = 1000;
+    public const REWARD_REGISTRATION_COMPLETED = 200;
     public const REWARD_FIRST_PROJECT_UPLOADED = 2500;
 
     /**

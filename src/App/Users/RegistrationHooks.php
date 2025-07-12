@@ -52,6 +52,9 @@ class RegistrationHooks
 
 		// Add hook for ARES form scripts - runs on every frontend page
 		add_action('wp_enqueue_scripts', [$this, 'enqueue_ares_form_scripts']);
+
+		// Award registration bonus when user is promoted to full member
+		add_action('mistr_fachman_user_promoted', [$this, 'award_registration_bonus'], 10, 1);
 	}
 
 	/**
@@ -463,6 +466,49 @@ class RegistrationHooks
 					'ico_validation_nonce' => wp_create_nonce('mistr_fachman_ico_validation_nonce')
 				]
 			);
+		}
+	}
+
+	/**
+	 * Award registration bonus points when user is promoted to full member
+	 *
+	 * @param int $user_id User ID who was promoted
+	 */
+	public function award_registration_bonus(int $user_id): void
+	{
+		// Import the required DualPointsManager class
+		$dual_manager = new \MistrFachman\Services\DualPointsManager();
+		
+		// Get the registration bonus amount from configuration
+		$bonus_points = \MistrFachman\Services\DomainConfigurationService::getUserWorkflowReward('registration_completed');
+		
+		mycred_debug('Awarding registration bonus', [
+			'user_id' => $user_id,
+			'bonus_points' => $bonus_points,
+			'source' => 'RegistrationHooks::award_registration_bonus'
+		], 'users', 'info');
+		
+		// Award the registration bonus
+		$result = $dual_manager->awardDualPoints(
+			$user_id,
+			$bonus_points,
+			'registration_bonus',
+			'Bonus za dokončení registrace: vítejte v systému!',
+			0 // No post_id for registration events
+		);
+		
+		if ($result) {
+			mycred_debug('Registration bonus awarded successfully', [
+				'user_id' => $user_id,
+				'points_awarded' => $bonus_points,
+				'description' => 'Registration completion bonus'
+			], 'users', 'info');
+		} else {
+			mycred_debug('Failed to award registration bonus', [
+				'user_id' => $user_id,
+				'points_attempted' => $bonus_points,
+				'error' => 'DualPointsManager::awardDualPoints() returned false'
+			], 'users', 'error');
 		}
 	}
 
