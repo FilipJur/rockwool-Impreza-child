@@ -59,6 +59,15 @@ class Manager extends PostTypeManagerBase {
         // Initialize form handler with injected dependencies
         $this->form_handler = new NewFakturyFormHandler($this->user_detection_service, $this);
         
+        // Hook form handler into WPCF7
+        add_action('wpcf7_mail_sent', [$this->form_handler, 'handle_submission']);
+    }
+
+    /**
+     * Initialize domain services and register hooks - Gemini Fix
+     * Called once from bootstrap to prevent duplicate hook registration
+     */
+    public function init(): void {
         // Initialize admin components with centralized configuration
         $card_renderer = new FakturyCardRenderer();
         $asset_config = \MistrFachman\Services\DomainConfigurationService::getAssetConfig('invoice');
@@ -77,14 +86,18 @@ class Manager extends PostTypeManagerBase {
         // Wire up card renderer to use admin controller's abstract methods
         $card_renderer->setAdminController($admin_controller);
         
+        // Register hooks exactly once
         $admin_controller->init_hooks();
         
         // Initialize points handler for myCred integration
         $points_handler = new PointsHandler();
         $points_handler->init_hooks();
         
-        // Hook form handler into WPCF7
-        add_action('wpcf7_mail_sent', [$this->form_handler, 'handle_submission']);
+        \MistrFachman\Services\DebugLogger::logPointsFlow('domain_initialized', 'invoice', 0, [
+            'message' => 'Faktury domain fully initialized',
+            'services' => ['AdminController', 'PointsHandler', 'FormHandler'],
+            'source' => 'Manager::init() (Gemini fix)'
+        ]);
     }
 
     /**

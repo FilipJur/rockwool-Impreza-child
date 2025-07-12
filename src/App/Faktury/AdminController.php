@@ -65,20 +65,12 @@ class AdminController extends AdminControllerBase {
         // Gatekeeper validation hook - blocks invalid posts BEFORE database save
         add_filter('wp_insert_post_data', [$this, 'gatekeeper_validation_wp_insert'], 99, 2);
 
-        // Points recalculation on invoice value changes
-        // Register for both field name and field key to catch all ACF update scenarios
-        $invoice_value_field_name = FakturaFieldService::getValueFieldSelector(false);  // invoice_value
-        $invoice_value_field_key = FakturaFieldService::getValueFieldSelector(true);   // field_invoice_value_2025
-        
-        // Debug: Log hook registration
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("[FAKTURY:HOOKS] Registering ACF hooks:");
-            error_log("[FAKTURY:HOOKS] - acf/update_value/name={$invoice_value_field_name}");
-            error_log("[FAKTURY:HOOKS] - acf/update_value/key={$invoice_value_field_key}");
-        }
-        
-        add_filter("acf/update_value/name={$invoice_value_field_name}", [$this, 'recalculate_points_on_value_change'], 10, 3);
-        add_filter("acf/update_value/key={$invoice_value_field_key}", [$this, 'recalculate_points_on_value_change'], 10, 3);
+        // Phase 2 Critical Fix: ACF hooks removed from AdminController
+        // All calculation now handled by PointsHandler ACF hooks
+        DebugLogger::logPointsFlow('admin_controller_hooks_init', 'invoice', 0, [
+            'message' => 'AdminController initialized without ACF calculation hooks',
+            'source' => 'AdminController::init_hooks (Phase 2 critical fix)'
+        ]);
 
         // Debug: Add generic ACF save_post hook to track all ACF saves
         add_action('acf/save_post', [$this, 'debug_acf_save_post'], 5);
@@ -182,10 +174,11 @@ class AdminController extends AdminControllerBase {
 
     /**
      * Handle AJAX approve action with validation
+     * Phase 1 Refactor: Removed points calculation and awarding logic
      */
     protected function process_approve_action(int $post_id): void {
         DebugLogger::logPointsFlow('ajax_approve_start', 'invoice', $post_id, [
-            'source' => 'AdminController::process_approve_action'
+            'source' => 'AdminController::process_approve_action (Phase 1 refactored)'
         ]);
 
         $post = get_post($post_id);
@@ -197,22 +190,10 @@ class AdminController extends AdminControllerBase {
             throw new \Exception('Faktura nenalezena.');
         }
 
-        // Get calculated points for this faktura
-        $points_to_award = $this->getCalculatedPoints($post_id);
-
-        DebugLogger::logCalculation('invoice', $post_id, [
-            'points_calculated' => $points_to_award,
-            'context' => 'ajax_approve',
-            'source' => 'AdminController::process_approve_action'
-        ]);
-
-        // Save the calculated points for auditing
-        FakturaFieldService::setPoints($post_id, $points_to_award);
-
         // Clear rejection reason
         FakturaFieldService::setRejectionReason($post_id, '');
 
-        // Publish post
+        // Publish post - awarding will be handled by transition_post_status hook
         $result = wp_update_post(['ID' => $post_id, 'post_status' => 'publish']);
 
         if (is_wp_error($result)) {
@@ -223,46 +204,10 @@ class AdminController extends AdminControllerBase {
             throw new \Exception('Failed to update post status: ' . $result->get_error_message());
         }
 
-        // Award points directly using PointsHandler public method
-        $user_id = (int)$post->post_author;
-        if ($user_id) {
-            // Check if points were already awarded to prevent duplicates
-            $awarded_points_meta = get_post_meta($post_id, FakturaFieldService::getAwardedPointsMetaFieldName(), true);
-            $duplicate_prevention = !empty($awarded_points_meta) && (int)$awarded_points_meta === $points_to_award;
-            
-            DebugLogger::logAssignment('invoice', $post_id, [
-                'points_to_award' => $points_to_award,
-                'user_id' => $user_id,
-                'awarded_points_meta' => $awarded_points_meta,
-                'duplicate_prevention' => $duplicate_prevention,
-                'source' => 'AdminController::process_approve_action (AJAX)'
-            ]);
-            
-            if (!$duplicate_prevention) {
-                $points_handler = new PointsHandler();
-                $success = $points_handler->award_points($post_id, $user_id, $points_to_award);
-
-                if ($success) {
-                    update_post_meta($post_id, FakturaFieldService::getAwardedPointsMetaFieldName(), $points_to_award);
-                    
-                    DebugLogger::logAssignment('invoice', $post_id, [
-                        'points_awarded' => $points_to_award,
-                        'user_id' => $user_id,
-                        'success' => true,
-                        'method' => 'ajax_approve',
-                        'source' => 'AdminController::process_approve_action'
-                    ]);
-                } else {
-                    DebugLogger::logAssignment('invoice', $post_id, [
-                        'error' => 'Failed to award points via PointsHandler',
-                        'points_attempted' => $points_to_award,
-                        'user_id' => $user_id,
-                        'success' => false,
-                        'source' => 'AdminController::process_approve_action'
-                    ]);
-                }
-            }
-        }
+        DebugLogger::logPointsFlow('ajax_approve_success', 'invoice', $post_id, [
+            'message' => 'Status updated to publish, awarding handled by status transition hook',
+            'source' => 'AdminController::process_approve_action (Phase 1 refactored)'
+        ]);
     }
 
     /**
@@ -368,74 +313,8 @@ class AdminController extends AdminControllerBase {
         return 'invoice';
     }
 
-    /**
-     * Recalculate points whenever invoice value changes
-     * Hooked to ACF update_value filter for invoice_value field
-     *
-     * @param mixed $value The new field value being saved
-     * @param int $post_id The post ID
-     * @param array $field The ACF field array
-     * @return mixed The unmodified value (we don't change the original field)
-     */
-    public function recalculate_points_on_value_change($value, $post_id, $field) {
-        // Always log that this hook was called for debugging
-        DebugLogger::logPointsFlow('acf_hook_called', 'invoice', (int) $post_id, [
-            'value' => $value,
-            'field_name' => $field['name'] ?? 'unknown',
-            'field_key' => $field['key'] ?? 'unknown',
-            'post_type' => get_post_type($post_id),
-            'source' => 'AdminController::recalculate_points_on_value_change'
-        ]);
-
-        // Only process for invoice posts  
-        $post_id = (int) $post_id;
-        $post = get_post($post_id);
-        if (!$post || $post->post_type !== $this->getWordPressPostType()) {
-            DebugLogger::logPointsFlow('acf_hook_skip', 'invoice', $post_id, [
-                'reason' => 'wrong post type',
-                'expected' => $this->getWordPressPostType(),
-                'actual' => $post ? $post->post_type : 'null',
-                'source' => 'AdminController::recalculate_points_on_value_change'
-            ]);
-            return $value;
-        }
-
-        // Calculate points based on new invoice value
-        $invoice_value = is_numeric($value) ? (int) $value : 0;
-        $calculated_points = $invoice_value > 0 ? floor($invoice_value / 10) : 0;
-        $current_points = FakturaFieldService::getPoints($post_id);
-
-        DebugLogger::logRecalculation('invoice', $post_id, [
-            'trigger' => 'acf_update_value_hook',
-            'field_name' => $field['name'] ?? 'unknown',
-            'field_key' => $field['key'] ?? 'unknown',
-            'invoice_value' => $invoice_value,
-            'points_calculated' => $calculated_points,
-            'points_current' => $current_points,
-            'update_needed' => $calculated_points !== $current_points,
-            'source' => 'AdminController::recalculate_points_on_value_change'
-        ]);
-
-        // Update the points field immediately
-        $points_field = FakturaFieldService::getPointsFieldSelector();
-        $update_result = update_field($points_field, $calculated_points, $post_id);
-
-        DebugLogger::logFieldUpdate('invoice', $post_id, [
-            'field_updated' => 'points',
-            'old_value' => $current_points,
-            'new_value' => $calculated_points,
-            'success' => $update_result !== false,
-            'trigger_source' => 'acf_value_change',
-            'field_info' => [
-                'name' => $field['name'] ?? 'unknown',
-                'key' => $field['key'] ?? 'unknown'
-            ],
-            'source' => 'AdminController::recalculate_points_on_value_change'
-        ]);
-
-        // Return the original value unchanged
-        return $value;
-    }
+    // Phase 2 Critical Fix: Method removed entirely
+    // All ACF calculation logic moved to PointsHandler for clean separation
 
     /**
      * Debug method to track all ACF save_post events
@@ -587,61 +466,14 @@ class AdminController extends AdminControllerBase {
             }
         }
 
-        // Handle point operations based on status changes
-        if ($new_status === 'publish' && $old_status !== 'publish') {
-            // Award points when publishing (backup system - primary awarding is in PointsHandler)
-            $points_to_award = $this->getCalculatedPoints($post->ID);
-
-            DebugLogger::logPointsFlow('status_transition_publish', 'invoice', $post->ID, [
-                'old_status' => $old_status,
-                'new_status' => $new_status,
-                'points_to_award' => $points_to_award,
-                'source' => 'AdminController::handle_status_transition'
-            ]);
-
-            if ($points_to_award > 0) {
-                // Save calculated points
-                FakturaFieldService::setPoints($post->ID, $points_to_award);
-
-                // Check if points were already awarded by PointsHandler to prevent duplicates
-                $awarded_points_meta = get_post_meta($post->ID, FakturaFieldService::getAwardedPointsMetaFieldName(), true);
-                $duplicate_prevention = !empty($awarded_points_meta);
-                
-                DebugLogger::logAssignment('invoice', $post->ID, [
-                    'points_to_award' => $points_to_award,
-                    'user_id' => (int)$post->post_author,
-                    'awarded_points_meta' => $awarded_points_meta,
-                    'duplicate_prevention' => $duplicate_prevention,
-                    'source' => 'AdminController::handle_status_transition (backup system)'
-                ]);
-                
-                if (!$duplicate_prevention) {
-                    // Award points as backup if PointsHandler didn't run
-                    $points_handler = new PointsHandler();
-                    $success = $points_handler->award_points($post->ID, (int)$post->post_author, $points_to_award);
-                    
-                    if ($success) {
-                        update_post_meta($post->ID, FakturaFieldService::getAwardedPointsMetaFieldName(), $points_to_award);
-                        
-                        DebugLogger::logAssignment('invoice', $post->ID, [
-                            'points_awarded' => $points_to_award,
-                            'user_id' => (int)$post->post_author,
-                            'success' => true,
-                            'method' => 'status_transition_backup',
-                            'source' => 'AdminController::handle_status_transition'
-                        ]);
-                    }
-                }
-            }
-        } elseif ($old_status === 'publish' && $new_status !== 'publish') {
-            // Revoke points when unpublishing
-            $points_handler = new PointsHandler();
-            // Note: revoke_points is protected in PointsHandlerBase, called automatically via hooks
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                $domain_debug = strtoupper($this->getPostType());
-                error_log("[{$domain_debug}:UI] Points will be revoked for post #{$post->ID} (status: {$new_status})");
-            }
-        }
+        // Phase 1 Refactor: Removed backup awarding logic
+        // All point operations now handled by centralized PointsHandler status transition hook
+        DebugLogger::logPointsFlow('status_transition_logged', 'invoice', $post->ID, [
+            'old_status' => $old_status,
+            'new_status' => $new_status,
+            'message' => 'Status transition logged, point operations handled by PointsHandler hook',
+            'source' => 'AdminController::handle_status_transition (Phase 1 refactored)'
+        ]);
     }
 
     /**
@@ -699,6 +531,7 @@ class AdminController extends AdminControllerBase {
 
     /**
      * Process bulk approve operation for faktury
+     * Phase 1 Refactor: Removed points calculation and awarding logic
      */
     protected function process_bulk_approve(int $user_id): int {
         $pending_posts = get_posts([
@@ -710,43 +543,31 @@ class AdminController extends AdminControllerBase {
         ]);
 
         $approved_count = 0;
-        $points_handler = new PointsHandler();
 
         foreach ($pending_posts as $post_id) {
-            $calculated_points = $this->getCalculatedPoints($post_id);
-            FakturaFieldService::setPoints($post_id, $calculated_points);
-
             // Clear rejection reason
             FakturaFieldService::setRejectionReason($post_id, '');
 
-            // Publish the post
+            // Publish the post - awarding will be handled by transition_post_status hook
             $result = wp_update_post([
                 'ID' => $post_id,
                 'post_status' => 'publish'
             ]);
 
             if (!is_wp_error($result)) {
-                // Check if points were already awarded to prevent duplicates
-                $awarded_points_meta = get_post_meta($post_id, FakturaFieldService::getAwardedPointsMetaFieldName(), true);
-                
-                if (empty($awarded_points_meta) || (int)$awarded_points_meta !== $calculated_points) {
-                    $success = $points_handler->award_points($post_id, $user_id, $calculated_points);
-                    if ($success) {
-                        update_post_meta($post_id, FakturaFieldService::getAwardedPointsMetaFieldName(), $calculated_points);
-                        $approved_count++;
-                        if (defined('WP_DEBUG') && WP_DEBUG) {
-                            error_log("[FAKTURY:AJAX] Bulk approved post {$post_id} with {$calculated_points} points");
-                        }
-                    }
-                } else {
-                    // Points already awarded, still count as approved
-                    $approved_count++;
-                    if (defined('WP_DEBUG') && WP_DEBUG) {
-                        error_log("[FAKTURY:AJAX] Bulk approved post {$post_id} - points already awarded");
-                    }
+                $approved_count++;
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("[FAKTURY:AJAX] Bulk approved post {$post_id} - awarding handled by status transition hook");
                 }
             }
         }
+
+        DebugLogger::logPointsFlow('bulk_approve_complete', 'invoice', 0, [
+            'approved_count' => $approved_count,
+            'user_id' => $user_id,
+            'message' => 'Bulk approval complete, point awarding handled by status transition hooks',
+            'source' => 'AdminController::process_bulk_approve (Phase 1 refactored)'
+        ]);
 
         return $approved_count;
     }
