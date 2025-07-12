@@ -5,7 +5,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Current Focus
-WordPress child theme development with enterprise architecture. All major systems are production-ready. Recent e-commerce service consolidation, including centralized balance and reward calculation methods, has further strengthened the single source of truth pattern. CF7 relational selects implementation complete with dynamic material filtering based on construction types. Taxonomy system uses Czech admin labels and English slugs with ACF JSON import support. Alpine.js reactive components handle AJAX material filtering. Dual shortcode system supports CF7 custom tags and regular WordPress shortcodes. Consolidated services architecture reduces code duplication. System ready for production deployment with form integration and data validation.
+WordPress child theme development with enterprise architecture transitioning to decoupled points system. Recent completion of comprehensive debug logging system enables detailed tracking of points calculation, validation, and awarding flows. Fixed critical race conditions in invoice points calculation through enhanced ACF hook registration and duplicate prevention. Eliminated hardcoded post types across shortcodes and domain services. **NEXT PHASE**: Implementing points system decoupling refactor to separate calculation, validation, and awarding concerns (see DECOUPLING_REFACTOR_PLAN.md). System architecture ready for clean separation of concerns with comprehensive logging support via debug_points_flow.log.
 
 ## Build & Development Commands
 
