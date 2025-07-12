@@ -61,9 +61,18 @@ function impreza_child_enqueue_custom_assets()
  */
 function impreza_child_inject_user_data()
 {
-	// Get user status using the Users domain service
-	$users_manager = \MistrFachman\Users\Manager::get_instance();
-	$user_status = $users_manager->user_service->get_user_registration_status();
+	// Safety check: Only proceed if services are initialized
+	try {
+		$users_manager = \MistrFachman\Users\Manager::get_instance();
+		$user_status = $users_manager->user_service->get_user_registration_status();
+	} catch (\InvalidArgumentException $e) {
+		// Services not yet initialized, provide fallback data
+		$user_status = [
+			'status' => 'guest',
+			'needs_form' => false,
+			'can_purchase' => false
+		];
+	}
 
 	// Get My Account URL
 	$my_account_url = '/muj-ucet';
@@ -339,4 +348,39 @@ function set_returning_user_cookie_on_login_check() {
  * Load the main application bootstrap file.
  */
 require_once get_stylesheet_directory() . '/src/bootstrap.php';
+
+/**
+ * Development Testing - Refactor Verification
+ * 
+ * Add admin menu item for testing the decoupling refactor fixes
+ */
+if (defined('WP_DEBUG') && WP_DEBUG) {
+    add_action('admin_menu', 'add_refactor_test_menu');
+    
+    function add_refactor_test_menu() {
+        add_management_page(
+            'Refactor Tests',
+            'Refactor Tests',
+            'manage_options',
+            'refactor-tests',
+            'display_refactor_test_page'
+        );
+    }
+    
+    function display_refactor_test_page() {
+        echo '<div class="wrap">';
+        echo '<h1>Points System Refactor Tests</h1>';
+        echo '<div class="notice notice-info"><p><strong>Debug Mode:</strong> These tests are only available when WP_DEBUG is enabled.</p></div>';
+        
+        // Include the test files
+        echo '<h2>System Status Check</h2>';
+        include get_stylesheet_directory() . '/test-refactor-fixes.php';
+        
+        echo '<hr>';
+        echo '<h2>Race Condition Test</h2>';
+        include get_stylesheet_directory() . '/test-race-condition-scenario.php';
+        
+        echo '</div>';
+    }
+}
 
