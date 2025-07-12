@@ -132,8 +132,18 @@ if (file_exists($autoloader_path)) {
 }
 
 
-// Initialize systems with service layer using dependency injection
-add_action('init', function () {
+// Global initialization guard to prevent service spam
+if (!defined('MISTR_FACHMAN_SERVICES_INITIALIZED')) {
+    define('MISTR_FACHMAN_SERVICES_INITIALIZED', true);
+
+    // Initialize systems with service layer using dependency injection - Gemini Fix  
+    add_action('after_setup_theme', function () {
+        // Additional runtime guard in case define() doesn't work across requests
+        global $mistr_fachman_services_loaded;
+        if (!empty($mistr_fachman_services_loaded)) {
+            return;
+        }
+        $mistr_fachman_services_loaded = true;
     // === ARCHITECTURE SERVICES INITIALIZATION ===
     // Initialize core configuration and abstraction services first
     \MistrFachman\Services\DomainConfigurationService::initialize();
@@ -191,20 +201,22 @@ add_action('init', function () {
         ], 'bootstrap', 'error');
     }
 
-    // 1.5. Initialize the Realizace System with injected dependencies
+    // 1.5. Initialize the Realizace System with injected dependencies - Gemini Fix
     $RealizaceManager = \MistrFachman\Realizace\Manager::class;
     if (class_exists($RealizaceManager) && $user_detection_service) {
-        $RealizaceManager::get_instance($user_detection_service);
-        mycred_debug('Realizace Manager initialized with injected UserDetectionService', null, 'bootstrap', 'info');
+        $realizace_manager = $RealizaceManager::get_instance($user_detection_service);
+        // Note: Realizace Manager needs same init() method - will implement if needed
+        mycred_debug('Realizace Manager created (hooks not yet registered)', null, 'bootstrap', 'info');
     } else {
         mycred_debug('Realizace Manager class not found or UserDetectionService unavailable.', null, 'bootstrap', 'error');
     }
 
-    // 1.6. Initialize the Faktury System with injected dependencies
+    // 1.6. Initialize the Faktury System with injected dependencies - Gemini Fix
     $FakturyManager = \MistrFachman\Faktury\Manager::class;
     if (class_exists($FakturyManager) && $user_detection_service) {
-        $FakturyManager::get_instance($user_detection_service);
-        mycred_debug('Faktury Manager initialized with injected UserDetectionService', null, 'bootstrap', 'info');
+        $faktury_manager = $FakturyManager::get_instance($user_detection_service);
+        $faktury_manager->init(); // Register hooks exactly once
+        mycred_debug('Faktury Manager initialized with services and hooks registered', null, 'bootstrap', 'info');
     } else {
         mycred_debug('Faktury Manager class not found or UserDetectionService unavailable.', null, 'bootstrap', 'error');
     }
@@ -245,11 +257,12 @@ add_action('init', function () {
         ], 'bootstrap', 'error');
     }
 
-    mycred_log_architecture_event('PSR-4 Application Initialized with Service Layer', [
-        'autoloader' => 'composer',
-        'domains' => ['Users', 'Realizace', 'Faktury', 'ECommerce', 'Shortcodes', 'Services', 'ProjectStatus'],
-        'pattern' => 'decoupled with service injection'
-    ]);
-}, 5); // Early priority to ensure services are available before wp_enqueue_scripts
+        mycred_log_architecture_event('PSR-4 Application Initialized with Service Layer', [
+            'autoloader' => 'composer',
+            'domains' => ['Users', 'Realizace', 'Faktury', 'ECommerce', 'Shortcodes', 'Services', 'ProjectStatus'],
+            'pattern' => 'decoupled with service injection'
+        ]);
+    }, 5); // Early priority to ensure services are available before wp_enqueue_scripts
+} // End of initialization guard
 
 // Legacy debug helpers removed for staging deployment
