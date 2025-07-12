@@ -91,6 +91,13 @@ $user_id = $data['user_id'] ?? 0;
                                 </svg>
                                 <span><?= number_format($progress_data['first_project']['points']) ?> bodů</span>
                             </div>
+                        <?php elseif ($progress_data['first_project']['status'] === 'rejected'): ?>
+                            <div class="step-badge-rejected">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="#d63638">
+                                    <path fill-rule="evenodd" d="M8 15A7 7 0 108 1a7 7 0 000 14zM5.354 4.646a.5.5 0 10-.708.708L7.293 8l-2.647 2.646a.5.5 0 00.708.708L8 8.707l2.646 2.647a.5.5 0 00.708-.708L8.707 8l2.647-2.646a.5.5 0 00-.708-.708L8 7.293 5.354 4.646z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>Odmítnuto</span>
+                            </div>
                         <?php else: ?>
                             <div class="step-badge-none">
                                 <span>Nahrajte první projekt</span>
@@ -103,6 +110,8 @@ $user_id = $data['user_id'] ?? 0;
                                 První nahraná realizace
                             <?php elseif ($progress_data['first_project']['status'] === 'pending'): ?>
                                 Realizace čeká na schválení
+                            <?php elseif ($progress_data['first_project']['status'] === 'rejected'): ?>
+                                Realizace byla odmítnuta
                             <?php else: ?>
                                 Nahrajte svou první realizaci
                             <?php endif; ?>

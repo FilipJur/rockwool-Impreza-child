@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Base;
 
 use MistrFachman\Services\DomainConfigurationService;
+use MistrFachman\Services\ProjectStatusService;
 
 
 /**
@@ -88,15 +89,6 @@ abstract class AdminControllerBase {
         return '';
     }
 
-    /**
-     * Runs domain-specific validation checks before a post is published.
-     * This method is the core of the validation gatekeeper.
-     *
-     * @param \WP_Post $post The post object being transitioned.
-     * @return array An array with 'success' (bool) and 'message' (string) keys.
-     *               e.g., ['success' => true] or ['success' => false, 'message' => 'Validation failed: Reason.']
-     */
-    abstract protected function run_pre_publish_validation(\WP_Post $post): array;
 
     /**
      * Render domain-specific user profile card
@@ -139,12 +131,11 @@ abstract class AdminControllerBase {
         add_action('post_submitbox_misc_actions', [$this, 'add_reject_button_to_publish_box']);
 
         // Status transition handling
-        // Priority 5: Run validation gatekeeper BEFORE other transition logic
-        add_action('transition_post_status', [$this, 'handle_pre_publish_validation'], 5, 3);
         add_action('transition_post_status', [$this, 'handle_status_transition'], 10, 3);
 
         // Admin notices for validation errors
         add_action('admin_notices', [$this, 'display_validation_admin_notices']);
+
 
         // User profile integration
         add_action('mistr_fachman_user_profile_cards', [$this, 'add_cards_to_user_profile'], 10, 2);
@@ -250,31 +241,25 @@ abstract class AdminControllerBase {
     }
 
     /**
-     * Get status display configuration
+     * Get status display configuration using ProjectStatusService
      */
     protected function get_status_display_config(string $status): array {
-        return match ($status) {
-            'publish' => [
-                'label' => 'Schváleno',
-                'class' => 'status-approved'
-            ],
-            'pending' => [
-                'label' => 'Čeká na schválení',
-                'class' => 'status-pending'
-            ],
-            'rejected' => [
-                'label' => 'Odmítnuto',
-                'class' => 'status-rejected'
-            ],
-            'draft' => [
-                'label' => 'Koncept',
-                'class' => 'status-draft'
-            ],
-            default => [
-                'label' => ucfirst($status),
-                'class' => 'status-default'
-            ]
+        // Get status label from ProjectStatusService
+        $label = ProjectStatusService::getStatusLabel($status);
+        
+        // Map status to admin-specific CSS classes
+        $class = match ($status) {
+            'publish' => 'status-approved',
+            'pending' => 'status-pending', 
+            'rejected' => 'status-rejected',
+            'draft' => 'status-draft',
+            default => 'status-default'
         };
+        
+        return [
+            'label' => $label,
+            'class' => $class
+        ];
     }
 
     /**
@@ -303,7 +288,7 @@ abstract class AdminControllerBase {
             $button_style = 'background: #f0ad4e; border-color: #eea236; color: #fff;'; // Orange for revoke
             $action_type = 'revoke';
         } elseif ($post->post_status === 'rejected') {
-            $button_text = 'Odmítnuto';
+            $button_text = ProjectStatusService::getStatusLabel('rejected');
             $button_style = 'background: #7e8993; border-color: #7e8993; color: #fff; cursor: not-allowed;'; // Grey for rejected
             $button_disabled = 'disabled';
             $action_type = 'disabled';
@@ -325,40 +310,6 @@ abstract class AdminControllerBase {
             </button>
         </div>
         <?php
-    }
-
-    /**
-     * Handles the pre-publish validation check. Hooked to 'transition_post_status'.
-     *
-     * @param string   $new_status The new post status.
-     * @param string   $old_status The old post status.
-     * @param \WP_Post $post       The post object.
-     */
-    public function handle_pre_publish_validation(string $new_status, string $old_status, \WP_Post $post): void {
-        // Only run for our specific post type and only when moving to 'publish'
-        if ($post->post_type !== $this->getPostType() || $new_status !== 'publish' || $old_status === 'publish') {
-            return;
-        }
-
-        // Call the domain-specific validation logic
-        $validation_result = $this->run_pre_publish_validation($post);
-
-        // If validation fails, block the transition
-        if (isset($validation_result['success']) && $validation_result['success'] === false) {
-            // 1. Force the status back to the original status to prevent publishing
-            $post->post_status = $old_status;
-
-            // 2. Set a transient to display a persistent admin notice after the page reloads
-            $error_message = $validation_result['message'] ?? 'Schválení se nezdařilo z důvodu nesplnění pravidel.';
-            set_transient(
-                'domain_validation_error_' . get_current_user_id(),
-                [
-                    'message' => $error_message,
-                    'post_title' => $post->post_title
-                ],
-                30 // Transient expires in 30 seconds
-            );
-        }
     }
 
     /**
@@ -728,7 +679,7 @@ abstract class AdminControllerBase {
                 throw new \Exception('Insufficient permissions.');
             }
 
-            $rejection_reason = isset($_POST['reason']) ? sanitize_textarea_field($_POST['reason']) : 'Odmítnuto administrátorem z editoru.';
+            $rejection_reason = isset($_POST['reason']) ? sanitize_textarea_field($_POST['reason']) : ProjectStatusService::getStatusLabel('rejected') . ' administrátorem z editoru.';
 
             // Use the existing field service to set the reason
             $field_selector = $this->getRejectionReasonFieldSelector();

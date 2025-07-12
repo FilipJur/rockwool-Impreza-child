@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Realizace;
 
+use MistrFachman\Services\DomainConfigurationService;
+
 /**
  * Taxonomy Manager for Realizace Domain
  *
@@ -37,7 +39,7 @@ class TaxonomyManager {
         \MistrFachman\Services\DebugLogger::log('[TaxonomyManager] register_taxonomies() called');
         
         // Register construction types taxonomy (English slug, Czech labels)
-        $result1 = register_taxonomy('construction_type', ['realizace'], [
+        $result1 = register_taxonomy('construction_type', [DomainConfigurationService::getWordPressPostType('realization')], [
             'labels' => [
                 'name' => 'Typy konstrukcí',
                 'singular_name' => 'Typ konstrukce',
@@ -80,7 +82,7 @@ class TaxonomyManager {
         ]);
 
         // Register construction materials taxonomy (English slug, Czech labels)
-        $result2 = register_taxonomy('construction_material', ['realizace'], [
+        $result2 = register_taxonomy('construction_material', [DomainConfigurationService::getWordPressPostType('realization')], [
             'labels' => [
                 'name' => 'Stavební materiály',
                 'singular_name' => 'Stavební materiál',

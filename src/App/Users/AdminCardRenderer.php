@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MistrFachman\Users;
 
+use MistrFachman\Services\ProjectStatusService;
+use MistrFachman\Services\DomainConfigurationService;
+
 /**
  * Admin Card Renderer - UI Component Rendering
  *
@@ -239,9 +242,9 @@ class AdminCardRenderer {
      */
     private function get_user_realizace_count(int $user_id): int {
         $query = new \WP_Query([
-            'post_type' => 'realization',
+            'post_type' => DomainConfigurationService::getWordPressPostType('realization'),
             'author' => $user_id,
-            'post_status' => ['pending', 'publish', 'rejected'],
+            'post_status' => ProjectStatusService::getAllValidStatuses(),
             'posts_per_page' => 1,
             'fields' => 'ids',
             'no_found_rows' => false
@@ -258,7 +261,7 @@ class AdminCardRenderer {
      */
     private function get_pending_realizace_count(int $user_id): int {
         $query = new \WP_Query([
-            'post_type' => 'realization',
+            'post_type' => DomainConfigurationService::getWordPressPostType('realization'),
             'author' => $user_id,
             'post_status' => 'pending',
             'posts_per_page' => 1,

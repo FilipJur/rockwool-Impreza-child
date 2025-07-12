@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Realizace;
 
+use MistrFachman\Services\DomainConfigurationService;
+
 /**
  * DebugValidator - Diagnostic and Validation Utilities
  *
@@ -221,7 +223,7 @@ class DebugValidator {
         
         // Get all realizace posts
         $posts = get_posts([
-            'post_type' => 'realization',
+            'post_type' => DomainConfigurationService::getWordPressPostType('realization'),
             'post_status' => 'any',
             'posts_per_page' => -1,
             'fields' => 'all'

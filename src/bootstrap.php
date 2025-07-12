@@ -139,7 +139,10 @@ add_action('init', function () {
     \MistrFachman\Services\DomainConfigurationService::initialize();
     \MistrFachman\Services\ValidationRulesRegistry::initialize();
     
-    mycred_debug('Architecture services initialized (DomainConfiguration, ValidationRules)', null, 'bootstrap', 'info');
+    // Initialize ProjectStatusService and register hooks for cache invalidation
+    \MistrFachman\Services\ProjectStatusService::registerHooks();
+    
+    mycred_debug('Architecture services initialized (DomainConfiguration, ValidationRules, ProjectStatus)', null, 'bootstrap', 'info');
 
     // Namespace aliases for clarity
     $ECommerceManager = \MistrFachman\MyCred\ECommerce\Manager::class;
@@ -213,13 +216,17 @@ add_action('init', function () {
     $product_service = new $ProductService($ecommerce_manager);
     $user_service = isset($users_manager) ? $users_manager->get_user_service() : null;
     
+    // 3.0. Initialize ProjectStatusService (no dependencies)
+    $ProjectStatusService = \MistrFachman\Services\ProjectStatusService::class;
+    $project_status_service = class_exists($ProjectStatusService) ? new $ProjectStatusService() : null;
+    
     // 3.1. Initialize ZebricekDataService (no dependencies)
     $ZebricekDataService = \MistrFachman\Services\ZebricekDataService::class;
     $zebricek_data_service = class_exists($ZebricekDataService) ? new $ZebricekDataService() : null;
 
     // 4. Initialize the Shortcode System, injecting all necessary services
-    if (class_exists($ShortcodeManager) && $user_service && $zebricek_data_service) {
-        $shortcode_manager = new $ShortcodeManager($ecommerce_manager, $product_service, $user_service, $zebricek_data_service);
+    if (class_exists($ShortcodeManager) && $user_service && $zebricek_data_service && $project_status_service) {
+        $shortcode_manager = new $ShortcodeManager($ecommerce_manager, $product_service, $user_service, $zebricek_data_service, $project_status_service);
         $shortcode_manager->init_shortcodes(); // Explicitly initialize
         
         // 4.1. Initialize Žebříček AJAX Service
@@ -233,13 +240,14 @@ add_action('init', function () {
         mycred_debug('Shortcode Manager class not found or required services unavailable.', [
             'shortcode_manager_exists' => class_exists($ShortcodeManager),
             'user_service_available' => isset($user_service),
-            'zebricek_service_available' => isset($zebricek_data_service)
+            'zebricek_service_available' => isset($zebricek_data_service),
+            'project_status_service_available' => isset($project_status_service)
         ], 'bootstrap', 'error');
     }
 
     mycred_log_architecture_event('PSR-4 Application Initialized with Service Layer', [
         'autoloader' => 'composer',
-        'domains' => ['Users', 'Realizace', 'Faktury', 'ECommerce', 'Shortcodes', 'Services'],
+        'domains' => ['Users', 'Realizace', 'Faktury', 'ECommerce', 'Shortcodes', 'Services', 'ProjectStatus'],
         'pattern' => 'decoupled with service injection'
     ]);
 }, 5); // Early priority to ensure services are available before wp_enqueue_scripts

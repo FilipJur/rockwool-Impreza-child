@@ -6,6 +6,7 @@ namespace MistrFachman\Base;
 
 use MistrFachman\Services\DualPointsManager;
 use MistrFachman\Services\DomainConfigurationService;
+use MistrFachman\Services\ProjectStatusService;
 
 /**
  * Base Points Handler - Abstract Foundation
@@ -332,16 +333,9 @@ abstract class PointsHandlerBase {
     }
 
     /**
-     * Get localized status label
+     * Get localized status label using ProjectStatusService
      */
     protected function get_status_label(string $status): string {
-        return match ($status) {
-            'rejected' => 'odmítnuto',
-            'pending' => 'čeká na schválení',
-            'draft' => 'koncept',
-            'trash' => 'koš',
-            'deleted' => 'smazáno',
-            default => $status
-        };
+        return ProjectStatusService::getStatusLabel($status);
     }
 }

@@ -6,6 +6,7 @@ namespace MistrFachman\Realizace;
 
 use MistrFachman\Base\AdminControllerBase;
 use MistrFachman\Base\AdminCardRendererBase;
+use MistrFachman\Services\ProjectStatusService;
 
 /**
  * Realizace Admin Controller - Unified Admin Interface Controller
@@ -120,32 +121,9 @@ class AdminController extends AdminControllerBase {
     }
 
     /**
-     * Get status display configuration
+     * Status display configuration inherited from AdminControllerBase
+     * Uses ProjectStatusService for centralized status handling
      */
-    protected function get_status_display_config(string $status): array {
-        return match ($status) {
-            'publish' => [
-                'label' => 'Schváleno',
-                'class' => 'status-approved'
-            ],
-            'pending' => [
-                'label' => 'Čeká na schválení',
-                'class' => 'status-pending'
-            ],
-            'rejected' => [
-                'label' => 'Odmítnuto',
-                'class' => 'status-rejected'
-            ],
-            'draft' => [
-                'label' => 'Koncept',
-                'class' => 'status-draft'
-            ],
-            default => [
-                'label' => ucfirst($status),
-                'class' => 'status-default'
-            ]
-        };
-    }
 
 
 
@@ -473,10 +451,10 @@ class AdminController extends AdminControllerBase {
     }
 
     /**
-     * Get the WordPress post type slug (Czech, for database/WP operations)
+     * Get the WordPress post type slug (for database/WP operations)
      */
     protected function getWordPressPostType(): string {
-        return 'realizace';
+        return 'realization';
     }
 
 

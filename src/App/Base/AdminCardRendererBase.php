@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MistrFachman\Base;
 
+use MistrFachman\Services\ProjectStatusService;
+
 /**
  * Base Admin Card Renderer - Lean Data Preparation Class
  *
@@ -108,6 +110,10 @@ abstract class AdminCardRendererBase {
         $post_type = $this->getPostType();
         $meta_key = "_{$post_type}_points_awarded";
 
+        // Build dynamic status list for SQL query
+        $valid_statuses = ProjectStatusService::getAllValidStatuses();
+        $status_placeholders = implode(',', array_fill(0, count($valid_statuses), '%s'));
+        
         $stats = $wpdb->get_results($wpdb->prepare("
             SELECT
                 post_status,
@@ -117,9 +123,9 @@ abstract class AdminCardRendererBase {
             LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = %s)
             WHERE p.post_type = %s
             AND p.post_author = %d
-            AND p.post_status IN ('pending', 'publish', 'rejected')
+            AND p.post_status IN ($status_placeholders)
             GROUP BY post_status
-        ", $meta_key, $post_type, $user_id), ARRAY_A);
+        ", array_merge([$meta_key, $post_type, $user_id], $valid_statuses)), ARRAY_A);
 
         $result = [
             'total' => 0,
@@ -159,7 +165,7 @@ abstract class AdminCardRendererBase {
         $query = new \WP_Query([
             'post_type' => $this->getPostType(),
             'author' => $user_id,
-            'post_status' => ['pending', 'publish', 'rejected'],
+            'post_status' => ProjectStatusService::getAllValidStatuses(),
             'posts_per_page' => -1,
             'orderby' => 'date',
             'order' => 'DESC',
@@ -198,27 +204,21 @@ abstract class AdminCardRendererBase {
      * @return array Configuration
      */
     public function get_status_config(string $status): array {
-        return match ($status) {
-            'publish' => [
-                'label' => 'Schváleno',
-                'class' => 'status-success'
-            ],
-            'pending' => [
-                'label' => 'Čeká na schválení',
-                'class' => 'status-warning'
-            ],
-            'rejected' => [
-                'label' => 'Odmítnuto',
-                'class' => 'status-error'
-            ],
-            'draft' => [
-                'label' => 'Koncept',
-                'class' => 'status-draft'
-            ],
-            default => [
-                'label' => ucfirst($status),
-                'class' => 'status-default'
-            ]
+        // Get status label from ProjectStatusService
+        $label = ProjectStatusService::getStatusLabel($status);
+        
+        // Map status to admin card CSS classes
+        $class = match ($status) {
+            'publish' => 'status-success',
+            'pending' => 'status-warning',
+            'rejected' => 'status-error',
+            'draft' => 'status-draft',
+            default => 'status-default'
         };
+        
+        return [
+            'label' => $label,
+            'class' => $class
+        ];
     }
 }
