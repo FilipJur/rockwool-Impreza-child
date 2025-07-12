@@ -212,4 +212,14 @@ class FakturaFieldService extends FieldServiceBase {
             'invoice_date' => self::getInvoiceDate($post_id),
         ];
     }
+
+    /**
+     * Get the meta field name for tracking awarded points
+     * Used to prevent duplicate point awarding
+     *
+     * @return string Meta field name
+     */
+    public static function getAwardedPointsMetaFieldName(): string {
+        return DomainConfigurationService::getFieldName(self::DOMAIN_KEY, 'awarded_points_meta');
+    }
 }

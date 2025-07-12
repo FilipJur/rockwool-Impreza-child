@@ -74,14 +74,24 @@ class PointsHandler extends PointsHandlerBase {
      */
     public function getCalculatedPoints(int $post_id = 0): int {
         if ($post_id === 0) {
-            error_log('[FAKTURY:WARNING] getCalculatedPoints called with post_id 0');
+            DebugLogger::logCalculation('invoice', 0, [
+                'error' => 'getCalculatedPoints called with post_id 0',
+                'points_calculated' => 0
+            ]);
             return 0;
         }
+        
+        $invoice_value = FakturaFieldService::getValue($post_id);
         
         // Use centralized points calculation service
         $calculated_points = \MistrFachman\Services\PointsCalculationService::calculatePoints('invoice', $post_id);
         
-        error_log("[FAKTURY:DEBUG] Points calculation for post {$post_id}: {$calculated_points} points (via PointsCalculationService)");
+        DebugLogger::logCalculation('invoice', $post_id, [
+            'invoice_value' => $invoice_value,
+            'points_calculated' => $calculated_points,
+            'calculation_formula' => 'floor(invoice_value / 10)',
+            'source' => 'PointsCalculationService'
+        ]);
         
         return $calculated_points;
     }
@@ -93,9 +103,26 @@ class PointsHandler extends PointsHandlerBase {
     public function award_points(int $post_id, int $user_id, int $points_to_award): bool {
         $invoice_value = FakturaFieldService::getValue($post_id);
         
-        error_log("[FAKTURY:INFO] Awarding {$points_to_award} points to user {$user_id} for faktura {$post_id} (value: {$invoice_value} CZK)");
+        DebugLogger::logAssignment('invoice', $post_id, [
+            'points_awarded' => $points_to_award,
+            'user_id' => $user_id,
+            'invoice_value' => $invoice_value,
+            'method' => 'award_points',
+            'source' => 'PointsHandler::award_points'
+        ]);
         
-        return parent::award_points($post_id, $user_id, $points_to_award);
+        $success = parent::award_points($post_id, $user_id, $points_to_award);
+        
+        if (!$success) {
+            DebugLogger::logAssignment('invoice', $post_id, [
+                'error' => 'Failed to award points via parent::award_points',
+                'points_attempted' => $points_to_award,
+                'user_id' => $user_id,
+                'success' => false
+            ]);
+        }
+        
+        return $success;
     }
 
     /**
@@ -105,7 +132,8 @@ class PointsHandler extends PointsHandlerBase {
         parent::init_hooks();
         
         // Observer hook: React to changes in invoice_value field
-        add_action('updated_post_meta', [$this, 'on_invoice_value_update'], 10, 4);
+        // DISABLED: AdminController ACF hooks handle this more reliably
+        // add_action('updated_post_meta', [$this, 'on_invoice_value_update'], 15, 4);
     }
 
     /**
@@ -124,24 +152,34 @@ class PointsHandler extends PointsHandlerBase {
             return;
         }
 
-        // Step 2: Calculate points using centralized service
+        // Step 2: Calculate points directly from the fresh meta_value (not from database)
         $new_invoice_value = (int) $meta_value;
-        $new_points = \MistrFachman\Services\PointsCalculationService::calculatePoints('invoice', $post_id);
+        $new_points = $new_invoice_value > 0 ? (int) floor($new_invoice_value / 10) : 0;
         
         // Step 3: Get the currently stored points to see if an update is needed.
         $current_points = FakturaFieldService::getPoints($post_id);
 
+        DebugLogger::logRecalculation('invoice', $post_id, [
+            'trigger' => 'on_invoice_value_update',
+            'meta_key' => $meta_key,
+            'invoice_value' => $new_invoice_value,
+            'points_calculated' => $new_points,
+            'points_current' => $current_points,
+            'update_needed' => $new_points !== $current_points,
+            'hook_context' => 'updated_post_meta'
+        ]);
+
         // Step 4: Only update if the calculated points are different from what's stored.
         if ($new_points !== $current_points) {
             // No need for loop prevention here, as we are not re-triggering the same meta_key update.
-            FakturaFieldService::setPoints($post_id, $new_points);
+            $success = FakturaFieldService::setPoints($post_id, $new_points);
 
-            DebugLogger::log('REACTIVE UPDATE SUCCESS', [
-                'post_id' => $post_id,
-                'trigger_key' => $meta_key,
-                'new_invoice_value' => $new_invoice_value,
-                'calculated_points' => $new_points,
-                'previous_points' => $current_points
+            DebugLogger::logFieldUpdate('invoice', $post_id, [
+                'field_updated' => 'points',
+                'old_value' => $current_points,
+                'new_value' => $new_points,
+                'success' => $success,
+                'trigger_source' => 'invoice_value_change'
             ]);
         }
     }
@@ -170,6 +208,10 @@ class PointsHandler extends PointsHandlerBase {
 
         // Prevent this from running during an AJAX request, which has its own logic.
         if (wp_doing_ajax()) {
+            DebugLogger::logPointsFlow('editor_save_skip', 'invoice', $post_id, [
+                'reason' => 'wp_doing_ajax() returned true',
+                'source' => 'handle_editor_save'
+            ]);
             return;
         }
 
@@ -183,18 +225,33 @@ class PointsHandler extends PointsHandlerBase {
         // For Faktury, we allow points calculation for both publish AND pending posts
         // This enables form submission workflow where posts are created as pending
         if (!in_array($post_status, ['publish', 'pending'])) {
+            DebugLogger::logPointsFlow('editor_save_skip', 'invoice', $post_id, [
+                'reason' => 'post_status not publish or pending',
+                'post_status' => $post_status,
+                'source' => 'handle_editor_save'
+            ]);
             return;
         }
 
         $user_id = (int)get_post_field('post_author', $post_id);
         if (!$user_id || !get_userdata($user_id)) {
+            DebugLogger::logPointsFlow('editor_save_skip', 'invoice', $post_id, [
+                'reason' => 'invalid user_id',
+                'user_id' => $user_id,
+                'source' => 'handle_editor_save'
+            ]);
             return;
         }
 
         // Get current points - if empty, populate with calculated value
         $current_points = FakturaFieldService::getPoints($post_id);
         
-        error_log("[FAKTURY:DEBUG] ACF hook firing for post {$post_id} - current points: {$current_points}, status: {$post_status}");
+        DebugLogger::logPointsFlow('editor_save_start', 'invoice', $post_id, [
+            'post_status' => $post_status,
+            'user_id' => $user_id,
+            'current_points' => $current_points,
+            'source' => 'handle_editor_save'
+        ]);
         
         if ($current_points === 0) {
             $calculated_points = $this->getCalculatedPoints($post_id);
@@ -202,20 +259,61 @@ class PointsHandler extends PointsHandlerBase {
             if ($calculated_points > 0) {
                 $set_result = FakturaFieldService::setPoints($post_id, $calculated_points);
                 
-                error_log("[FAKTURY:DEBUG] Auto-populated points via ACF hook: {$calculated_points} for post #{$post_id} (result: " . ($set_result ? 'success' : 'failed') . ")");
+                DebugLogger::logFieldUpdate('invoice', $post_id, [
+                    'field_updated' => 'points',
+                    'action' => 'auto_populate',
+                    'calculated_points' => $calculated_points,
+                    'set_result' => $set_result,
+                    'source' => 'handle_editor_save'
+                ]);
                 
                 // Verify the value was actually saved
                 $verified_points = FakturaFieldService::getPoints($post_id);
-                error_log("[FAKTURY:DEBUG] Verification: points field now contains: {$verified_points}");
+                if ($verified_points !== $calculated_points) {
+                    DebugLogger::logFieldUpdate('invoice', $post_id, [
+                        'error' => 'Points verification failed after auto-populate',
+                        'expected' => $calculated_points,
+                        'actual' => $verified_points,
+                        'source' => 'handle_editor_save'
+                    ]);
+                }
             }
         }
 
-        // Only award points if the post is published (not pending)
+        // Award points for both publish transitions and published posts
+        // This covers both initial publish and subsequent updates
         if ($post_status === 'publish') {
             $points_to_award = FakturaFieldService::getPoints($post_id);
             
             if ($points_to_award > 0) {
-                $this->award_points($post_id, $user_id, $points_to_award);
+                // Check if points were already awarded to prevent duplicates
+                $awarded_points_meta = get_post_meta($post_id, FakturaFieldService::getAwardedPointsMetaFieldName(), true);
+                $duplicate_prevention = !empty($awarded_points_meta) && (int)$awarded_points_meta === $points_to_award;
+                
+                DebugLogger::logAssignment('invoice', $post_id, [
+                    'points_to_award' => $points_to_award,
+                    'user_id' => $user_id,
+                    'awarded_points_meta' => $awarded_points_meta,
+                    'duplicate_prevention' => $duplicate_prevention,
+                    'source' => 'handle_editor_save'
+                ]);
+                
+                if (!$duplicate_prevention) {
+                    $success = $this->award_points($post_id, $user_id, $points_to_award);
+                    
+                    if ($success) {
+                        // Track awarded points to prevent duplicates
+                        update_post_meta($post_id, FakturaFieldService::getAwardedPointsMetaFieldName(), $points_to_award);
+                        
+                        DebugLogger::logAssignment('invoice', $post_id, [
+                            'points_awarded' => $points_to_award,
+                            'user_id' => $user_id,
+                            'success' => true,
+                            'meta_updated' => true,
+                            'source' => 'handle_editor_save'
+                        ]);
+                    }
+                }
             }
         }
     }
