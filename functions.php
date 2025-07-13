@@ -20,7 +20,7 @@ function impreza_parent_theme_enqueue_styles()
 	// Parent theme styles
 	wp_enqueue_style('impreza-style', get_template_directory_uri() . '/style.css');
 
-	// Tailwind utilities (frontend only - loaded first, lower priority)
+	// Tailwind utilities (frontend only)
 	wp_enqueue_style(
 		'tailwind-utilities',
 		get_stylesheet_directory_uri() . '/tailwind.css',
@@ -28,13 +28,8 @@ function impreza_parent_theme_enqueue_styles()
 		'1.0.0'
 	);
 
-	// Child theme custom styles (loaded last, higher priority)
-	wp_enqueue_style(
-		'impreza-child-style',
-		get_stylesheet_directory_uri() . '/style.css',
-		['impreza-style', 'tailwind-utilities'],
-		'1.0.0'
-	);
+	// Note: Child theme style.css is automatically loaded by WordPress
+	// No need to manually enqueue it - this prevents double loading
 }
 
 // Centralized enqueue for child theme custom assets
