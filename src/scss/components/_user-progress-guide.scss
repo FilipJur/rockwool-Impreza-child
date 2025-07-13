@@ -61,154 +61,216 @@
     }
   }
 
-  // Step badge styling - Figma: Different states with specific colors
-  .step-badge-completed {
-    // Completed state - red background (#DB0626), white text
-    background-color: $color-primary;
-    color: $color-white;
-    width: 127px;
-    height: 40px;
-    padding: 8px 16px 8px 8px;
-    font-family: $font-primary;
-    font-weight: $font-weight-bold;
-    font-size: $font-size-sm;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap; // Prevent text wrapping
-    opacity: 1;
-
-    svg {
-      width: 16px;
-      height: 16px;
+  // Mixins and placeholders for DRY badge styling
+  @mixin step-icon($size: 16px, $svg-data) {
+    &::before {
+      content: "";
+      width: $size;
+      height: $size;
+      background-image: url($svg-data);
+      background-repeat: no-repeat;
+      background-size: contain;
       flex-shrink: 0;
     }
   }
 
-  .step-badge-in-progress {
-    // In-progress state - light pink background (#FDF3F4), black text
-    background-color: #fdf3f4;
-    color: $color-black;
-    width: 143px;
-    height: 40px;
-    padding: 8px 12px 8px 12px;
-    font-family: $font-primary;
-    font-weight: $font-weight-normal;
-    font-size: $font-size-sm;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap; // Prevent text wrapping
-    opacity: 1;
-
-    svg {
-      width: 25px;
-      height: 25px;
-      flex-shrink: 0;
-    }
-  }
-
-  .step-badge-pending {
-    // Pending state - dashed gray border (#DADADA), gray text
-    border: 1px dashed #dadada;
-    background-color: transparent;
-    color: $color-gray-medium;
-    padding: 8px 12px;
-    font-family: $font-primary;
-    font-weight: $font-weight-normal;
-    font-size: $font-size-sm;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap; // Prevent text wrapping
-
-    svg {
-      width: 16px;
-      height: 16px;
-      flex-shrink: 0;
-    }
-  }
-
-  .step-badge-future {
-    // Future state - dashed gray border (#DADADA), gray text
-    border: 1px dashed #dadada;
-    background-color: transparent;
-    color: $color-gray-medium;
+  %small-badge {
     width: 40px;
     height: 40px;
-    padding: 8px 12px;
-    font-family: $font-primary;
-    font-weight: $font-weight-normal;
-    font-size: $font-size-sm;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap; // Prevent text wrapping
-    opacity: 1;
-
-    svg {
-      width: 16px;
-      height: 16px;
-      flex-shrink: 0;
+    justify-content: center;
+    
+    .step-badge__text {
+      display: none; // Hide text in small badge
     }
   }
 
-  .step-badge-none {
-    // None state (no project uploaded yet) - dashed border #909090
+  %dashed-border-base {
+    border: 1px dashed #dadada;
+    background-color: transparent;
+    color: $color-gray-medium;
+  }
+
+  %dashed-border-dark {
     border: 1px dashed #909090;
     background-color: transparent;
     color: $color-gray-medium;
-    width: 40px;
-    height: 40px;
-    padding: 8px 12px;
+  }
+
+  // CSS-driven step badge styling
+  .step-badge {
+    // Base styling for all badges
     font-family: $font-primary;
-    font-weight: $font-weight-normal;
     font-size: $font-size-sm;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 4px;
     white-space: nowrap;
     opacity: 1;
+    transition: all $transition-base;
+    padding: 8px 12px;
+    min-height: 40px;
 
-    span {
-      display: none; // Hide text in the small 40x40 box
+    // Default pending state using placeholder
+    @extend %dashed-border-base;
+    font-weight: $font-weight-normal;
+
+    .step-badge__text {
+      // All badge text gets normal weight by default
+      font-weight: inherit;
     }
   }
 
-  // Step titles - Specific typography per title type
+  // State-specific styling via data attributes
+  [data-state="completed"] .step-badge {
+    // Completed state - red background, white text
+    background-color: $color-primary;
+    color: $color-white;
+    border: none;
+    font-weight: $font-weight-bold;
+    padding: 8px 16px 8px 8px;
+    width: 127px;
+
+    // Add checkmark icon using mixin
+    @include step-icon(16px, "data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M13.366 4.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L6.659 9.586l5.293-5.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  }
+
+  [data-state="pending"] .step-badge {
+    // Pending state - light pink background, black text
+    background-color: #fdf3f4;
+    color: $color-black;
+    border: none;
+    width: 143px;
+    padding: 8px 12px;
+
+    // Add hourglass icon using mixin
+    @include step-icon(25px, "data:image/svg+xml,%3Csvg width='25' height='25' viewBox='0 0 25 25' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M18.6917 22.1654H6.69171V16.1654L10.6917 12.1654L6.69171 8.16541V2.16541H18.6917V8.16541L14.6917 12.1654L18.6917 16.1654M8.69171 7.66541L12.6917 11.6654L16.6917 7.66541V4.16541H8.69171M12.6917 12.6654L8.69171 16.6654V20.1654H16.6917V16.6654M14.6917 18.1654H10.6917V17.3654L12.6917 15.3654L14.6917 17.3654V18.1654Z' fill='black'/%3E%3C/svg%3E");
+  }
+
+  [data-state="rejected"] .step-badge {
+    // Rejected state - dashed border, gray background
+    @extend %dashed-border-base;
+
+    // Add X icon using mixin
+    @include step-icon(16px, "data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='%23d63638' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M8 15A7 7 0 108 1a7 7 0 000 14zM5.354 4.646a.5.5 0 10-.708.708L7.293 8l-2.647 2.646a.5.5 0 00.708.708L8 8.707l2.646 2.647a.5.5 0 00.708-.708L8.707 8l2.647-2.646a.5.5 0 00-.708-.708L8 7.293 5.354 4.646z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  }
+
+  [data-state="awaiting"] .step-badge {
+    // Awaiting state - darker dashed border
+    @extend %dashed-border-dark;
+    @extend %small-badge;
+  }
+
+  [data-state="locked"] .step-badge {
+    // Locked state - dashed border with lock icon
+    @extend %dashed-border-base;
+    @extend %small-badge;
+
+    // Add lock icon using mixin
+    @include step-icon(16px, "data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='%23909090' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M4 7V5a4 4 0 018 0v2a2 2 0 012 2v5a2 2 0 01-2 2H4a2 2 0 01-2-2V9a2 2 0 012-2zm6-2v2H6V5a2 2 0 014 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  }
+
+  [data-state="available"] .step-badge {
+    // Available state - dashed border, no icon (ready for action)
+    @extend %dashed-border-base;
+    @extend %small-badge;
+  }
+
+  // CSS-driven step title styling
   .step-title {
-    font-family: $font-primary; // Avenir Next
+    font-family: $font-primary;
     margin: 0;
     padding: 0;
-    white-space: nowrap; // Prevent title text wrapping
+    white-space: nowrap;
     line-height: 24px;
     letter-spacing: 0%;
+    transition: all $transition-base;
+    position: relative;
 
-    // Default styling for completed states (Dokončená registrace, Vyberte si první odměny)
-    font-weight: 600; // Demi Bold
-    font-size: 18px;
-    color: $color-primary;
-  }
-
-  // Specific styling for project status states
-  .step-title--project-pending {
-    font-weight: 400; // Regular
-    font-size: 16px;
-    color: $color-black;
-  }
-
-  .step-title--project-none {
-    font-weight: 600; // Demi Bold
-    font-size: 18px;
-    color: $color-black;
-  }
-
-  // Specific styling for rewards status states
-  .step-title--rewards-waiting {
+    // Default styling
     font-weight: 400; // Regular
     font-size: 18px;
     color: $color-black;
+  }
+
+  // State-specific title styling
+  [data-state="completed"] .step-title {
+    font-weight: 600; // Bold for completed
+    color: $color-primary; // Primary color for completed
+  }
+
+  [data-state="pending"][data-step="project"] .step-title {
+    font-weight: 400; // Regular for pending projects
+    font-size: 16px; // Smaller for pending
+    color: $color-black;
+  }
+
+  [data-step="project"][data-state="awaiting"] .step-title {
+    font-weight: 600; // Bold for project awaiting upload
+    font-size: 18px;
+    color: $color-black;
+  }
+
+  [data-step="rewards"][data-state="locked"] .step-title {
+    font-weight: 400; // Regular for locked rewards
+    font-size: 18px;
+    color: $color-black;
+  }
+
+  [data-step="rewards"][data-state="available"] .step-title {
+    font-weight: 400; // Regular for available rewards (not completed)
+    font-size: 18px;
+    color: $color-black;
+  }
+
+  // Current step styling (highlighted with arrow)
+  [data-current="true"] .step-title {
+    font-weight: 600; // Bold for current step
+    
+    // Add arrow after current step title
+    &::after {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 9px;
+      margin-left: 8px;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='9' viewBox='0 0 12 9' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0.191752 4.32969L9.57529 4.32969L6.95029 1.70469L7.77512 0.879852L11.8083 4.91302L7.77512 8.94619L6.95029 8.12135L9.57529 5.49635L0.191752 5.49635L0.191752 4.32969Z' fill='%23DB0626'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-size: contain;
+      vertical-align: middle;
+    }
+  }
+
+  // Points amount styling - completed and pending badges show bold points
+  [data-state="completed"] .step-badge__text,
+  [data-state="pending"] .step-badge__text {
+    font-weight: 700; // Extra bold for point amounts
+  }
+
+  // Progress bar styling
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    transition: background-color $transition-base;
+    background-color: #dadada; // Default pending
+
+    // Completed progress bars
+    &[data-from="registration"] {
+      background-color: $color-primary; // Registration always completed or will be first
+    }
+    
+    &[data-from="project"] {
+      background-color: #dadada; // Default pending
+    }
+  }
+
+  // Dynamic progress bar coloring based on previous step completion
+  [data-state="completed"] ~ .progress-bar-container .progress-bar {
+    background-color: $color-primary; // Previous step completed
+  }
+
+  [data-state="pending"] ~ .progress-bar-container .progress-bar,
+  [data-state="awaiting"] ~ .progress-bar-container .progress-bar {
+    background-color: #fdf3f4; // In progress
   }
 
   // Badge container positioning - now inline with title

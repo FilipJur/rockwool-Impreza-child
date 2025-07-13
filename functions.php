@@ -211,7 +211,7 @@ function lwp_modify_login_content($buffer) {
     // Replace entire terms section with proper structure like OTP
     $disclaimer_with_link = 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s <a href="#">podmínkami programu</a>.';
     $terms_html = '<div class="accept_terms_and_conditions">' . $disclaimer_with_link . '</div>';
-    
+
     // Remove the entire broken terms section and replace with clean version
     $buffer = preg_replace(
         '/<div class="accept_terms_and_conditions">.*?<\/div>/s',
@@ -335,39 +335,3 @@ function set_returning_user_cookie_on_login_check() {
  * Load the main application bootstrap file.
  */
 require_once get_stylesheet_directory() . '/src/bootstrap.php';
-
-/**
- * Development Testing - Refactor Verification
- * 
- * Add admin menu item for testing the decoupling refactor fixes
- */
-if (defined('WP_DEBUG') && WP_DEBUG) {
-    add_action('admin_menu', 'add_refactor_test_menu');
-    
-    function add_refactor_test_menu() {
-        add_management_page(
-            'Refactor Tests',
-            'Refactor Tests',
-            'manage_options',
-            'refactor-tests',
-            'display_refactor_test_page'
-        );
-    }
-    
-    function display_refactor_test_page() {
-        echo '<div class="wrap">';
-        echo '<h1>Points System Refactor Tests</h1>';
-        echo '<div class="notice notice-info"><p><strong>Debug Mode:</strong> These tests are only available when WP_DEBUG is enabled.</p></div>';
-        
-        // Include the test files
-        echo '<h2>System Status Check</h2>';
-        include get_stylesheet_directory() . '/test-refactor-fixes.php';
-        
-        echo '<hr>';
-        echo '<h2>Race Condition Test</h2>';
-        include get_stylesheet_directory() . '/test-race-condition-scenario.php';
-        
-        echo '</div>';
-    }
-}
-

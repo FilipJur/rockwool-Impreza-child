@@ -107,55 +107,156 @@ class UserProgressGuideShortcode extends ShortcodeBase
     }
 
     /**
-     * Get user's progress data with caching optimization
+     * Get simple workflow state for CSS-driven rendering
+     */
+    private function get_workflow_state(int $user_id): array
+    {
+        $user_status = $this->user_service->get_user_registration_status($user_id);
+        $project_data = $this->project_status_service->getCachedUserProjects($user_id);
+        
+        // Determine current step (what user should focus on)
+        $current_step = $this->get_current_step($user_status, $project_data);
+        
+        return [
+            'current_step' => $current_step,
+            'user_status' => $user_status,
+            'registration' => [
+                'state' => $user_status === 'full_member' ? 'completed' : 'pending',
+                'points' => $user_status === 'full_member' ? DomainConfigurationService::getUserWorkflowReward('registration_completed') : 0,
+                'text' => $this->get_registration_text($user_status)
+            ],
+            'project' => [
+                'state' => $this->get_project_state($project_data, $user_status),
+                'points' => DomainConfigurationService::getUserWorkflowReward('first_project_uploaded'),
+                'text' => $this->get_project_text($project_data, $user_status)
+            ],
+            'rewards' => [
+                'state' => $project_data['has_published'] ? 'available' : 'locked',
+                'text' => $project_data['has_published'] ? 'Vyberte si první odměny' : 'Vyberte si první odměny za odvedenou práci'
+            ]
+        ];
+    }
+    
+    /**
+     * Determine which step user should focus on
+     */
+    private function get_current_step(string $user_status, array $project_data): string
+    {
+        if ($user_status !== 'full_member') {
+            return 'registration';
+        }
+        
+        if (!$project_data['has_uploaded']) {
+            return 'project';
+        }
+        
+        if ($project_data['has_published']) {
+            return 'rewards';
+        }
+        
+        if ($project_data['has_uploaded'] && !$project_data['has_published']) {
+            return 'rewards'; // Pending project - focus on upcoming rewards
+        }
+        
+        return 'project';
+    }
+    
+    /**
+     * Get registration status text
+     */
+    private function get_registration_text(string $user_status): string
+    {
+        return match($user_status) {
+            'needs_form' => 'Dokončete registrační formulář',
+            'awaiting_review' => 'Čeká na schválení',
+            'full_member' => number_format(DomainConfigurationService::getUserWorkflowReward('registration_completed'), 0, ',', ' ') . ' bodů',
+            default => 'V procesu'
+        };
+    }
+    
+    /**
+     * Get project state
+     */
+    private function get_project_state(array $project_data, string $user_status): string
+    {
+        if ($user_status !== 'full_member') {
+            return 'locked';
+        }
+        
+        if ($project_data['has_published']) {
+            return 'completed';
+        }
+        
+        if ($project_data['has_uploaded']) {
+            return $project_data['has_rejected'] ? 'rejected' : 'pending';
+        }
+        
+        return 'awaiting';
+    }
+    
+    /**
+     * Get project text based on state
+     */
+    private function get_project_text(array $project_data, string $user_status): string
+    {
+        if ($user_status !== 'full_member') {
+            return '';
+        }
+        
+        $state = $this->get_project_state($project_data, $user_status);
+        
+        return match($state) {
+            'completed' => number_format(DomainConfigurationService::getUserWorkflowReward('first_project_uploaded'), 0, ',', ' ') . ' bodů',
+            'pending' => number_format(DomainConfigurationService::getUserWorkflowReward('first_project_uploaded'), 0, ',', ' ') . ' bodů',
+            'rejected' => 'Odmítnuto',
+            'awaiting' => 'Nahrajte první projekt',
+            default => ''
+        };
+    }
+
+    /**
+     * Get user's progress data for CSS-driven rendering
      */
     private function get_progress_data(int $user_id): array
     {
-        $user_status = $this->user_service->get_user_registration_status($user_id);
-
-        // Registration step progress based on status
-        $registration_completed = ($user_status === 'full_member');
-        $registration_progress = DomainConfigurationService::getUserProgressPercentage($user_status);
-
-        // Use ProjectStatusService for project data (includes rejected status handling)
-        $project_data = $this->project_status_service->getCachedUserProjects($user_id);
-
-        // Check first project upload (only for full members)
-        $first_project_uploaded = false;
-        $project_progress = 0;
-        $project_status = 'none'; // none, pending, published, rejected
-
-        if ($user_status === 'full_member') {
-            $first_project_uploaded = $project_data['has_uploaded'];
-            $project_progress = $first_project_uploaded ? DomainConfigurationService::PROGRESS_PROJECT_UPLOADED : $project_data['progress_percentage'];
-
-            // Determine granular project status with rejected handling
-            if ($project_data['has_published']) {
-                $project_status = 'published';
-            } elseif ($project_data['has_uploaded']) {
-                // Check if has rejected projects
-                $project_status = $project_data['has_rejected'] ? 'rejected' : 'pending';
-            } elseif ($project_data['progress_percentage'] > 0) {
-                $project_status = 'draft';
-            } else {
-                $project_status = 'none';
-            }
-        }
-
+        // Get simplified workflow state
+        $workflow = $this->get_workflow_state($user_id);
+        
         return [
-            'user_status' => $user_status,
+            'workflow' => $workflow,
             'registration' => [
-                'completed' => $registration_completed,
-                'progress_percentage' => $registration_progress,
-                'points' => $registration_completed ? DomainConfigurationService::getUserWorkflowReward('registration_completed') : 0
+                'title' => 'Dokončená registrace',
+                'state' => $workflow['registration']['state'],
+                'text' => $workflow['registration']['text'],
+                'is_current' => $workflow['current_step'] === 'registration'
             ],
-            'first_project' => [
-                'completed' => $first_project_uploaded,
-                'progress_percentage' => $project_progress,
-                'points' => DomainConfigurationService::getUserWorkflowReward('first_project_uploaded'),
-                'status' => $project_status
+            'project' => [
+                'title' => $this->get_project_title($workflow['project']['state']),
+                'state' => $workflow['project']['state'], 
+                'text' => $workflow['project']['text'],
+                'is_current' => $workflow['current_step'] === 'project'
+            ],
+            'rewards' => [
+                'title' => $workflow['rewards']['text'],
+                'state' => $workflow['rewards']['state'],
+                'text' => '',
+                'is_current' => $workflow['current_step'] === 'rewards'
             ]
         ];
+    }
+    
+    /**
+     * Get project title based on state
+     */
+    private function get_project_title(string $state): string
+    {
+        return match($state) {
+            'completed' => 'První nahraná realizace',
+            'pending' => 'Realizace čeká na schválení',
+            'rejected' => 'Realizace byla odmítnuta',
+            'awaiting' => 'Nahrajte svou první realizaci',
+            default => 'Nahrajte svou první realizaci'
+        };
     }
 
     /**
