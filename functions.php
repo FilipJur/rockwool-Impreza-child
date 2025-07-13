@@ -113,18 +113,10 @@ function impreza_child_inject_user_data()
 	wp_localize_script('theme-main-js', 'mistrFachman', $js_data);
 }
 
-// Admin-specific asset enqueuing (no Tailwind to avoid conflicts)
+// Admin-specific asset enqueuing (CSS handled by domain-specific managers)
 add_action('admin_enqueue_scripts', 'impreza_child_enqueue_admin_assets');
 function impreza_child_enqueue_admin_assets()
 {
-	// Enqueue admin-specific CSS (contains grid layout, collapsible sections, etc.)
-	wp_enqueue_style(
-		'theme-admin-css',
-		get_stylesheet_directory_uri() . '/style.css',
-		['admin-bar'],
-		wp_get_theme()->get('Version')
-	);
-
 	// Register built admin JavaScript bundle
 	$admin_js_asset_file = get_stylesheet_directory() . '/build/js/admin.asset.php';
 	$admin_js_asset = file_exists($admin_js_asset_file) ? include $admin_js_asset_file : array('dependencies' => array(), 'version' => '1.0.0');

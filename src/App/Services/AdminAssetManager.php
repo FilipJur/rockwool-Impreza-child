@@ -66,12 +66,20 @@ final class AdminAssetManager {
     }
 
     /**
-     * Enqueue admin styles
+     * Enqueue admin styles with duplicate prevention
      */
     protected function enqueue_admin_styles(): void {
-        // Use main theme CSS which includes admin styles
+        // Standard handle for admin CSS across all domains
+        $admin_css_handle = 'mistr-admin-css';
+        
+        // Check if CSS is already enqueued by another domain manager
+        if (wp_style_is($admin_css_handle, 'enqueued') || wp_style_is($admin_css_handle, 'done')) {
+            return; // Already loaded
+        }
+        
+        // Enqueue admin CSS with consistent handle
         wp_enqueue_style(
-            'mistr-theme-css',
+            $admin_css_handle,
             get_stylesheet_uri(),
             ['admin-bar'],
             wp_get_theme()->get('Version')

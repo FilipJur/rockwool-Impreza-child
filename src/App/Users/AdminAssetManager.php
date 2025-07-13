@@ -54,11 +54,19 @@ class AdminAssetManager {
             error_log('AdminAssetManager: ERROR - theme-admin-js not registered!');
         }
 
-        if ($main_css_registered) {
-            wp_enqueue_style('impreza-child-style');
-            error_log('AdminAssetManager: Enqueued impreza-child-style');
+        // Use consistent admin CSS handle and prevent duplicates
+        $admin_css_handle = 'mistr-admin-css';
+        if (!wp_style_is($admin_css_handle, 'enqueued') && !wp_style_is($admin_css_handle, 'done')) {
+            // Enqueue with standard handle if not already loaded
+            wp_enqueue_style(
+                $admin_css_handle,
+                get_stylesheet_uri(),
+                ['admin-bar'],
+                wp_get_theme()->get('Version')
+            );
+            error_log('AdminAssetManager: Enqueued mistr-admin-css');
         } else {
-            error_log('AdminAssetManager: ERROR - impreza-child-style not registered!');
+            error_log('AdminAssetManager: mistr-admin-css already loaded, skipping');
         }
 
         // Localize script for AJAX
