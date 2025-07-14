@@ -1,0 +1,170 @@
+/**
+ * Login Typography System
+ * Centralized typography patterns based on exact Figma specifications
+ * Single source of truth for all login/registration text styling
+ */
+
+@use '../../base/variables' as *;
+@use 'sass:map';
+
+// Typography specification map - FIGMA SINGLE SOURCE OF TRUTH
+$figma-typography: (
+  title: (
+    font-family: $font-primary,
+    font-size: 36px,
+    font-weight: 600,
+    line-height: 40px,
+    text-align: center,
+    color: $color-black
+  ),
+  subtitle: (
+    font-family: $font-primary,
+    font-size: 18px,
+    font-weight: 400,
+    line-height: 24px,
+    text-align: center,
+    color: $color-black
+  ),
+  button: (
+    font-family: $font-primary,
+    font-size: 18px,
+    font-weight: 600,
+    line-height: 100%,
+    color: $color-white
+  ),
+  toggle-link: (
+    font-family: $font-primary,
+    font-size: 18px,
+    font-weight: 600,
+    line-height: 100%,
+    text-align: center,
+    color: $color-black,
+    text-decoration: underline
+  ),
+  disclaimer-short: (
+    font-family: $font-primary,
+    font-size: 14px,
+    font-weight: 400,
+    line-height: 18px,
+    text-align: center,
+    color: $color-black
+  ),
+  disclaimer-long: (
+    font-family: $font-primary,
+    font-size: 16px,
+    font-weight: 400,
+    line-height: 22px,
+    text-align: center,
+    color: $color-black
+  ),
+  input-text: (
+    font-family: $font-primary,
+    font-size: 16px,
+    font-weight: 400,
+    line-height: 1.375,
+    color: $color-black
+  ),
+  country-code: (
+    font-family: $font-primary,
+    font-size: 16px,
+    font-weight: 400,
+    line-height: 1.375,
+    color: $color-black
+  )
+);
+
+// Typography mixin generator
+@mixin figma-typography($variant) {
+  $spec: map.get($figma-typography, $variant);
+  
+  @if $spec {
+    @each $property, $value in $spec {
+      #{$property}: $value;
+    }
+  } @else {
+    @error "Typography variant '#{$variant}' not found in $figma-typography map";
+  }
+}
+
+// Responsive typography scaling function
+@function responsive-font-size($base-size, $scale-factor: 0.8) {
+  @return calc(#{$base-size} * #{$scale-factor});
+}
+
+// Semantic typography mixins for common components
+@mixin login-title {
+  @include figma-typography(title);
+}
+
+@mixin login-subtitle {
+  @include figma-typography(subtitle);
+}
+
+@mixin login-button-text {
+  @include figma-typography(button);
+}
+
+@mixin login-toggle-link {
+  @include figma-typography(toggle-link);
+  
+  &:hover {
+    color: $color-primary;
+    text-decoration: none;
+  }
+}
+
+@mixin login-disclaimer($type: 'short') {
+  @if $type == 'long' {
+    @include figma-typography(disclaimer-long);
+  } @else {
+    @include figma-typography(disclaimer-short);
+  }
+  
+  // Common disclaimer link styling
+  a {
+    color: inherit;
+    text-decoration: underline;
+    
+    &:hover {
+      color: $color-primary;
+      text-decoration: underline;
+    }
+  }
+}
+
+@mixin login-input-text {
+  @include figma-typography(input-text);
+}
+
+// Responsive typography mixins
+@mixin responsive-login-title {
+  @include login-title;
+  
+  @media (max-width: 480px) {
+    font-size: responsive-font-size(36px, 0.78); // 28px
+  }
+}
+
+@mixin responsive-login-subtitle {
+  @include login-subtitle;
+  
+  @media (max-width: 480px) {
+    font-size: responsive-font-size(18px, 0.89); // 16px
+  }
+}
+
+@mixin responsive-button-text {
+  @include login-button-text;
+  
+  @media (max-width: 480px) {
+    font-size: responsive-font-size(18px, 0.89) !important; // 16px
+  }
+}
+
+@mixin responsive-toggle-link {
+  @include login-toggle-link;
+  
+  @media (max-width: 480px) {
+    font-size: responsive-font-size(18px, 0.89); // 16px
+  }
+}

@@ -1,0 +1,226 @@
+/**
+ * Login Layout & Spacing System
+ * Consolidated spacing patterns with CSS custom properties for variants
+ * Implements the exact Figma spacing specifications with semantic naming
+ */
+
+@use '../../base/variables' as *;
+@use 'sass:map';
+
+// Figma spacing specifications map
+$figma-spacing: (
+  // Registration version spacing
+  registration: (
+    title-top: 64px,
+    title-bottom: 16px,
+    subtitle-top: 16px,
+    input-top: 65px,
+    button-top: 32px,
+    disclaimer-top: 50px,
+    toggle-link-top: 30px,
+    toggle-link-bottom: 50px
+  ),
+  // Login version spacing changes
+  login: (
+    disclaimer-input-gap: 8px,
+    disclaimer-button-gap: 32px
+  ),
+  // Activation form spacing
+  activation: (
+    otp-container-top: 64px,
+    otp-container-bottom: 32px,
+    otp-gap: 21px,
+    button-bottom: 16px
+  )
+);
+
+// Spacing function to get consolidated values
+@function figma-space($variant, $property) {
+  $spacing-map: map.get($figma-spacing, $variant);
+  
+  @if $spacing-map {
+    $value: map.get($spacing-map, $property);
+    @if $value {
+      @return $value;
+    } @else {
+      @error "Spacing property '#{$property}' not found in '#{$variant}' spacing map";
+    }
+  } @else {
+    @error "Spacing variant '#{$variant}' not found in $figma-spacing map";
+  }
+}
+
+// CSS Custom Properties for dynamic spacing variants
+:root {
+  // Default to registration spacing
+  --login-title-margin-top: #{figma-space(registration, title-top)};
+  --login-title-margin-bottom: #{figma-space(registration, title-bottom)};
+  --login-subtitle-margin-top: #{figma-space(registration, subtitle-top)};
+  --login-input-margin-top: #{figma-space(registration, input-top)};
+  --login-button-margin-top: #{figma-space(registration, button-top)};
+  --login-disclaimer-margin-top: #{figma-space(registration, disclaimer-top)};
+  --login-toggle-margin-top: #{figma-space(registration, toggle-link-top)};
+  --login-toggle-margin-bottom: #{figma-space(registration, toggle-link-bottom)};
+  
+  // Login variant overrides (applied via CSS classes)
+  --login-disclaimer-input-gap: #{figma-space(login, disclaimer-input-gap)};
+  --login-disclaimer-button-gap: #{figma-space(login, disclaimer-button-gap)};
+}
+
+// Layout spacing mixins using CSS custom properties
+@mixin title-spacing {
+  margin-top: var(--login-title-margin-top);
+  margin-bottom: var(--login-title-margin-bottom);
+  margin-inline: -3rem; // Figma-specific adjustment
+}
+
+@mixin subtitle-spacing {
+  margin-top: var(--login-subtitle-margin-top);
+  margin-bottom: 0;
+}
+
+@mixin input-spacing {
+  margin-top: var(--login-input-margin-top);
+  margin-bottom: 0;
+}
+
+@mixin button-spacing {
+  margin-top: var(--login-button-margin-top);
+  margin-bottom: 0;
+}
+
+@mixin disclaimer-spacing($variant: 'registration') {
+  @if $variant == 'login' {
+    margin: var(--login-disclaimer-input-gap) 0 var(--login-disclaimer-button-gap) 0;
+  } @else {
+    margin: var(--login-disclaimer-margin-top) 0 0 0;
+  }
+}
+
+@mixin toggle-link-spacing {
+  margin-top: var(--login-toggle-margin-top);
+  margin-bottom: var(--login-toggle-margin-bottom);
+}
+
+// Activation form specific spacing
+@mixin otp-container-spacing {
+  margin-top: figma-space(activation, otp-container-top);
+  margin-bottom: figma-space(activation, otp-container-bottom);
+}
+
+@mixin otp-inputs-layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: figma-space(activation, otp-gap);
+  width: 100%;
+  max-width: 442px;
+  margin: 0 auto;
+  padding: 0;
+  
+  @media (max-width: 480px) {
+    gap: 12px;
+    max-width: 320px;
+  }
+}
+
+@mixin otp-digit-sizing {
+  width: 34px;
+  height: 50px;
+  padding: 13px 11px;
+  
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 45px;
+    padding: 10px 8px;
+  }
+}
+
+// Content width constraints mixin
+@mixin content-width-constraints {
+  width: 442px;
+  max-width: 342px; // For subtitle text wrapping
+  margin-inline: auto;
+  
+  @media (max-width: 480px) {
+    max-width: 100%;
+  }
+}
+
+// Form layout patterns
+@mixin form-section-layout {
+  @include content-width-constraints;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+// Status and auxiliary element spacing
+@mixin status-spacing {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+@mixin divider-spacing {
+  width: 100%;
+  height: 1px;
+  background: $color-gray-border;
+  border: none;
+  margin: 16px 0;
+}
+
+// Responsive spacing adjustments
+@mixin responsive-spacing-adjustments {
+  @media (max-width: 480px) {
+    // Adjust CSS custom properties for mobile
+    :root {
+      --login-title-margin-top: 40px; // Reduced from 64px
+      --login-input-margin-top: 45px; // Reduced from 65px
+      --login-disclaimer-margin-top: 35px; // Reduced from 50px
+      --login-toggle-margin-top: 20px; // Reduced from 30px
+      --login-toggle-margin-bottom: 30px; // Reduced from 50px
+    }
+    
+    // Mobile-specific toggle link adjustment
+    .lwp_change_pn {
+      margin-top: 8px;
+    }
+  }
+}
+
+// Layout variant classes for dynamic spacing
+.login-variant--registration {
+  // Uses default CSS custom property values
+}
+
+.login-variant--existing-user {
+  // Login-specific spacing overrides handled by disclaimer classes
+}
+
+// Utility classes for spacing
+.u-spacing-reset {
+  margin: 0;
+  padding: 0;
+}
+
+.u-spacing-section {
+  margin-bottom: figma-space(registration, button-top);
+}
+
+.u-spacing-form-field {
+  margin-bottom: $gap-form-field;
+}
+
+// Print spacing considerations
+@media print {
+  .lwp_forms_login {
+    margin: 0;
+    box-shadow: none;
+    
+    // Collapse margins for print
+    * {
+      margin-top: 0 !important;
+      margin-bottom: 8px !important;
+    }
+  }
+}

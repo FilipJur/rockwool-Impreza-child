@@ -1,368 +1,185 @@
 /**
- * Login Activation Form Styles
- * Extends login base styles for OTP code entry step
+ * Login Activation Form Styles - Refactored
+ * Clean implementation using shared patterns and modern SCSS
  * Domain: Authentication/Login
  * Design: w6FJkgIwZWiFb2nYyDbzaj (63-15301)
  */
 
 @use '../../base/variables' as *;
+@use 'login-typography' as *;
+@use 'login-components' as *;
+@use 'login-layout' as *;
 
-// Activation form specific styles - extends base login styles
+// Activation form container
 #lwp_activate {
-  // Match the main container width from Figma design
-  width: 442px;
-  max-width: 442px;
-  margin: 0 auto;
-  // Content variants for activation step
+  @include container-constraints;
+  
+  // Form title
   .lh1 {
-    // Title for activation step
-    font-family: $font-primary;
-    font-size: 36px;
-    font-weight: $font-weight-semibold;
-    line-height: 1.11;
-    text-align: center;
-    color: $color-black;
-    margin-bottom: 16px;
+    @include responsive-login-title;
+    @include title-spacing;
   }
   
+  // Form subtitle with inline link
   .lwp_labels {
-    // Subtitle with inline link styling
-    font-family: $font-primary;
-    font-size: $font-size-lg; // 18px
-    font-weight: $font-weight-normal;
-    line-height: 1.33;
-    text-align: center;
-    color: $color-black;
-    margin: 0 0 32px 0;
+    @include responsive-login-subtitle;
+    @include subtitle-spacing;
     
-    // Style the inline "kód pošleme znovu" link
+    // Inline "send code again" link styling
     a {
-      color: $color-black;
+      color: inherit;
       text-decoration: underline;
-      font-weight: $font-weight-normal;
+      font-weight: inherit;
       
       &:hover {
-        color: #DB0626;
+        color: $color-primary;
       }
     }
   }
   
-  // 6-digit OTP input container
+  // OTP input container
   .lwp_scode_parent {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    @include flex-center-column;
     width: 100%;
-    margin-bottom: 32px;
+    @include otp-container-spacing;
     
-    // Hide the label - content is now in .lh1 and .lwp_labels
+    // Hide original label
     .lwp_labels {
-      display: none;
+      @include hide-element;
     }
   }
   
-  // Original input field - hidden when transformed to individual inputs
+  // Original input (hidden when transformed)
   .lwp_scode {
-    // When transformed, this will be hidden
     &[data-transformed="true"] {
-      display: none !important;
+      @include hide-element;
     }
   }
   
-  // Container for 6 individual OTP input fields
+  // OTP digit inputs container
   .otp-input-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 21px; // 21px gap from Figma design
-    width: 100%;
-    max-width: 442px; // Match main container width
-    margin: 0 auto;
-    padding: 0;
+    @include otp-inputs-layout;
   }
   
-  // Individual OTP digit input fields
+  // Individual OTP digit fields
   .otp-digit-input {
-    width: 34px; // 34.09px from Figma
-    height: 50px; // 50px from Figma
-    border: 1px solid $color-gray-light !important; // Default gray border - override parent styles
+    @include otp-digit-sizing;
+    border: 1px solid $color-gray-border !important;
     border-radius: 0;
     background: transparent;
-    font-family: $font-primary;
-    font-size: 18px; // 18px from Figma
-    font-weight: $font-weight-normal;
-    line-height: 1.333; // 1.3333333333333333em from Figma
+    @include login-input-text;
+    font-size: 18px; // Override for OTP specific size
     text-align: center;
-    color: $color-black;
-    padding: 13px 11px; // 13px 11px from Figma
     outline: none;
     transition: border-color 0.15s ease-in-out;
     
-    // Hover and focus states
     &:hover,
     &:focus,
     &:active {
-      border: 1px solid $color-primary !important; // Override parent border removal
+      border-color: $color-primary !important;
     }
     
-    // Remove spinner arrows for number input
+    // Remove number input spinners
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
     
-    // Firefox
     &[type=number] {
       -moz-appearance: textfield;
     }
   }
   
-  // Primary submit button (Registrovat)
+  // Primary button (Register)
   .submit_button.auth_secCode {
-    width: 100%;
-    height: 60px;
-    background: #DB0626 !important;
-    color: #FFFFFF !important;
-    border: none;
-    border-radius: 0;
-    font-family: $font-primary;
-    font-size: 18px !important;
-    font-weight: 600 !important;
-    line-height: 1.366 !important;
-    padding: 0 30px !important;
-    cursor: pointer;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.2s ease;
+    @include button-variant(primary);
     margin-bottom: 16px;
-    
-    &:hover {
-      background: #b8051f !important;
-      box-shadow: 0 4px 12px rgba(219, 6, 38, 0.3);
-    }
-    
-    &:active {
-      box-shadow: 0 2px 4px rgba(219, 6, 38, 0.3);
-    }
-    
-    &:focus-visible {
-      outline: 2px solid #DB0626;
-      outline-offset: 2px;
-    }
   }
   
-  // Secondary button (Send code again)
+  // Secondary button (Resend code)
   .submit_button.lwp_didnt_r_c {
-    width: 100%;
-    height: 60px;
-    background: transparent !important;
-    color: $color-black !important;
-    border: 1px solid #CCCCCC !important;
-    border-radius: 0;
-    font-family: $font-primary;
-    font-size: 18px !important;
-    font-weight: 600 !important;
-    line-height: 1.366 !important;
-    padding: 0 30px !important;
-    cursor: pointer;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.2s ease;
+    @include button-variant(secondary);
     margin-bottom: 16px;
-    
-    &:hover {
-      background: #f8f9fa !important;
-      border-color: #999 !important;
-    }
-    
-    &:active {
-      background: #e9ecef !important;
-    }
-    
-    &:focus-visible {
-      outline: 2px solid #DB0626;
-      outline-offset: 2px;
-    }
-    
-    // Disabled state
-    &.lwp_disable {
-      opacity: 0.6;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
   }
   
   // Divider line
   .lwp_line {
-    width: 100%;
-    height: 1px;
-    background: #CCCCCC;
-    border: none;
-    margin: 16px 0;
+    @include divider-spacing;
   }
   
-  // Bottom section with links
+  // Bottom section
   .lwp_bottom_activation {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    @include flex-center-column;
     width: 100%;
     margin-top: 16px;
     
-    // "Registraci už mám - Chci se přihlásit" link
-    .lwp_change_pn {
-      font-family: $font-primary;
-      font-size: 18px; // Match Figma design
-      font-weight: $font-weight-semibold; // 600 weight
-      line-height: 1.366;
-      text-align: center;
-      color: $color-black;
-      text-decoration: none; // No underline in Figma
-      margin-bottom: 16px;
-      
-      &:hover {
-        color: #DB0626;
-        text-decoration: none;
-      }
-    }
-    
-    // Hide email change link (not in design)
+    // Hide email change link
     .lwp_change_el {
-      display: none !important;
+      @include hide-element;
     }
   }
   
-  // Repositioned "Registraci už mám" link (moved after main button by JavaScript)
+  // Toggle link (both instances)
   .lwp_change_pn {
     display: block;
-    font-family: $font-primary;
-    font-size: 18px; // Match Figma design
-    font-weight: $font-weight-semibold; // 600 weight
-    line-height: 1.366;
-    text-align: center;
-    color: $color-black;
-    text-decoration: none; // No underline in Figma
-    margin-top: 12px; // 12px gap from Figma
-    margin-bottom: 0;
-    
-    &:hover {
-      color: #DB0626;
-      text-decoration: none;
-    }
+    @include responsive-toggle-link;
+    @include toggle-link-spacing;
   }
   
   // Timer display
   .lwp_timer {
-    font-family: $font-primary;
+    @include login-input-text;
     font-size: 16px;
-    font-weight: $font-weight-normal;
     text-align: center;
-    color: $color-black;
     margin-bottom: 16px;
   }
   
   // Status messages
   .status {
-    font-family: $font-primary;
+    @include login-input-text;
     font-size: 16px;
-    font-weight: $font-weight-normal;
     text-align: center;
-    color: $color-black;
-    margin-bottom: 16px;
+    @include status-spacing;
     
-    // Hide "running recaptcha..." message
-    &:contains("running recaptcha") {
-      display: none;
-    }
-  }
-  
-  // Close button (if needed)
-  .close {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 18px;
-    color: #999;
-    text-decoration: none;
-    
-    &:hover {
-      color: $color-black;
+    // Hide recaptcha messages
+    &:contains("running recaptcha"),
+    &:contains("recaptcha") {
+      @include hide-element;
     }
   }
 }
 
-// Terms of service for activation form (added by JavaScript)
+// Activation terms (added by PHP)
 .activation-terms {
   text-align: center;
-  margin: 32px 0 16px 0;
+  margin: 0;
   width: 100%;
   
   .activation-terms-text {
-    font-family: $font-primary;
-    font-size: 16px;
-    font-weight: $font-weight-normal;
-    line-height: 1.375;
-    text-align: center;
-    color: $color-black;
+    @include login-disclaimer(long);
     display: block;
-    
-    // Style inline links only
-    a {
-      color: $color-black;
-      text-decoration: underline;
-      
-      &:hover {
-        color: #DB0626;
-        text-decoration: underline;
-      }
-    }
   }
 }
 
-// Ensure activation form shows when active
+// Ensure activation form visibility
 form.ajax-auth#lwp_activate[style*="display:block"] {
   display: block !important;
 }
 
-// Hide status messages we don't want to show
-.status:has-text("running recaptcha") {
-  display: none !important;
+// Hide unwanted status messages
+.status:has-text("running recaptcha"),
+p.status:contains("running recaptcha"),
+p.status:contains("recaptcha") {
+  @include hide-element;
 }
 
-// Responsive adjustments for activation form
+// Responsive adjustments
 @media (max-width: 480px) {
   #lwp_activate {
-    .otp-input-container {
-      gap: 12px; // Smaller gap on mobile
-      max-width: 320px;
-    }
-    
-    .otp-digit-input {
-      width: 30px;
-      height: 45px;
-      font-size: 16px;
-      padding: 10px 8px;
-    }
-    
     .submit_button.auth_secCode,
     .submit_button.lwp_didnt_r_c {
       height: 50px;
-      font-size: 16px !important;
-    }
-    
-    .lh1 {
-      font-size: 28px;
-    }
-    
-    .lwp_labels {
-      font-size: 16px;
     }
   }
 }

@@ -1,15 +1,17 @@
 /**
  * Login Components - Main Import File
- * Domain-based architecture following backend patterns
+ * Modern SCSS architecture with centralized systems
  * 
  * Domain: Authentication/Login
  * Design: w6FJkgIwZWiFb2nYyDbzaj (Figma)
  * Plugin: login-with-phone-number
  */
 
-// Import all login domain partials
-@use 'login-base';      // Core styles targeting plugin HTML
-@use 'login-variants';  // User state content variations
-@use 'login-plugin';    // Plugin integration overrides  
-@use 'login-activation'; // Activation/OTP form styles
-@use 'login-responsive'; // Responsive adjustments
+// Import new centralized systems
+@use 'login-typography';           // Typography system with Figma specs
+@use 'login-components';           // Reusable component patterns
+@use 'login-layout';               // Spacing and layout systems
+
+// Import modern implementations
+@use 'login-base';                 // Clean base styles using new systems
+@use 'login-activation';           // Clean activation styles
