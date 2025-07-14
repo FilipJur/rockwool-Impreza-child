@@ -78,7 +78,7 @@
     width: 40px;
     height: 40px;
     justify-content: center;
-    
+
     .step-badge__text {
       display: none; // Hide text in small badge
     }
@@ -131,7 +131,10 @@
     width: 127px;
 
     // Add checkmark icon using mixin
-    @include step-icon(16px, "data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M13.366 4.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L6.659 9.586l5.293-5.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    @include step-icon(
+      16px,
+      "data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M13.366 4.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L6.659 9.586l5.293-5.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E"
+    );
   }
 
   [data-state="pending"] .step-badge {
@@ -139,11 +142,13 @@
     background-color: #fdf3f4;
     color: $color-black;
     border: none;
-    width: 143px;
     padding: 8px 12px;
 
     // Add hourglass icon using mixin
-    @include step-icon(25px, "data:image/svg+xml,%3Csvg width='25' height='25' viewBox='0 0 25 25' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M18.6917 22.1654H6.69171V16.1654L10.6917 12.1654L6.69171 8.16541V2.16541H18.6917V8.16541L14.6917 12.1654L18.6917 16.1654M8.69171 7.66541L12.6917 11.6654L16.6917 7.66541V4.16541H8.69171M12.6917 12.6654L8.69171 16.6654V20.1654H16.6917V16.6654M14.6917 18.1654H10.6917V17.3654L12.6917 15.3654L14.6917 17.3654V18.1654Z' fill='black'/%3E%3C/svg%3E");
+    @include step-icon(
+      25px,
+      "data:image/svg+xml,%3Csvg width='25' height='25' viewBox='0 0 25 25' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M18.6917 22.1654H6.69171V16.1654L10.6917 12.1654L6.69171 8.16541V2.16541H18.6917V8.16541L14.6917 12.1654L18.6917 16.1654M8.69171 7.66541L12.6917 11.6654L16.6917 7.66541V4.16541H8.69171M12.6917 12.6654L8.69171 16.6654V20.1654H16.6917V16.6654M14.6917 18.1654H10.6917V17.3654L12.6917 15.3654L14.6917 17.3654V18.1654Z' fill='black'/%3E%3C/svg%3E"
+    );
   }
 
   [data-state="rejected"] .step-badge {
@@ -151,7 +156,10 @@
     @extend %dashed-border-base;
 
     // Add X icon using mixin
-    @include step-icon(16px, "data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='%23d63638' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M8 15A7 7 0 108 1a7 7 0 000 14zM5.354 4.646a.5.5 0 10-.708.708L7.293 8l-2.647 2.646a.5.5 0 00.708.708L8 8.707l2.646 2.647a.5.5 0 00.708-.708L8.707 8l2.647-2.646a.5.5 0 00-.708-.708L8 7.293 5.354 4.646z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    @include step-icon(
+      16px,
+      "data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='%23d63638' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M8 15A7 7 0 108 1a7 7 0 000 14zM5.354 4.646a.5.5 0 10-.708.708L7.293 8l-2.647 2.646a.5.5 0 00.708.708L8 8.707l2.646 2.647a.5.5 0 00.708-.708L8.707 8l2.647-2.646a.5.5 0 00-.708-.708L8 7.293 5.354 4.646z' clip-rule='evenodd'/%3E%3C/svg%3E"
+    );
   }
 
   [data-state="awaiting"] .step-badge {
@@ -166,7 +174,10 @@
     @extend %small-badge;
 
     // Add lock icon using mixin
-    @include step-icon(16px, "data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='%23909090' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M4 7V5a4 4 0 018 0v2a2 2 0 012 2v5a2 2 0 01-2 2H4a2 2 0 01-2-2V9a2 2 0 012-2zm6-2v2H6V5a2 2 0 014 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    @include step-icon(
+      16px,
+      "data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='%23909090' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M4 7V5a4 4 0 018 0v2a2 2 0 012 2v5a2 2 0 01-2 2H4a2 2 0 01-2-2V9a2 2 0 012-2zm6-2v2H6V5a2 2 0 014 0z' clip-rule='evenodd'/%3E%3C/svg%3E"
+    );
   }
 
   [data-state="available"] .step-badge {
@@ -225,7 +236,7 @@
   // Current step styling (highlighted with arrow)
   [data-current="true"] .step-title {
     font-weight: 600; // Bold for current step
-    
+
     // Add arrow after current step title
     &::after {
       content: "";
@@ -257,7 +268,7 @@
     &[data-from="registration"] {
       background-color: $color-primary; // Registration always completed or will be first
     }
-    
+
     &[data-from="project"] {
       background-color: #dadada; // Default pending
     }
