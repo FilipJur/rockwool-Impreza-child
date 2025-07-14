@@ -5,62 +5,63 @@
  * Design: w6FJkgIwZWiFb2nYyDbzaj (63-15301)
  */
 
-@use '../../base/variables' as *;
-@use 'login-typography' as *;
-@use 'login-components' as *;
-@use 'login-layout' as *;
+@use "../../base/variables" as *;
+@use "login-typography" as *;
+@use "login-components" as *;
+@use "login-layout" as *;
 
 // Activation form container
 #lwp_activate {
   @include container-constraints;
-  
+
   // Form title
   .lh1 {
     @include responsive-login-title;
-    @include title-spacing;
+    margin-bottom: 16px;
   }
-  
+
   // Form subtitle with inline link
   .lwp_labels {
     @include responsive-login-subtitle;
-    @include subtitle-spacing;
-    
+    margin-bottom: 65px;
+
     // Inline "send code again" link styling
     a {
       color: inherit;
       text-decoration: underline;
       font-weight: inherit;
-      
+
       &:hover {
         color: $color-primary;
       }
     }
   }
-  
+
   // OTP input container
   .lwp_scode_parent {
     @include flex-center-column;
     width: 100%;
-    @include otp-container-spacing;
-    
-    // Hide original label
+    margin-bottom: 32px;
+
+    // Style the subtitle label properly
     .lwp_labels {
-      @include hide-element;
+      @include responsive-login-subtitle;
+      margin-bottom: 65px;
     }
   }
-  
+
   // Original input (hidden when transformed)
   .lwp_scode {
     &[data-transformed="true"] {
       @include hide-element;
     }
   }
-  
+
   // OTP digit inputs container
   .otp-input-container {
     @include otp-inputs-layout;
   }
-  
+
   // Individual OTP digit fields
   .otp-digit-input {
     @include otp-digit-sizing;
@@ -72,61 +73,61 @@
     text-align: center;
     outline: none;
     transition: border-color 0.15s ease-in-out;
-    
+
     &:hover,
     &:focus,
     &:active {
       border-color: $color-primary !important;
     }
-    
+
     // Remove number input spinners
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
-    
-    &[type=number] {
+
+    &[type="number"] {
       -moz-appearance: textfield;
     }
   }
-  
+
   // Primary button (Register)
   .submit_button.auth_secCode {
     @include button-variant(primary);
-    margin-bottom: 16px;
+    margin-bottom: 32px;
   }
-  
+
   // Secondary button (Resend code)
   .submit_button.lwp_didnt_r_c {
     @include button-variant(secondary);
     margin-bottom: 16px;
   }
-  
+
   // Divider line
   .lwp_line {
     @include divider-spacing;
   }
-  
+
   // Bottom section
   .lwp_bottom_activation {
     @include flex-center-column;
     width: 100%;
     margin-top: 16px;
-    
+
     // Hide email change link
     .lwp_change_el {
       @include hide-element;
     }
   }
-  
+
   // Toggle link (both instances)
   .lwp_change_pn {
     display: block;
     @include responsive-toggle-link;
     @include toggle-link-spacing;
   }
-  
+
   // Timer display
   .lwp_timer {
     @include login-input-text;
@@ -134,14 +135,14 @@
     text-align: center;
     margin-bottom: 16px;
   }
-  
+
   // Status messages
   .status {
     @include login-input-text;
     font-size: 16px;
     text-align: center;
     @include status-spacing;
-    
+
     // Hide recaptcha messages
     &:contains("running recaptcha"),
     &:contains("recaptcha") {
@@ -155,7 +156,7 @@
   text-align: center;
   margin: 0;
   width: 100%;
-  
+
   .activation-terms-text {
     @include login-disclaimer(long);
     display: block;

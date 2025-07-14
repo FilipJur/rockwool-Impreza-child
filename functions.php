@@ -265,18 +265,34 @@ function lwp_modify_login_content($buffer) {
 }
 
 /**
- * Modify activation form content based on Figma design
+ * Modify activation form content based on state (login vs registration)
  */
 function lwp_modify_activation_content($buffer) {
-    // Activation form content from Figma
-    $activation_content = [
-        'title' => 'Zadejte kód, který jsme vám poslali',
-        'subtitle' => 'Nic vám nepřišlo? Stačí kliknout a <a href="#" class="lwp_didnt_r_c">kód pošleme znovu</a>.',
-        'button' => 'Registrovat',
-        'resend_button' => 'Znovu odeslat kód',
-        'login_link' => 'Registraci už mám - Chci se přihlásit',
-        'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s <a href="#">podmínkami programu</a>.'
+    // Determine user state based on has_account cookie
+    $is_existing_user = isset($_COOKIE['has_account']) && $_COOKIE['has_account'] === 'true';
+    
+    // Define content variations for activation form
+    $activation_content_variants = [
+        'login' => [
+            'title' => 'Zadejte kód, který jsme vám poslali',
+            'subtitle' => 'Nic vám nepřišlo? Stačí kliknout a <a href="#" class="lwp_didnt_r_c">kód pošleme znovu</a>.',
+            'button' => 'Přihlásit',
+            'resend_button' => 'Znovu odeslat kód',
+            'login_link' => 'Registraci už mám - Chci se přihlásit',
+            'disclaimer' => '' // No disclaimer for login
+        ],
+        'registration' => [
+            'title' => 'Zadejte kód, který jsme vám poslali',
+            'subtitle' => 'Nic vám nepřišlo? Stačí kliknout a <a href="#" class="lwp_didnt_r_c">kód pošleme znovu</a>.',
+            'button' => 'Registrovat',
+            'resend_button' => 'Znovu odeslat kód',
+            'login_link' => 'Registraci už mám - Chci se přihlásit',
+            'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s <a href="#">podmínkami programu</a>.'
+        ]
     ];
+    
+    // Select content based on user state
+    $activation_content = $is_existing_user ? $activation_content_variants['login'] : $activation_content_variants['registration'];
 
     // Replace activation form title
     $buffer = preg_replace(
@@ -313,13 +329,15 @@ function lwp_modify_activation_content($buffer) {
         $buffer
     );
 
-    // Add proper terms disclaimer at the very end of the activation form (before closing form tag)
-    $terms_html = '<div class="activation-terms"><span class="activation-terms-text">' . $activation_content['disclaimer'] . '</span></div>';
-    $buffer = preg_replace(
-        '/(<\/form>)/i',
-        $terms_html . '$1',
-        $buffer
-    );
+    // Add proper terms disclaimer only for registration (before closing form tag)
+    if (!empty($activation_content['disclaimer'])) {
+        $terms_html = '<div class="activation-terms"><span class="activation-terms-text">' . $activation_content['disclaimer'] . '</span></div>';
+        $buffer = preg_replace(
+            '/(<\/form>)/i',
+            $terms_html . '$1',
+            $buffer
+        );
+    }
 
     // Hide recaptcha status message
     $buffer = preg_replace(
