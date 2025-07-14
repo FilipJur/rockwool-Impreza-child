@@ -172,7 +172,7 @@ class DomainConfigurationService
     public static function getAssetConfig(string $domain_key): array
     {
         $config = self::getDomainConfig($domain_key);
-        
+
         return [
             'script_handle_prefix' => $config['asset_config']['script_handle_prefix'],
             'localization_object_name' => $config['asset_config']['localization_object_name'],
@@ -198,7 +198,7 @@ class DomainConfigurationService
     public static function getStatusConfig(string $domain_key): array
     {
         $config = self::getDomainConfig($domain_key);
-        
+
         return [
             'post_type' => $config['post_type'],
             'rejected_status' => $config['status_config']['rejected_status'],
@@ -217,7 +217,7 @@ class DomainConfigurationService
     public static function getFieldSelector(string $domain_key, string $field_key): string
     {
         $config = self::getDomainConfig($domain_key);
-        
+
         if (!isset($config['field_selectors'][$field_key])) {
             throw new \InvalidArgumentException("Field selector not found: {$domain_key}.{$field_key}");
         }
@@ -236,7 +236,7 @@ class DomainConfigurationService
     public static function getFieldName(string $domain_key, string $field_key): string
     {
         $config = self::getDomainConfig($domain_key);
-        
+
         if (!isset($config['field_names'][$field_key])) {
             throw new \InvalidArgumentException("Field name not found: {$domain_key}.{$field_key}");
         }
@@ -255,7 +255,7 @@ class DomainConfigurationService
     public static function getColumnKey(string $domain_key, string $column_key): string
     {
         $config = self::getDomainConfig($domain_key);
-        
+
         if (!isset($config['column_keys'][$column_key])) {
             throw new \InvalidArgumentException("Column key not found: {$domain_key}.{$column_key}");
         }
@@ -357,7 +357,7 @@ class DomainConfigurationService
     public const PROGRESS_FORM_SUBMITTED = 66;
     public const PROGRESS_APPROVED = 100;
     public const PROGRESS_PROJECT_UPLOADED = 100;
-    
+
     /**
      * User workflow reward constants
      */
