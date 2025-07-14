@@ -1,10 +1,7 @@
 /**
- * ACF Number Field Formatting
+ * ACF Number Field Formatting - TARGETED VERSION
  * 
- * Enhances ACF number fields with:
- * - Real-time thousands separator formatting (space)
- * - Proper value parsing for form submission
- * - Visual feedback for points and currency fields
+ * ONLY formats the invoice_value ACF field in admin
  */
 
 class ACFNumberFormatter {
@@ -14,168 +11,113 @@ class ACFNumberFormatter {
 
     init() {
         if (typeof acf === 'undefined') {
-            console.warn('ACF not available for number formatting');
             return;
         }
 
-        this.setupACFHooks();
-        this.enhanceExistingFields();
-    }
-
-    setupACFHooks() {
-        // Hook into ACF's field initialization
-        acf.addAction('ready_field/type=number', (field) => {
-            this.enhanceNumberField(field);
+        // Wait for ACF to be ready
+        acf.addAction('ready', () => {
+            this.enhanceInvoiceField();
         });
 
-        acf.addAction('append_field/type=number', (field) => {
-            this.enhanceNumberField(field);
+        // Also check on field append (for dynamic fields)
+        acf.addAction('append', () => {
+            this.enhanceInvoiceField();
         });
     }
 
-    enhanceExistingFields() {
-        // Enhance already loaded number fields
-        document.querySelectorAll('.acf-field-number input[type="number"]').forEach(input => {
-            this.enhanceInput(input);
-        });
-    }
-
-    enhanceNumberField(field) {
-        const input = field.find('input[type="number"]').get(0);
-        if (input) {
-            this.enhanceInput(input);
-        }
-    }
-
-    enhanceInput(input) {
-        // Skip if already enhanced
-        if (input.dataset.formattingEnhanced) {
-            return;
-        }
-
-        input.dataset.formattingEnhanced = 'true';
-
-        // Check if this is a points or currency field based on field name
-        const isPointsField = this.isPointsField(input);
-        const isCurrencyField = this.isCurrencyField(input);
-
-        if (!isPointsField && !isCurrencyField) {
-            return; // Only format points and currency fields
-        }
-
-        // Create display input for formatted value
-        const displayInput = this.createDisplayInput(input, isPointsField);
+    enhanceInvoiceField() {
+        // Target ONLY the invoice_value field by ID pattern
+        const inputs = document.querySelectorAll('input[type="number"][id*="field_invoice_value"]');
         
-        // Set up event handlers
-        this.setupEventHandlers(input, displayInput, isPointsField);
-
-        // Format initial value
-        this.formatDisplayValue(input, displayInput, isPointsField);
+        inputs.forEach(input => {
+            if (!input.dataset.formattingActive) {
+                this.enhanceNumberInput(input);
+            }
+        });
     }
 
-    isPointsField(input) {
-        const fieldName = input.name || '';
-        return fieldName.includes('points') || 
-               fieldName.includes('body') || 
-               fieldName.includes('awarded') ||
-               input.closest('.acf-field').querySelector('label')?.textContent?.toLowerCase().includes('bod');
-    }
+    enhanceNumberInput(input) {
+        input.dataset.formattingActive = 'true';
 
-    isCurrencyField(input) {
-        const fieldName = input.name || '';
-        return fieldName.includes('amount') || 
-               fieldName.includes('value') || 
-               fieldName.includes('castka') ||
-               input.closest('.acf-field').querySelector('label')?.textContent?.toLowerCase().includes('částka');
-    }
-
-    createDisplayInput(originalInput, isPointsField) {
+        // Create wrapper
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        
+        // Create display input
         const displayInput = document.createElement('input');
         displayInput.type = 'text';
-        displayInput.className = originalInput.className + ' acf-formatted-display';
-        displayInput.placeholder = isPointsField ? 'např. 25 000' : 'např. 125 000';
+        displayInput.className = input.className;
         
-        // Copy styling
-        displayInput.style.cssText = originalInput.style.cssText;
-        
-        // Hide original input
-        originalInput.style.display = 'none';
-        
-        // Insert display input after original
-        originalInput.parentNode.insertBefore(displayInput, originalInput.nextSibling);
-        
-        return displayInput;
-    }
-
-    setupEventHandlers(originalInput, displayInput, isPointsField) {
-        // Format on display input change
-        displayInput.addEventListener('input', () => {
-            const cleanValue = this.parseFormattedNumber(displayInput.value);
-            originalInput.value = cleanValue;
-            this.formatDisplayValue(originalInput, displayInput, isPointsField);
+        // Copy attributes
+        const attrs = ['required', 'min', 'max', 'step'];
+        attrs.forEach(attr => {
+            if (input.hasAttribute(attr)) {
+                displayInput.setAttribute(attr, input.getAttribute(attr));
+            }
         });
-
-        displayInput.addEventListener('blur', () => {
-            this.formatDisplayValue(originalInput, displayInput, isPointsField);
+        
+        // Insert wrapper
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+        wrapper.appendChild(displayInput);
+        
+        // Hide number input
+        input.style.position = 'absolute';
+        input.style.opacity = '0';
+        input.style.pointerEvents = 'none';
+        input.style.height = '1px';
+        input.style.width = '1px';
+        
+        // Initialize with current value
+        if (input.value) {
+            displayInput.value = parseInt(input.value).toLocaleString('cs-CZ').replace(/,/g, ' ');
+        }
+        
+        // Setup events
+        displayInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            const digits = value.replace(/\D/g, '');
+            
+            if (!digits) {
+                input.value = '';
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                return;
+            }
+            
+            // Update hidden input
+            input.value = digits;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Format display
+            const formatted = parseInt(digits).toLocaleString('cs-CZ').replace(/,/g, ' ');
+            if (value !== formatted) {
+                const cursorPos = e.target.selectionStart;
+                e.target.value = formatted;
+                
+                // Maintain cursor position
+                const diff = formatted.length - value.length;
+                e.target.setSelectionRange(cursorPos + diff, cursorPos + diff);
+            }
         });
-
-        // Sync when original input changes (programmatically)
+        
+        // Listen for programmatic changes to the hidden input
         const observer = new MutationObserver(() => {
-            this.formatDisplayValue(originalInput, displayInput, isPointsField);
+            if (input.value && !displayInput.matches(':focus')) {
+                displayInput.value = parseInt(input.value).toLocaleString('cs-CZ').replace(/,/g, ' ');
+            }
         });
         
-        observer.observe(originalInput, {
+        observer.observe(input, {
             attributes: true,
             attributeFilter: ['value']
         });
-
-        // Also listen for value changes
-        originalInput.addEventListener('change', () => {
-            this.formatDisplayValue(originalInput, displayInput, isPointsField);
+        
+        // Also listen for value property changes
+        input.addEventListener('change', () => {
+            if (input.value && !displayInput.matches(':focus')) {
+                displayInput.value = parseInt(input.value).toLocaleString('cs-CZ').replace(/,/g, ' ');
+            }
         });
-    }
-
-    formatDisplayValue(originalInput, displayInput, isPointsField) {
-        const value = parseInt(originalInput.value) || 0;
-        
-        if (value === 0) {
-            displayInput.value = '';
-            return;
-        }
-
-        const formatted = this.formatNumber(value);
-        displayInput.value = formatted;
-        
-        // Add suffix hint in placeholder when empty
-        if (!displayInput.value) {
-            displayInput.placeholder = isPointsField ? 'např. 25 000 bodů' : 'např. 125 000 Kč';
-        }
-    }
-
-    formatNumber(number) {
-        if (!number || isNaN(number)) {
-            return '';
-        }
-        
-        return new Intl.NumberFormat('cs-CZ', {
-            useGrouping: true,
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(number).replace(/\s/g, ' '); // Ensure consistent space character
-    }
-
-    parseFormattedNumber(formattedString) {
-        if (!formattedString) {
-            return 0;
-        }
-        
-        // Remove all non-digit characters except comma (decimal separator)
-        const cleaned = formattedString.replace(/[^\d,]/g, '');
-        
-        // Convert to number
-        const number = parseInt(cleaned.replace(',', '')) || 0;
-        
-        return Math.max(0, number); // Ensure non-negative
     }
 }
 
@@ -183,10 +125,3 @@ class ACFNumberFormatter {
 document.addEventListener('DOMContentLoaded', () => {
     new ACFNumberFormatter();
 });
-
-// Also initialize if ACF is already loaded
-if (typeof acf !== 'undefined') {
-    acf.addAction('ready', () => {
-        new ACFNumberFormatter();
-    });
-}

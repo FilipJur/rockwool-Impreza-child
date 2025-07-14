@@ -1,8 +1,7 @@
 /**
- * Contact Form 7 Number Field Formatting - MINIMAL VERSION
+ * Contact Form 7 Number Field Formatting - TARGETED VERSION
  * 
- * ONLY adds thousands separator formatting to number fields.
- * NO UI changes, hints, labels, or other modifications.
+ * ONLY formats the invoice_value input in .faktura-form
  */
 
 class CF7NumberFormatter {
@@ -22,67 +21,80 @@ class CF7NumberFormatter {
     }
 
     enhanceFields() {
-        // Only target specific field types that should be formatted
-        const selectors = [
-            'input[name*="amount"]',
-            'input[name*="castka"]', 
-            'input[name*="value"]',
-            'input[name*="invoice"]',
-            'input[name*="faktura"]'
-        ];
-
-        const cf7Forms = document.querySelectorAll('.wpcf7-form');
+        // ONLY target the specific invoice_value input in .faktura-form
+        const input = document.querySelector('.faktura-form input[type="number"][name="invoice_value"]');
         
-        cf7Forms.forEach(form => {
-            selectors.forEach(selector => {
-                const inputs = form.querySelectorAll(selector);
-                inputs.forEach(input => this.enhanceInput(input));
-            });
-        });
-    }
-
-    enhanceInput(input) {
-        // Skip if already enhanced
-        if (input.dataset.cf7FormattingEnhanced) {
-            return;
+        if (input && !input.dataset.formattingActive) {
+            this.enhanceNumberInput(input);
         }
-
-        input.dataset.cf7FormattingEnhanced = 'true';
-
-        // ONLY add formatting on blur - no real-time formatting to avoid interference
-        input.addEventListener('blur', () => {
-            this.formatInputValue(input);
-        });
     }
 
-    formatInputValue(input) {
-        const value = input.value.trim();
-        if (!value) return;
+    enhanceNumberInput(input) {
+        input.dataset.formattingActive = 'true';
 
-        // Parse numeric value
-        const numericValue = this.parseNumber(value);
-        if (numericValue === 0) return;
-
-        // Format with space separators
-        const formatted = this.formatNumber(numericValue);
-        input.value = formatted;
-    }
-
-    parseNumber(value) {
-        // Remove all non-digits
-        const cleaned = value.replace(/[^\d]/g, '');
-        return parseInt(cleaned) || 0;
-    }
-
-    formatNumber(number) {
-        if (!number || isNaN(number)) {
-            return '';
-        }
+        // Create wrapper
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
         
-        // Use Czech formatting with space separator
-        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        // Create display input
+        const displayInput = document.createElement('input');
+        displayInput.type = 'text';
+        displayInput.className = input.className.replace('wpcf7-number', 'wpcf7-text');
+        
+        // Copy attributes
+        if (input.hasAttribute('required')) displayInput.required = true;
+        if (input.hasAttribute('aria-required')) displayInput.setAttribute('aria-required', 'true');
+        if (input.hasAttribute('min')) displayInput.setAttribute('data-min', input.getAttribute('min'));
+        
+        // Insert wrapper
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+        wrapper.appendChild(displayInput);
+        
+        // Hide number input
+        input.style.position = 'absolute';
+        input.style.opacity = '0';
+        input.style.pointerEvents = 'none';
+        input.style.height = '1px';
+        input.style.width = '1px';
+        
+        // Setup events
+        displayInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            const digits = value.replace(/\D/g, '');
+            
+            if (!digits) {
+                input.value = '';
+                return;
+            }
+            
+            // Update hidden input
+            input.value = digits;
+            
+            // Format display
+            const formatted = parseInt(digits).toLocaleString('cs-CZ').replace(/,/g, ' ');
+            if (value !== formatted) {
+                const cursorPos = e.target.selectionStart;
+                e.target.value = formatted;
+                
+                // Maintain cursor position
+                const diff = formatted.length - value.length;
+                e.target.setSelectionRange(cursorPos + diff, cursorPos + diff);
+            }
+        });
+        
+        // Handle validation
+        input.addEventListener('invalid', (e) => {
+            e.preventDefault();
+            displayInput.setCustomValidity(input.validationMessage);
+            displayInput.reportValidity();
+        });
+        
+        displayInput.addEventListener('invalid', (e) => {
+            e.preventDefault();
+        });
     }
 }
 
-// Initialize on load
+// Initialize
 new CF7NumberFormatter();
