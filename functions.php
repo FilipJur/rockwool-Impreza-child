@@ -168,14 +168,16 @@ function lwp_modify_login_content($buffer) {
             'title' => 'Registrujte se, získáte tak přístup k výhodám, které mají jen Mistři.',
             'subtitle' => 'Stačí zadat číslo a kód vám hned přistane v mobilu.',
             'button' => 'Poslat ověřovací kód',
-            'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s podmínkami programu.',
+            'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s <a href="#">podmínkami programu</a>.',
+            'disclaimer_position' => 'end', // Position at end of form
             'toggle_link' => 'Registraci už mám - Chci se přihlásit'
         ],
         'existing_user' => [
-            'title' => 'Zadejte své telefonní číslo a v appce jste raz dva',
+            'title' => 'Zadejte své telefonní číslo a&nbsp;v&nbsp;appce jste raz dva',
             'subtitle' => 'Pošleme vám jednorázový kód pro rychlé přihlášení.',
             'button' => 'Poslat ověřovací kód',
             'disclaimer' => 'Telefonní číslo slouží k ověření totožnosti.',
+            'disclaimer_position' => 'after_input', // Position right below input
             'toggle_link' => 'Ještě nemám registraci - Registrovat se'
         ]
     ];
@@ -208,22 +210,54 @@ function lwp_modify_login_content($buffer) {
         $buffer
     );
 
-    // Replace entire terms section with proper structure like OTP
-    $disclaimer_with_link = 'Telefonní číslo slouží k ověření totožnosti. Registrací souhlasíte s <a href="#">podmínkami programu</a>.';
-    $terms_html = '<div class="accept_terms_and_conditions">' . $disclaimer_with_link . '</div>';
-
-    // Remove the entire broken terms section and replace with clean version
+    // Remove the existing terms section (we'll position it correctly based on user type)
     $buffer = preg_replace(
         '/<div class="accept_terms_and_conditions">.*?<\/div>/s',
-        $terms_html,
+        '',
         $buffer
     );
+
+    // Handle disclaimer positioning based on user type with FIGMA typography classes
+    $disclaimer_class = $content['disclaimer_position'] === 'end' ? 'accept_terms_and_conditions long-disclaimer' : 'accept_terms_and_conditions short-disclaimer';
+    $disclaimer_html = '<div class="' . $disclaimer_class . '">' . $content['disclaimer'] . '</div>';
+    
+    if ($content['disclaimer_position'] === 'after_input') {
+        // For existing users: place disclaimer RIGHT below input field
+        $buffer = preg_replace(
+            '/(<div class="lwp-form-box-bottom">.*?<\/div>)/s',
+            '$1' . $disclaimer_html,
+            $buffer
+        );
+    }
 
     // Add toggle link after submit button
     $toggle_link_html = '<a href="#" class="lwp_change_pn">' . esc_html($content['toggle_link']) . '</a>';
     $buffer = preg_replace(
         '/(<button class="submit_button auth_phoneNumber"[^>]*>.*?<\/button>)/s',
         '$1' . $toggle_link_html,
+        $buffer
+    );
+
+    // For new users: add disclaimer at the very END of the form (last position)
+    if ($content['disclaimer_position'] === 'end') {
+        $buffer = preg_replace(
+            '/(<\/form>)/s',
+            $disclaimer_html . '$1',
+            $buffer
+        );
+    }
+
+    // Hide running recaptcha status messages
+    $buffer = preg_replace(
+        '/<p class="status"[^>]*>running recaptcha\.\.\.<\/p>/s',
+        '<p class="status" style="display: none;">running recaptcha...</p>',
+        $buffer
+    );
+
+    // Remove close button (not in Figma design)
+    $buffer = preg_replace(
+        '/<a class="close" href="">\(x\)<\/a>/s',
+        '',
         $buffer
     );
 
@@ -279,11 +313,11 @@ function lwp_modify_activation_content($buffer) {
         $buffer
     );
 
-    // Add proper terms disclaimer after the form (remove inline style and add link)
+    // Add proper terms disclaimer at the very end of the activation form (before closing form tag)
     $terms_html = '<div class="activation-terms"><span class="activation-terms-text">' . $activation_content['disclaimer'] . '</span></div>';
     $buffer = preg_replace(
-        '/<\/form>/i',
-        $terms_html . '</form>',
+        '/(<\/form>)/i',
+        $terms_html . '$1',
         $buffer
     );
 
@@ -291,6 +325,13 @@ function lwp_modify_activation_content($buffer) {
     $buffer = preg_replace(
         '/<p class="status">running recaptcha\.\.\.<\/p>/s',
         '<p class="status" style="display: none;">running recaptcha...</p>',
+        $buffer
+    );
+
+    // Remove close button (not in Figma design)
+    $buffer = preg_replace(
+        '/<a class="close" href="">\(x\)<\/a>/s',
+        '',
         $buffer
     );
 
