@@ -25,7 +25,13 @@ function initLoginContentVariants() {
   // Watch for activation form appearing
   watchForActivationForm();
 
-  console.log('Login content variants: Initialized with activation form watcher');
+  // Initialize phone number formatting
+  initPhoneNumberFormatting();
+
+  // Initialize submit button interactions
+  initSubmitButtonInteractions();
+
+  console.log('Login content variants: Initialized with activation form watcher, phone formatting, and button interactions');
 }
 
 function watchForActivationForm() {
@@ -333,6 +339,222 @@ function updateOriginalInput(inputs, originalInput) {
     }, 100);
   }
 }
+
+/**
+ * Initialize phone number formatting for the login form
+ * Adds visual spacing after every 3 digits (e.g., "123 456 789")
+ */
+function initPhoneNumberFormatting() {
+  const phoneInput = document.querySelector('#phone');
+  if (!phoneInput) {
+    return;
+  }
+
+  // Format phone number with spaces after every 3 digits
+  function formatPhoneNumber(value) {
+    // Remove all non-digit characters
+    const digits = value.replace(/\D/g, '');
+    
+    // Add space after every 3 digits
+    return digits.replace(/(\d{3})(?=\d)/g, '$1 ');
+  }
+
+  // Handle input formatting
+  phoneInput.addEventListener('input', (e) => {
+    const cursorPosition = e.target.selectionStart;
+    const oldValue = e.target.value;
+    const oldLength = oldValue.length;
+    
+    // Format the new value
+    const newValue = formatPhoneNumber(e.target.value);
+    const newLength = newValue.length;
+    
+    // Update the input value
+    e.target.value = newValue;
+    
+    // Restore cursor position, accounting for added spaces
+    const lengthDiff = newLength - oldLength;
+    const newCursorPosition = cursorPosition + lengthDiff;
+    e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+  });
+
+  // Handle paste events
+  phoneInput.addEventListener('paste', (e) => {
+    // Let the paste happen, then format
+    setTimeout(() => {
+      const cursorPosition = phoneInput.selectionStart;
+      const formatted = formatPhoneNumber(phoneInput.value);
+      phoneInput.value = formatted;
+      // Position cursor at end after paste
+      phoneInput.setSelectionRange(formatted.length, formatted.length);
+    }, 0);
+  });
+
+  // Format existing value on initialization
+  if (phoneInput.value) {
+    phoneInput.value = formatPhoneNumber(phoneInput.value);
+  }
+}
+
+/**
+ * Initialize submit button interactions
+ * Adds visual feedback for button press and Enter key submission
+ */
+function initSubmitButtonInteractions() {
+  // Handle both login and activation form buttons
+  const selectors = [
+    '.submit_button.auth_phoneNumber', // Login form button
+    '.submit_button.auth_secCode'      // Activation form button
+  ];
+
+  selectors.forEach(selector => {
+    const button = document.querySelector(selector);
+    if (button) {
+      addButtonInteractions(button);
+    }
+  });
+
+  // Also handle dynamically added activation buttons
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) {
+          const activationButton = node.querySelector ? node.querySelector('.submit_button.auth_secCode') : null;
+          if (activationButton && !activationButton.dataset.interactionsAdded) {
+            addButtonInteractions(activationButton);
+          }
+        }
+      });
+    });
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
+/**
+ * Add visual interaction feedback to a submit button
+ * @param {HTMLElement} button - The submit button element
+ */
+function addButtonInteractions(button) {
+  if (button.dataset.interactionsAdded) {
+    return;
+  }
+  button.dataset.interactionsAdded = 'true';
+
+  // Add pressed state class for CSS styling
+  function addPressedState() {
+    button.classList.add('button-pressed');
+    
+    // Remove after animation duration
+    setTimeout(() => {
+      button.classList.remove('button-pressed');
+    }, 200);
+  }
+
+  // Handle mouse/touch interactions with hold capability
+  let isHolding = false;
+  
+  // Mouse down - start holding
+  button.addEventListener('mousedown', (e) => {
+    isHolding = true;
+    button.classList.add('button-pressed');
+  });
+  
+  // Mouse up - release hold
+  button.addEventListener('mouseup', () => {
+    if (isHolding) {
+      isHolding = false;
+      setTimeout(() => {
+        button.classList.remove('button-pressed');
+      }, 100);
+    }
+  });
+  
+  // Mouse leave - release hold if dragged away
+  button.addEventListener('mouseleave', () => {
+    if (isHolding) {
+      isHolding = false;
+      setTimeout(() => {
+        button.classList.remove('button-pressed');
+      }, 100);
+    }
+  });
+  
+  // Touch interactions with hold capability
+  button.addEventListener('touchstart', (e) => {
+    isHolding = true;
+    button.classList.add('button-pressed');
+  }, { passive: true });
+  
+  button.addEventListener('touchend', () => {
+    if (isHolding) {
+      isHolding = false;
+      setTimeout(() => {
+        button.classList.remove('button-pressed');
+      }, 100);
+    }
+  }, { passive: true });
+  
+  button.addEventListener('touchcancel', () => {
+    if (isHolding) {
+      isHolding = false;
+      setTimeout(() => {
+        button.classList.remove('button-pressed');
+      }, 100);
+    }
+  }, { passive: true });
+
+  // Handle keyboard activation (Space/Enter on button) with hold capability
+  let isKeyHolding = false;
+  
+  button.addEventListener('keydown', (e) => {
+    if ((e.key === ' ' || e.key === 'Enter') && !isKeyHolding) {
+      e.preventDefault();
+      isKeyHolding = true;
+      button.classList.add('button-pressed');
+    }
+  });
+  
+  button.addEventListener('keyup', (e) => {
+    if ((e.key === ' ' || e.key === 'Enter') && isKeyHolding) {
+      e.preventDefault();
+      isKeyHolding = false;
+      
+      // Trigger click after brief delay for visual feedback
+      setTimeout(() => {
+        button.click();
+      }, 50);
+      
+      // Remove pressed state after click
+      setTimeout(() => {
+        button.classList.remove('button-pressed');
+      }, 150);
+    }
+  });
+
+  // Handle Enter key on form inputs to trigger button press animation
+  const form = button.closest('form');
+  if (form) {
+    const inputs = form.querySelectorAll('input[type="tel"], input[type="text"], .otp-digit-input');
+    
+    inputs.forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addPressedState();
+          
+          // Trigger form submission after visual feedback
+          setTimeout(() => {
+            button.click();
+          }, 75);
+        }
+      });
+    });
+  }
+}	
 
 /**
  * Setup function for the login content variants feature
