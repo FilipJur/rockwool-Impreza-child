@@ -112,7 +112,8 @@ class UserProgressGuideShortcode extends ShortcodeBase
     private function get_workflow_state(int $user_id): array
     {
         $user_status = $this->user_service->get_user_registration_status($user_id);
-        $project_data = $this->project_status_service->getCachedUserProjects($user_id);
+        // Get project data only for realizations (not invoices)
+        $project_data = $this->get_realization_project_data($user_id);
 
         // Determine current step (what user should focus on)
         $current_step = $this->get_current_step($user_status, $project_data);
@@ -257,6 +258,66 @@ class UserProgressGuideShortcode extends ShortcodeBase
             'awaiting' => 'Nahrajte svou první realizaci',
             default => 'Nahrajte svou první realizaci'
         };
+    }
+
+    /**
+     * Get project data specifically for realizations only (not invoices)
+     */
+    private function get_realization_project_data(int $user_id): array
+    {
+        // Only check 'realizace' post type for progress guide
+        $realization_post_types = ['realizace'];
+        
+        $has_uploaded = !empty($this->project_status_service->getProjectsForUser(
+            $user_id, 
+            ['pending', 'publish', 'rejected'], 
+            $realization_post_types
+        ));
+        
+        $has_published = !empty($this->project_status_service->getProjectsForUser(
+            $user_id, 
+            ['publish'], 
+            $realization_post_types
+        ));
+        
+        $has_rejected = !empty($this->project_status_service->getProjectsForUser(
+            $user_id, 
+            ['rejected'], 
+            $realization_post_types
+        ));
+
+        return [
+            'has_uploaded' => $has_uploaded,
+            'has_published' => $has_published,
+            'has_rejected' => $has_rejected,
+            'progress_percentage' => $this->calculate_realization_progress($user_id, $has_published, $has_uploaded, $has_rejected)
+        ];
+    }
+
+    /**
+     * Calculate progress percentage for realizations only
+     */
+    private function calculate_realization_progress(int $user_id, bool $has_published, bool $has_uploaded, bool $has_rejected): int
+    {
+        if ($has_published) {
+            return 100;
+        }
+
+        if ($has_uploaded && !$has_rejected) {
+            return 75; // Pending
+        }
+
+        if ($has_rejected) {
+            return 50; // Needs revision
+        }
+
+        // Check for drafts
+        $drafts = $this->project_status_service->getProjectsForUser($user_id, ['draft'], ['realizace']);
+        if (!empty($drafts)) {
+            return 25;
+        }
+
+        return 0;
     }
 
     /**
