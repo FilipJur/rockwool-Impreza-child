@@ -1,0 +1,350 @@
+/**
+ * User Points Balance Component
+ *
+ * Responsive component using design tokens and semantic styling.
+ * Eliminates magic values and hardcoded dimensions for maintainability.
+ */
+
+@use "../base/variables" as *;
+
+// Component-specific mixins
+@mixin balance-text(
+  $size: $font-size-base,
+  $weight: $font-weight-normal,
+  $line-height: normal
+) {
+  font-family: $font-primary;
+  font-weight: $weight;
+  font-size: $size;
+  @if $line-height != normal {
+    line-height: $line-height;
+  }
+}
+
+@mixin flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-points-balance {
+  // Responsive-first container
+  width: 100%;
+
+  // Layout
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: $space-container $space-container;
+  gap: $space-md;
+
+  // Appearance
+  background: $color-white;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.08);
+
+  // Responsive adjustments
+  @media (max-width: 600px) {
+    padding: $space-md $space-md 0;
+  }
+
+  // Balance header section
+  .balance-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: $space-header;
+    width: 100%;
+
+    // Main balance display
+    .main-balance {
+      @include flex-between;
+      width: 100%;
+      gap: $gap-balance;
+
+      @media (max-width: 768px) {
+        gap: $space-lg; // Smaller gap on mobile
+        flex-direction: column;
+        align-items: flex-start;
+
+        .balance-value {
+          align-self: flex-end;
+        }
+      }
+
+      .balance-label {
+        @include balance-text($font-size-3xl, $font-weight-semibold, 1.2);
+
+        @media (max-width: 480px) {
+          font-size: $font-size-2xl;
+        }
+      }
+
+      .balance-value {
+        @include balance-text($font-size-3xl, $font-weight-semibold, 1.2);
+        text-align: right;
+
+        @media (max-width: 480px) {
+          font-size: $font-size-2xl;
+        }
+      }
+    }
+
+    // Pending points section - directly below balance
+    .pending-section {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: $space-xs; // Small gap between elements
+
+      .pending-label {
+        @include balance-text($font-size-sm, $font-weight-normal, 1.286);
+        text-align: right;
+        flex-shrink: 0; // Don't compress the label
+        white-space: nowrap; // Keep text on one line
+      }
+
+      .pending-separator {
+        // Flexible separator that fills available space
+        flex-grow: 1; // Take up remaining space
+        height: 1px;
+        background: $color-separator;
+        min-width: $space-sm; // Minimum width to ensure visibility
+        margin: 0 $space-xs; // Small margins for visual breathing room
+      }
+
+      .pending-pill {
+        @include flex-center;
+        padding: 2px 18px; // 18px inline (left/right), 2px block (top/bottom)
+        height: $pill-height;
+        background: $color-pending-pill;
+        border-radius: $border-radius-pill;
+        flex-shrink: 0; // Don't compress the pill
+
+        .pending-value {
+          @include balance-text($font-size-base, $font-weight-semibold, 1.5);
+          white-space: nowrap; // Keep value on one line
+        }
+      }
+
+      // Hide when no pending points
+      &.hidden {
+        display: none;
+      }
+    }
+  }
+
+  // Progress section
+  .progress-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    align-self: stretch;
+    gap: $space-xs-sm;
+    width: 100%;
+
+    // Three-segment progress bar following Figma design
+    .progress-bar-container {
+      position: relative;
+      width: 100%;
+      height: 27px; // Match Figma's border-radius for fully rounded segments
+
+      // Base layer: remaining capacity (light gray background)
+      .progress-bar-background {
+        position: absolute;
+        width: 100%;
+        height: 8px; // 8px height as specified
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: $color-progress-bg; // #F6F6F6
+        border-radius: 0; // No rounded corners for base layer
+      }
+
+      // Middle layer: pending points (light pink)
+      .progress-bar-pending {
+        position: absolute;
+        height: 27px; // Full height for rounded appearance
+        left: 0;
+        top: 0;
+        background: $color-pending-pill; // #FBE6E9 (matches pill color)
+        border-radius: 27px; // Fully rounded (27px as per Figma)
+        transition: width $transition-base;
+        min-width: 0;
+        max-width: 100%;
+        z-index: 2; // Above background, below accepted
+      }
+
+      // Top layer: accepted points (primary red)
+      .progress-bar-accepted {
+        position: absolute;
+        height: 27px; // Full height for rounded appearance
+        left: 0;
+        top: 0;
+        background: $color-primary; // #DB0626
+        border-radius: 27px; // Fully rounded (27px as per Figma)
+        transition: width $transition-base;
+        min-width: 0;
+        max-width: 100%;
+        z-index: 3; // Highest layer
+      }
+    }
+
+    .progress-text {
+      @include balance-text($font-size-sm, $font-weight-normal, 1.3);
+      width: 100%;
+      text-align: right;
+
+      @media (max-width: 480px) {
+        text-align: center;
+      }
+    }
+  }
+
+  // Navigation section
+  .navigation {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    align-self: stretch;
+    gap: $space-xxs;
+    padding: $space-xs 0 $space-header $space-sm;
+    width: 100%;
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: $space-xxs;
+      @include balance-text($font-size-sm, $font-weight-semibold, 1.36);
+      color: $color-black;
+      text-decoration: none;
+      transition: color $transition-fast;
+
+      &:hover {
+        color: $color-primary;
+
+        .nav-arrow {
+          fill: $color-primary;
+        }
+      }
+
+      .nav-arrow {
+        width: 12px;
+        height: 9px;
+        transition: fill $transition-fast;
+      }
+    }
+  }
+
+  // Login state
+  &.login-required {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    .login-message {
+      padding: $space-md;
+
+      p {
+        @include balance-text($font-size-base, $font-weight-normal);
+        color: $color-gray-medium;
+        margin: 0;
+
+        a {
+          color: $color-primary;
+          text-decoration: underline;
+
+          &:hover {
+            color: $color-primary-dark;
+          }
+        }
+      }
+    }
+  }
+
+  // Success state - all products affordable
+  &.success-state {
+    // Override component background to primary red
+    background: $color-primary;
+
+    // Make all text white in success state
+    .balance-label,
+    .balance-value,
+    .pending-label,
+    .pending-value,
+    .nav-link {
+      color: $color-white !important;
+    }
+
+    // Success congratulations with rectangular background behind icon
+    .success-congratulations {
+      display: flex;
+      align-items: center;
+      gap: 8px; // Small gap between icon and text
+      margin-bottom: $space-header;
+      position: relative; // For absolute positioning of wrapper background
+
+      .success-icon-wrapper {
+        position: relative;
+
+        // Rectangular white background that spans to container edges
+        &::before {
+          content: "";
+          position: absolute;
+          top: -$space-container; // Extend to top edge of container
+          left: 0;
+          right: 0; // Extend to right edge of container
+          bottom: 0; // Extend down to bottom of wrapper
+          background: $color-white;
+          z-index: 0; // Behind the icon
+        }
+
+        .success-icon {
+          width: 22px;
+          height: 22px;
+          display: block; // Ensure proper layout
+          position: relative;
+          z-index: 1; // Above the white background
+
+          // Keep icon primary color (red) on white background
+          path {
+            fill: $color-primary;
+          }
+        }
+      }
+
+      .success-text {
+        @include balance-text(20px, $font-weight-normal, 26px);
+        color: $color-white; // White text on red background
+      }
+    }
+
+    // Success spacer - maintains layout spacing
+    .success-spacer {
+      min-height: 0; // Minimal height in success state
+    }
+
+    // Override pending section separator color
+    .pending-separator {
+      background: rgba($color-white, 0.3) !important;
+    }
+
+    // Override pending pill styling
+    .pending-pill {
+      background: rgba($color-white, 0.2) !important;
+    }
+
+    // Override navigation arrow
+    .nav-arrow path {
+      fill: $color-white !important;
+    }
+  }
+}

@@ -17,6 +17,12 @@ $color-gray-bg: #F2F2F2;        // Card backgrounds
 // Accent
 $color-accent: #33A7CC;         // Upload text, links
 
+// Component-specific colors
+$color-pending-pill: #FBE6E9;   // Light pink for pending points pill
+$color-separator: #DADADA;      // Separator lines
+$color-progress-bg: #F6F6F6;    // Progress bar background
+$color-success-dark: #1e7e34;   // Darker success text
+
 // Legacy grays (keep for backward compatibility)
 $gray-300: #e0e0e0;
 $gray-500: #888888;
@@ -29,6 +35,12 @@ $bg-light: #f8f9fa;
 $border-color: $color-gray-border;
 $border-radius: 4px;
 $border-radius-lg: 6px;
+$border-radius-pill: 27px;       // Pill-shaped elements
+
+// Component dimensions
+$pill-height: 28px;              // Standard pill height
+$progress-bar-height: 20px;      // Progress bar container height
+$progress-track-height: 8px;     // Progress track height
 
 // Spacing Scale (from design-tokens.md)
 $space-xs: 5px;
@@ -38,6 +50,12 @@ $space-lg: 30px;
 $space-xl: 40px;
 $space-2xl: 60px;
 $space-3xl: 80px;
+
+// Additional spacing tokens for components
+$space-xxs: 4px;                      // Navigation gaps, smallest spacing
+$space-xs-sm: 6px;                    // Between xs(5px) and sm(10px)
+$space-header: 16px;                  // Header section gaps
+$space-container: 28px;               // Component container padding
 
 // Legacy spacing (keep for backward compatibility)
 $spacing-xs: 2px;
@@ -53,6 +71,10 @@ $gap-form-field: 20px;     // Between form fields
 $gap-benefits: 20px;       // Between benefit cards
 $gap-hero: 40px;           // Hero content vertical
 $gap-content: 80px;        // Between major sections
+
+// User Points Balance component gaps
+$gap-balance: $space-2xl;  // Balance label/value separation (responsive)
+$gap-pending: 7px;         // Pending section elements
 
 // Typography (from design-tokens.md)
 $font-primary: 'Avenir Next', sans-serif;

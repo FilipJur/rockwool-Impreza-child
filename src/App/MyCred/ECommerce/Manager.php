@@ -113,18 +113,108 @@ class Manager {
      * to avoid duplication across shortcodes and components.
      *
      * @param int|null $user_id User ID (defaults to current user)
-     * @return array{total: float, available: float, reserved: float}
+     * @return array{total: float, available: float, reserved: float, pending: int}
      */
     public function get_balance_summary(?int $user_id = null): array {
         $total_balance = $this->balance_calculator->get_user_balance($user_id);
         $available_points = $this->balance_calculator->get_available_points($user_id);
         $cart_reserved = $total_balance - $available_points;
+        $pending_points = $this->get_pending_points($user_id);
 
         return [
             'total' => $total_balance,
             'available' => $available_points,
             'reserved' => $cart_reserved,
+            'pending' => $pending_points,
         ];
+    }
+
+    /**
+     * Get pending points for a user from submitted but not yet approved posts
+     *
+     * Queries both realizace and faktura post types with 'pending' status
+     * and sums their points values using the appropriate field services.
+     *
+     * @param int|null $user_id User ID (defaults to current user)
+     * @return int Total pending points awaiting approval
+     */
+    public function get_pending_points(?int $user_id = null): int {
+        if (!$user_id) {
+            $user_id = get_current_user_id();
+        }
+        
+        if (!$user_id) {
+            mycred_debug('get_pending_points: No user ID provided', [], 'ecommerce-manager', 'warning');
+            return 0;
+        }
+
+        try {
+            // Query pending realizace posts using proper services
+            $realizace_posts = get_posts([
+                'post_type' => \MistrFachman\Services\DomainConfigurationService::getWordPressPostType('realization'),
+                'post_status' => 'pending',
+                'author' => $user_id,
+                'numberposts' => -1,
+                'fields' => 'ids'
+            ]);
+
+            // Query pending faktura posts using proper services
+            $faktura_posts = get_posts([
+                'post_type' => \MistrFachman\Services\DomainConfigurationService::getWordPressPostType('invoice'),
+                'post_status' => 'pending',
+                'author' => $user_id,
+                'numberposts' => -1,
+                'fields' => 'ids'
+            ]);
+
+            $total_pending = 0;
+            $debug_data = [
+                'user_id' => $user_id,
+                'realizace_posts' => $realizace_posts,
+                'faktura_posts' => $faktura_posts,
+                'realizace_points' => [],
+                'faktura_points' => []
+            ];
+
+            // Sum points from realizace posts
+            foreach ($realizace_posts as $post_id) {
+                if (class_exists('\MistrFachman\Realizace\RealizaceFieldService')) {
+                    $points = \MistrFachman\Realizace\RealizaceFieldService::getPoints($post_id);
+                    $total_pending += $points;
+                    $debug_data['realizace_points'][$post_id] = $points;
+                } else {
+                    mycred_debug('RealizaceFieldService class not found', [], 'ecommerce-manager', 'error');
+                }
+            }
+
+            // Sum points from faktura posts
+            foreach ($faktura_posts as $post_id) {
+                if (class_exists('\MistrFachman\Faktury\FakturaFieldService')) {
+                    $points = \MistrFachman\Faktury\FakturaFieldService::getPoints($post_id);
+                    $total_pending += $points;
+                    $debug_data['faktura_points'][$post_id] = $points;
+                } else {
+                    mycred_debug('FakturaFieldService class not found', [], 'ecommerce-manager', 'error');
+                }
+            }
+
+            $debug_data['total_pending'] = $total_pending;
+
+            // Log detailed debug information if WP_DEBUG is enabled
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                mycred_debug('get_pending_points calculation', $debug_data, 'ecommerce-manager', 'info');
+            }
+
+            return $total_pending;
+
+        } catch (\Exception $e) {
+            mycred_debug('get_pending_points error', [
+                'user_id' => $user_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 'ecommerce-manager', 'error');
+            return 0;
+        }
     }
 
     /**

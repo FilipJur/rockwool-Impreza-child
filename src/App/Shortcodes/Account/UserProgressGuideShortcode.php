@@ -87,7 +87,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
     {
         // Always show if admin forces it
         if ($attributes['show_for_experienced'] === 'true') {
-            return true;
+        return true;
         }
 
         $user_status = $this->user_service->get_user_registration_status($user_id);
@@ -113,10 +113,10 @@ class UserProgressGuideShortcode extends ShortcodeBase
     {
         $user_status = $this->user_service->get_user_registration_status($user_id);
         $project_data = $this->project_status_service->getCachedUserProjects($user_id);
-        
+
         // Determine current step (what user should focus on)
         $current_step = $this->get_current_step($user_status, $project_data);
-        
+
         return [
             'current_step' => $current_step,
             'user_status' => $user_status,
@@ -136,7 +136,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
             ]
         ];
     }
-    
+
     /**
      * Determine which step user should focus on
      */
@@ -145,22 +145,22 @@ class UserProgressGuideShortcode extends ShortcodeBase
         if ($user_status !== 'full_member') {
             return 'registration';
         }
-        
+
         if (!$project_data['has_uploaded']) {
             return 'project';
         }
-        
+
         if ($project_data['has_published']) {
             return 'rewards';
         }
-        
+
         if ($project_data['has_uploaded'] && !$project_data['has_published']) {
             return 'rewards'; // Pending project - focus on upcoming rewards
         }
-        
+
         return 'project';
     }
-    
+
     /**
      * Get registration status text
      */
@@ -173,7 +173,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
             default => 'V procesu'
         };
     }
-    
+
     /**
      * Get project state
      */
@@ -182,18 +182,18 @@ class UserProgressGuideShortcode extends ShortcodeBase
         if ($user_status !== 'full_member') {
             return 'locked';
         }
-        
+
         if ($project_data['has_published']) {
             return 'completed';
         }
-        
+
         if ($project_data['has_uploaded']) {
             return $project_data['has_rejected'] ? 'rejected' : 'pending';
         }
-        
+
         return 'awaiting';
     }
-    
+
     /**
      * Get project text based on state
      */
@@ -202,9 +202,9 @@ class UserProgressGuideShortcode extends ShortcodeBase
         if ($user_status !== 'full_member') {
             return '';
         }
-        
+
         $state = $this->get_project_state($project_data, $user_status);
-        
+
         return match($state) {
             'completed' => number_format(DomainConfigurationService::getUserWorkflowReward('first_project_uploaded'), 0, ',', ' ') . ' bodů',
             'pending' => number_format(DomainConfigurationService::getUserWorkflowReward('first_project_uploaded'), 0, ',', ' ') . ' bodů',
@@ -221,7 +221,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
     {
         // Get simplified workflow state
         $workflow = $this->get_workflow_state($user_id);
-        
+
         return [
             'workflow' => $workflow,
             'registration' => [
@@ -232,7 +232,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
             ],
             'project' => [
                 'title' => $this->get_project_title($workflow['project']['state']),
-                'state' => $workflow['project']['state'], 
+                'state' => $workflow['project']['state'],
                 'text' => $workflow['project']['text'],
                 'is_current' => $workflow['current_step'] === 'project'
             ],
@@ -244,7 +244,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
             ]
         ];
     }
-    
+
     /**
      * Get project title based on state
      */

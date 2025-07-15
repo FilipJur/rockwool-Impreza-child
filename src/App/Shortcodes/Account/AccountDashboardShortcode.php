@@ -56,10 +56,10 @@ class AccountDashboardShortcode extends ShortcodeBase
         }
 
         $user_id = get_current_user_id();
-        
+
         // Get dashboard configuration
         $config = $this->get_dashboard_config($user_id, $attributes);
-        
+
         // Prepare template data
         $template_data = [
             'config' => $config,
@@ -78,7 +78,7 @@ class AccountDashboardShortcode extends ShortcodeBase
     {
         $has_made_purchase = $this->ecommerce_manager->has_user_made_purchase($user_id);
         $user_status = $this->user_service->get_user_registration_status($user_id);
-        
+
         // Determine if progress guide should show
         $show_progress_guide = false;
         if ($attributes['show_progress_guide'] === 'true') {
@@ -86,7 +86,7 @@ class AccountDashboardShortcode extends ShortcodeBase
         } elseif ($attributes['show_progress_guide'] === 'auto') {
             $show_progress_guide = !$has_made_purchase;
         }
-        
+
         return [
             'show_progress_guide' => $show_progress_guide,
             'show_leaderboard' => ($user_status === 'full_member' || $user_status === 'other'),
@@ -107,7 +107,7 @@ class AccountDashboardShortcode extends ShortcodeBase
             <p class="text-blue-700 mb-4">
                 Pro zobrazení vašeho účtu a postupu v programu se musíte přihlásit.
             </p>
-            <a href="<?= esc_url(wp_login_url(get_permalink())) ?>" 
+            <a href="<?= esc_url(wp_login_url(get_permalink())) ?>"
                class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
                 Přihlásit se
             </a>
@@ -121,11 +121,11 @@ class AccountDashboardShortcode extends ShortcodeBase
     private function render_dashboard_layout(array $data): string
     {
         extract($data);
-        
+
         ob_start(); ?>
         <div class="<?= esc_attr($wrapper_classes) ?> account-dashboard">
             <div class="dashboard-container space-y-8">
-                
+
                 <?php if ($config['show_progress_guide']): ?>
                     <!-- Row 1: Progress Guide -->
                     <div class="dashboard-row progress-row">
@@ -142,7 +142,7 @@ class AccountDashboardShortcode extends ShortcodeBase
                         <div class="dashboard-section balance-section">
                             <?= do_shortcode('[user_points_balance]') ?>
                         </div>
-                        
+
                         <!-- Right: Available Products -->
                         <div class="dashboard-section products-section">
                             <div class="products-container bg-white rounded-lg shadow p-6">
@@ -157,7 +157,7 @@ class AccountDashboardShortcode extends ShortcodeBase
                                         </svg>
                                     </a>
                                 </div>
-                                
+
                                 <div class="products-grid-wrapper overflow-x-auto">
                                     <?= do_shortcode('[mycred_product_grid balance_filter="' . esc_attr($attributes['products_filter']) . '" limit="' . esc_attr($attributes['products_limit']) . '" class="horizontal-scroll"]') ?>
                                 </div>
@@ -174,7 +174,7 @@ class AccountDashboardShortcode extends ShortcodeBase
                             <div class="dashboard-section position-section">
                                 <?= do_shortcode('[zebricek_position]') ?>
                             </div>
-                            
+
                             <!-- Right: Progress to Next Position -->
                             <div class="dashboard-section progress-section">
                                 <?= do_shortcode('[zebricek_progress]') ?>
@@ -200,7 +200,7 @@ class AccountDashboardShortcode extends ShortcodeBase
 
             </div>
         </div>
-        
+
         <!-- Dashboard Styles -->
         <style>
         .account-dashboard .horizontal-scroll .mycred-products-grid {
@@ -209,31 +209,29 @@ class AccountDashboardShortcode extends ShortcodeBase
             gap: 1rem;
             padding-bottom: 0.5rem;
         }
-        
+
         .account-dashboard .horizontal-scroll .mycred-product-item {
             flex: 0 0 auto;
             width: 203px;
             min-width: 203px;
         }
-        
+
         .account-dashboard .horizontal-scroll .mycred-products-grid::-webkit-scrollbar {
             height: 6px;
         }
-        
+
         .account-dashboard .horizontal-scroll .mycred-products-grid::-webkit-scrollbar-track {
             background: #f1f5f9;
-            border-radius: 3px;
         }
-        
+
         .account-dashboard .horizontal-scroll .mycred-products-grid::-webkit-scrollbar-thumb {
             background: #cbd5e1;
-            border-radius: 3px;
         }
-        
+
         .account-dashboard .horizontal-scroll .mycred-products-grid::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
-        
+
         @media (max-width: 1024px) {
             .account-dashboard .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -246,7 +244,7 @@ class AccountDashboardShortcode extends ShortcodeBase
     /**
      * Override wrapper classes for dashboard
      */
-    protected function get_wrapper_classes(array $attributes): string 
+    protected function get_wrapper_classes(array $attributes): string
     {
         $classes = [
             'mycred-shortcode',
@@ -266,11 +264,11 @@ class AccountDashboardShortcode extends ShortcodeBase
     protected function sanitize_attributes(array $attributes): array
     {
         $sanitized = parent::sanitize_attributes($attributes);
-        
+
         $sanitized['show_progress_guide'] = in_array($sanitized['show_progress_guide'], ['auto', 'true', 'false'], true) ? $sanitized['show_progress_guide'] : 'auto';
         $sanitized['products_limit'] = max(1, min(12, (int)$sanitized['products_limit']));
         $sanitized['products_filter'] = in_array($sanitized['products_filter'], ['all', 'affordable', 'unavailable'], true) ? $sanitized['products_filter'] : 'affordable';
-        
+
         return $sanitized;
     }
 }

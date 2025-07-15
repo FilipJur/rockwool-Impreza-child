@@ -67,7 +67,7 @@ class UserPointsBalanceShortcode extends ShortcodeBase
      */
     private function get_balance_data(int $user_id, array $attributes): array
     {
-        // Get centralized balance summary
+        // Get centralized balance summary (now includes pending points)
         $balance_summary = $this->ecommerce_manager->get_balance_summary($user_id);
 
         // Get next affordable product info
@@ -80,6 +80,7 @@ class UserPointsBalanceShortcode extends ShortcodeBase
             'total_balance' => (int) $balance_summary['total'],
             'available_points' => (float) $balance_summary['available'],
             'cart_reserved' => (int) $balance_summary['reserved'],
+            'pending_points' => (int) $balance_summary['pending'], // New pending points data
             'next_product' => $next_product_data
         ];
     }
@@ -88,7 +89,8 @@ class UserPointsBalanceShortcode extends ShortcodeBase
      * Get next unaffordable product information
      * 
      * Uses ProductService to find the next product in progression
-     * and calculates display data for the progress component.
+     * and calculates display data for the progress component with three segments:
+     * accepted points, pending points, and remaining capacity.
      */
     private function get_next_product_info(int $user_id, float $available_points): ?array
     {
@@ -102,13 +104,24 @@ class UserPointsBalanceShortcode extends ShortcodeBase
 
         $price = (float) $next_product->get_price();
         $points_needed = (int) ($price - $available_points);
-        $progress_percentage = $price > 0 ? min(100, ($available_points / $price) * 100) : 0;
-
+        
+        // Get balance summary for detailed progress calculation
+        $balance_summary = $this->ecommerce_manager->get_balance_summary($user_id);
+        $accepted_points = (float) $balance_summary['available']; // Available = accepted points
+        $pending_points = (float) $balance_summary['pending'];
+        $total_user_points = $accepted_points + $pending_points;
+        
+        // Calculate progress percentages for three-segment bar
+        $accepted_percentage = $price > 0 ? min(100, ($accepted_points / $price) * 100) : 0;
+        $pending_end_percentage = $price > 0 ? min(100, ($total_user_points / $price) * 100) : 0;
+        
         return [
             'product' => $next_product,
             'price' => (int) $price,
             'points_needed' => $points_needed,
-            'progress_percentage' => round($progress_percentage, 1)
+            'accepted_percentage' => round($accepted_percentage, 1),
+            'pending_end_percentage' => round($pending_end_percentage, 1),
+            'has_pending' => $pending_points > 0
         ];
     }
 
@@ -118,11 +131,13 @@ class UserPointsBalanceShortcode extends ShortcodeBase
     private function render_login_message(): string
     {
         ob_start(); ?>
-        <div class="user-points-balance-login bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-            <p class="text-blue-700">
-                Pro zobrazení vašeho zůstatku bodů se musíte 
-                <a href="<?= esc_url(wp_login_url(get_permalink())) ?>" class="text-blue-800 underline hover:text-blue-900">přihlásit</a>.
-            </p>
+        <div class="user-points-balance login-required">
+            <div class="login-message">
+                <p>
+                    Pro zobrazení vašeho zůstatku bodů se musíte 
+                    <a href="<?= esc_url(wp_login_url(get_permalink())) ?>">přihlásit</a>.
+                </p>
+            </div>
         </div>
         <?php return ob_get_clean();
     }
@@ -135,81 +150,94 @@ class UserPointsBalanceShortcode extends ShortcodeBase
         extract($data);
         
         ob_start(); ?>
-        <div class="<?= esc_attr($wrapper_classes) ?> user-points-balance bg-white rounded-lg shadow p-6">
-            <div class="balance-header mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Váš zůstatek bodů</h3>
-            </div>
-
-            <div class="balance-info space-y-4">
-                <!-- Current Balance Display -->
-                <div class="balance-display">
-                    <div class="total-balance flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <span class="balance-label text-sm font-medium text-gray-600">Celkový zůstatek:</span>
-                        <span class="balance-value text-2xl font-bold text-gray-900">
-                            <?= number_format($balance_data['total_balance']) ?> <span class="text-sm font-normal text-gray-600">bodů</span>
-                        </span>
+        <div class="<?= esc_attr($wrapper_classes) ?> user-points-balance<?= !$balance_data['next_product'] ? ' success-state' : '' ?>">
+            <!-- Success State Congratulations - First position when in success state -->
+            <?php if (!$balance_data['next_product']): ?>
+                <div class="success-congratulations">
+                    <div class="success-icon-wrapper">
+                        <svg class="success-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7.6 21.748L5.7 18.548L2.1 17.748L2.45 14.048L0 11.248L2.45 8.44805L2.1 4.74805L5.7 3.94805L7.6 0.748047L11 2.19805L14.4 0.748047L16.3 3.94805L19.9 4.74805L19.55 8.44805L22 11.248L19.55 14.048L19.9 17.748L16.3 18.548L14.4 21.748L11 20.298L7.6 21.748ZM9.95 14.798L15.6 9.14805L14.2 7.69805L9.95 11.948L7.8 9.84805L6.4 11.248L9.95 14.798Z" fill="#DB0626"/>
+                        </svg>
                     </div>
-                    
-                    <?php if ($balance_data['cart_reserved'] > 0): ?>
-                        <div class="available-vs-reserved grid grid-cols-2 gap-4 mt-3">
-                            <div class="available-points text-center p-3 bg-green-50 rounded">
-                                <div class="text-sm text-green-600 font-medium">Dostupné</div>
-                                <div class="text-lg font-bold text-green-800"><?= number_format($balance_data['available_points']) ?></div>
-                            </div>
-                            <div class="reserved-points text-center p-3 bg-yellow-50 rounded">
-                                <div class="text-sm text-yellow-600 font-medium">V košíku</div>
-                                <div class="text-lg font-bold text-yellow-800"><?= number_format($balance_data['cart_reserved']) ?></div>
-                            </div>
-                        </div>
-                    <?php else: ?>
-                        <div class="available-points text-center p-3 bg-green-50 rounded mt-3">
-                            <div class="text-sm text-green-600 font-medium">Dostupné k nákupu</div>
-                            <div class="text-lg font-bold text-green-800"><?= number_format($balance_data['available_points']) ?></div>
-                        </div>
-                    <?php endif; ?>
+                    <span class="success-text">Gratulujeme! Máte dostatek bodů na jakoukoliv odměnu.</span>
                 </div>
-
-                <!-- Next Product Progress -->
-                <?php if ($balance_data['next_product']): ?>
-                    <div class="next-product-progress border-t pt-4">
-                        <div class="progress-header mb-3">
-                            <h4 class="text-sm font-medium text-gray-700 mb-1">Pokrok k další odměně</h4>
-                            <div class="flex items-center justify-between text-sm text-gray-600">
-                                <span><?= esc_html($balance_data['next_product']['product']->get_name()) ?></span>
-                                <span class="font-medium"><?= number_format($balance_data['next_product']['price']) ?> bodů</span>
-                            </div>
-                        </div>
-                        
-                        <div class="progress-bar-container mb-2">
-                            <div class="progress-bar-background bg-gray-200 h-3 rounded-full relative overflow-hidden">
-                                <div class="progress-bar-fill bg-red-600 h-full rounded-full transition-all duration-300" 
-                                     style="width: <?= $balance_data['next_product']['progress_percentage'] ?>%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="progress-details flex items-center justify-between text-sm">
-                            <span class="text-gray-600">
-                                <?= $balance_data['next_product']['progress_percentage'] ?>% dokončeno
-                            </span>
-                            <span class="font-medium text-red-600">
-                                Potřebujete ještě <?= number_format($balance_data['next_product']['points_needed']) ?> bodů
-                            </span>
-                        </div>
-                    </div>
-                <?php else: ?>
-                    <div class="no-next-product border-t pt-4">
-                        <div class="all-products-affordable bg-green-50 rounded-lg p-4 text-center">
-                            <div class="celebration-icon text-2xl mb-2">🎉</div>
-                            <h4 class="text-sm font-medium text-green-800 mb-1">Gratulujeme!</h4>
-                            <p class="text-sm text-green-700">
-                                Máte dostatek bodů na všechny dostupné odměny!
-                            </p>
+            <?php endif; ?>
+            
+            <!-- Balance Header Section -->
+            <div class="balance-header">
+                <!-- Main Balance Display -->
+                <div class="main-balance">
+                    <div class="balance-label">Aktuální počet<br>bodů</div>
+                    <div class="balance-value"><?= number_format($balance_data['total_balance']) ?>&nbsp;b.</div>
+                </div>
+                
+                <!-- Pending Points Section - Directly below balance -->
+                <?php $pending_points = $balance_data['pending_points'] ?? 0; ?>
+                <?php if ($pending_points > 0): ?>
+                    <div class="pending-section">
+                        <span class="pending-label">Čeká na schválení</span>
+                        <div class="pending-separator"></div>
+                        <div class="pending-pill">
+                            <span class="pending-value"><?= number_format($pending_points) ?>&nbsp;b.</span>
                         </div>
                     </div>
                 <?php endif; ?>
             </div>
+            
+            <!-- Progress Section -->
+            <?php if ($balance_data['next_product']): ?>
+                <div class="progress-section">
+                    <div class="progress-bar-container">
+                        <!-- Base layer: remaining capacity (gray background) -->
+                        <div class="progress-bar-background"></div>
+                        
+                        <!-- Middle layer: pending points (pink) -->
+                        <?php if ($balance_data['next_product']['has_pending']): ?>
+                            <div class="progress-bar-pending" style="width: <?= $balance_data['next_product']['pending_end_percentage'] ?>%"></div>
+                        <?php endif; ?>
+                        
+                        <!-- Top layer: accepted points (red) -->
+                        <div class="progress-bar-accepted" style="width: <?= $balance_data['next_product']['accepted_percentage'] ?>%"></div>
+                    </div>
+                    <div class="progress-text">
+                        Zbývá <?= number_format($balance_data['next_product']['points_needed']) ?>b. do odemčení dalších odměn
+                    </div>
+                </div>
+            <?php else: ?>
+                <!-- Success State: No progress bar needed -->
+                <div class="progress-section success-spacer">
+                    <!-- Progress section hidden in success state, just maintains spacing -->
+                </div>
+            <?php endif; ?>
+            
+            <!-- Navigation Section -->
+            <div class="navigation">
+                <a href="<?= esc_url($this->get_points_page_url()) ?>" class="nav-link">
+                    Moje body
+                    <svg class="nav-arrow" width="12" height="9" viewBox="0 0 12 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0.000651209 3.83069L9.38419 3.83069L6.75919 1.20569L7.58402 0.380859L11.6172 4.41403L7.58402 8.44719L6.75919 7.62236L9.38419 4.99736L0.000651158 4.99736L0.000651209 3.83069Z" fill="#DB0626"/>
+                    </svg>
+                </a>
+            </div>
         </div>
         <?php return ob_get_clean();
+    }
+
+    /**
+     * Get URL for the user's points history page
+     * 
+     * @return string Points page URL
+     */
+    private function get_points_page_url(): string 
+    {
+        // Try to find a dedicated points page, fallback to account page
+        $account_page_id = get_option('woocommerce_myaccount_page_id');
+        if ($account_page_id) {
+            return get_permalink($account_page_id);
+        }
+        
+        // Fallback to current page if no account page found
+        return get_permalink();
     }
 
     /**

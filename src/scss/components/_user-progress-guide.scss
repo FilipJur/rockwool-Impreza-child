@@ -44,7 +44,7 @@
         width: 100%;
         height: 4px;
         transition: background-color $transition-base;
-
+        border-radius: 0;
         // Default pending state - gray (#DADADA)
         background-color: #dadada;
 
