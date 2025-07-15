@@ -49,6 +49,7 @@ class DomainConfigurationService
 
         self::registerRealizaceConfiguration();
         self::registerFakturyConfiguration();
+        self::initializeRewardConstants();
         self::$initialized = true;
     }
 
@@ -359,10 +360,28 @@ class DomainConfigurationService
     public const PROGRESS_PROJECT_UPLOADED = 100;
 
     /**
-     * User workflow reward constants
+     * User workflow reward configuration
+     * Stores registration completion and other workflow rewards
      */
-    public const REWARD_REGISTRATION_COMPLETED = 200;
-    public const REWARD_FIRST_PROJECT_UPLOADED = 2500;
+    private static array $workflow_rewards = [
+        'registration_completed' => 200,  // Points awarded for completing registration
+    ];
+
+    /**
+     * User workflow reward constants - dynamically set from configuration
+     */
+    public static int $REWARD_REGISTRATION_COMPLETED;
+    public static int $REWARD_FIRST_PROJECT_UPLOADED;
+
+    /**
+     * Initialize reward constants from configuration
+     * Called during service initialization to set dynamic values
+     */
+    private static function initializeRewardConstants(): void
+    {
+        self::$REWARD_REGISTRATION_COMPLETED = self::$workflow_rewards['registration_completed'];
+        self::$REWARD_FIRST_PROJECT_UPLOADED = self::$configurations['realization']['default_points'];
+    }
 
     /**
      * Get user workflow progress percentage
@@ -387,16 +406,17 @@ class DomainConfigurationService
     /**
      * Get user workflow reward points
      *
-     * @param string $milestone Milestone identifier (registration_completed)
+     * @param string $milestone Milestone identifier (registration_completed, first_project_uploaded)
      * @return int Reward points
      */
     public static function getUserWorkflowReward(string $milestone): int
     {
         switch ($milestone) {
             case 'registration_completed':
-                return self::REWARD_REGISTRATION_COMPLETED;
+                return self::$workflow_rewards['registration_completed'];
             case 'first_project_uploaded':
-                return self::REWARD_FIRST_PROJECT_UPLOADED;
+                // Get from realization domain configuration
+                return self::getDefaultPoints('realization');
             default:
                 return 0;
         }
