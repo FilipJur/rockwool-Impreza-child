@@ -155,7 +155,7 @@
     .progress-bar-container {
       position: relative;
       width: 100%;
-      height: 27px; // Match Figma's border-radius for fully rounded segments
+      height: 20px; // Updated to 20px as requested
 
       // Base layer: remaining capacity (light gray background)
       .progress-bar-background {
@@ -172,11 +172,11 @@
       // Middle layer: pending points (light pink)
       .progress-bar-pending {
         position: absolute;
-        height: 27px; // Full height for rounded appearance
+        height: 20px; // Updated to 20px as requested
         left: 0;
         top: 0;
         background: $color-pending-pill; // #FBE6E9 (matches pill color)
-        border-radius: 27px; // Fully rounded (27px as per Figma)
+        border-radius: 20px; // Updated to match height
         transition: width $transition-base;
         min-width: 0;
         max-width: 100%;
@@ -186,11 +186,11 @@
       // Top layer: accepted points (primary red)
       .progress-bar-accepted {
         position: absolute;
-        height: 27px; // Full height for rounded appearance
+        height: 20px; // Updated to 20px as requested
         left: 0;
         top: 0;
         background: $color-primary; // #DB0626
-        border-radius: 27px; // Fully rounded (27px as per Figma)
+        border-radius: 20px; // Updated to match height
         transition: width $transition-base;
         min-width: 0;
         max-width: 100%;

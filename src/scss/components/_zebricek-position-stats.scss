@@ -1,0 +1,83 @@
+/**
+ * Zebricek Position Stats Component
+ *
+ * Three-column stats display for leaderboard position data.
+ * Follows Figma design specifications with proper DRY principles.
+ * Inherits typography from theme config (Avenir Next, sizes, weights).
+ */
+
+@use "../base/variables" as *;
+
+.zebricek-position-stats {
+  // Container styling - reuse shadow variable for DRY
+  background: $color-white;
+  box-shadow: $shadow-card;
+  padding: 24px 26px; // Figma exact specs
+  display: flex;
+  flex-direction: column;
+  gap: 31px; // Figma exact specs
+
+  // Stats container - horizontal layout with specific gaps
+  .zebricek-stats-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 22px; // Figma exact specs
+  }
+
+  // Individual stat columns - flexible layout
+  .zebricek-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px; // Figma exact specs
+    flex: 1; // Equal width distribution
+    min-width: 0; // Allow shrinking
+
+    // Center column gets slightly more space for longer text
+    &--points {
+      flex: 1.2;
+    }
+  }
+
+  // Stat values (large numbers)
+  .zebricek-stat__value {
+    // Typography matches H1 from theme config (30px, 600 weight)
+    // NO font-family needed - inherits from theme config Avenir Next
+    font-weight: 600; // Matches theme config H1
+    font-size: 30px; // Matches theme config H1
+    line-height: 1.2; // Figma exact specs
+    text-align: center;
+    width: 100%;
+    color: $color-black; // Default color from variables
+
+    // Primary variant for position number (red)
+    &--primary {
+      color: $color-primary; // Use existing #DB0626 variable
+    }
+  }
+
+  // Stat labels (descriptive text)
+  .zebricek-stat__label {
+    // NO font-family needed - inherits from theme config Avenir Next
+    font-weight: 400; // Normal weight
+    font-size: $font-size-sm; // 14px from variables
+    line-height: 1.2857142857142858; // Figma exact specs
+    color: $color-black; // Use existing variable
+    width: 100%;
+
+    // Text alignment variants
+    &--center {
+      text-align: center;
+    }
+  }
+
+  // Vertical dividers between stats
+  .zebricek-divider {
+    width: 1px;
+    align-self: stretch; // Stretch to full container height
+    background: $color-separator; // Use existing #DADADA variable
+    flex-shrink: 0; // Prevent compression
+  }
+}

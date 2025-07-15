@@ -40,7 +40,9 @@ if (!defined('ABSPATH')) {
                 $stats_data = [
                     'annual_points' => $position_data['annual_points_formatted'] ?? '0 b.',
                     'year' => $position_data['year'] ?? date('Y'),
-                    'position' => $position_data['position_formatted'] ?? '0. pozice'
+                    'position' => $position_data['position_formatted'] ?? '0',
+                    'realizations_count' => $position_data['realizations_count'] ?? 0,
+                    'invoices_count' => $position_data['invoices_count'] ?? 0
                 ];
                 echo $renderer->load_template('zebricek/position-stats.php', $stats_data);
                 ?>

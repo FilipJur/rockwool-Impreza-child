@@ -8,6 +8,8 @@ use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
 use MistrFachman\Services\UserService;
 use MistrFachman\Services\ZebricekDataService;
+use MistrFachman\Services\ProjectStatusService;
+use MistrFachman\Services\DomainConfigurationService;
 
 /**
  * Žebříček Position Shortcode Component
@@ -91,15 +93,92 @@ class ZebricekPositionShortcode extends ShortcodeBase
         $position = $this->zebricek_service->get_user_position($user_id, $year);
         $annual_points = $this->zebricek_service->get_user_annual_points($user_id, $year);
         
+        // Get count of successful submissions for current year
+        $realizations_count = $this->get_user_realizations_count($user_id, $year);
+        $invoices_count = $this->get_user_invoices_count($user_id, $year);
+        
         return [
             'position' => $position,
-            'position_formatted' => "{$position}. pozice",
+            'position_formatted' => $position, // Just the number for Figma design
             'annual_points' => $annual_points,
             'annual_points_formatted' => number_format($annual_points, 0, ',', ' ') . ' b.',
+            'realizations_count' => $realizations_count,
+            'invoices_count' => $invoices_count,
             'year' => $year
         ];
     }
 
+    /**
+     * Get count of successful realizations for user in given year
+     * Uses existing architecture patterns from MyRealizaceShortcode
+     */
+    private function get_user_realizations_count(int $user_id, string $year): int
+    {
+        $cache_key = "realizace_count_{$user_id}_{$year}";
+        $cached_count = wp_cache_get($cache_key, 'zebricek_position');
+        
+        if ($cached_count !== false) {
+            return (int)$cached_count;
+        }
+        
+        // Query successful realizations for the year using existing services
+        $query_args = [
+            'post_type' => DomainConfigurationService::getWordPressPostType('realization'),
+            'author' => $user_id,
+            'post_status' => 'publish', // Only successful realizations count
+            'posts_per_page' => -1, // Get all
+            'fields' => 'ids', // Only need count, not full posts
+            'date_query' => [
+                [
+                    'year' => $year,
+                ],
+            ],
+        ];
+        
+        $query = new \WP_Query($query_args);
+        $count = $query->found_posts;
+        
+        // Cache for 10 minutes (same as position data)
+        wp_cache_set($cache_key, $count, 'zebricek_position', self::CACHE_DURATION);
+        
+        return $count;
+    }
+
+    /**
+     * Get count of successful invoices for user in given year
+     * Uses existing architecture patterns from MyFakturyShortcode
+     */
+    private function get_user_invoices_count(int $user_id, string $year): int
+    {
+        $cache_key = "faktury_count_{$user_id}_{$year}";
+        $cached_count = wp_cache_get($cache_key, 'zebricek_position');
+        
+        if ($cached_count !== false) {
+            return (int)$cached_count;
+        }
+        
+        // Query successful invoices for the year using existing services
+        $query_args = [
+            'post_type' => DomainConfigurationService::getWordPressPostType('invoice'),
+            'author' => $user_id,
+            'post_status' => 'publish', // Only successful invoices count
+            'posts_per_page' => -1, // Get all
+            'fields' => 'ids', // Only need count, not full posts
+            'date_query' => [
+                [
+                    'year' => $year,
+                ],
+            ],
+        ];
+        
+        $query = new \WP_Query($query_args);
+        $count = $query->found_posts;
+        
+        // Cache for 10 minutes (same as position data)
+        wp_cache_set($cache_key, $count, 'zebricek_position', self::CACHE_DURATION);
+        
+        return $count;
+    }
 
     /**
      * Clear position cache for specific user (delegates to service)
@@ -107,6 +186,11 @@ class ZebricekPositionShortcode extends ShortcodeBase
     public static function clear_user_cache(int $user_id): void
     {
         ZebricekDataService::clear_user_cache($user_id);
+        
+        // Also clear submission counts cache for current year
+        $current_year = date('Y');
+        wp_cache_delete("realizace_count_{$user_id}_{$current_year}", 'zebricek_position');
+        wp_cache_delete("faktury_count_{$user_id}_{$current_year}", 'zebricek_position');
     }
 
     /**

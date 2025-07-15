@@ -87,12 +87,17 @@ class ZebricekProgressShortcode extends ShortcodeBase
         $user_position = $this->zebricek_service->get_user_position($user_id, $current_year);
         $user_points = $this->zebricek_service->get_user_annual_points($user_id, $current_year);
         
+        // Get balance summary for pending points
+        $balance_summary = $this->ecommerce_manager->get_balance_summary($user_id);
+        $pending_points = (int) $balance_summary['pending'];
+        
         // Get next target (user above in leaderboard)
-        $next_target = $this->get_next_target_user($user_position, $current_year);
+        $next_target = $this->get_next_target_user($user_position, $current_year, $user_points, $pending_points);
         
         return [
             'current_position' => $user_position,
             'current_points' => $user_points,
+            'pending_points' => $pending_points,
             'next_target' => $next_target,
             'year' => $current_year
         ];
@@ -101,7 +106,7 @@ class ZebricekProgressShortcode extends ShortcodeBase
     /**
      * Get the next target user to overtake
      */
-    private function get_next_target_user(int $current_position, string $year): ?array
+    private function get_next_target_user(int $current_position, string $year, int $user_points, int $pending_points): ?array
     {
         if ($current_position <= 1) {
             return null; // Already at the top
@@ -118,14 +123,47 @@ class ZebricekProgressShortcode extends ShortcodeBase
         }
 
         $target_user = $leaderboard_data[0];
+        $target_points = (int) $target_user['points'];
+        
+        // Calculate points needed and progress percentages like UserPointsBalance
+        $points_needed = max(1, $target_points - $user_points + 1);
+        $total_user_points = $user_points + $pending_points;
+        
+        // Calculate progress percentages for three-segment bar
+        $accepted_percentage = $target_points > 0 ? min(100, ($user_points / $target_points) * 100) : 0;
+        $pending_end_percentage = $target_points > 0 ? min(100, ($total_user_points / $target_points) * 100) : 0;
+        
+        // Format display name: First name + First letter of surname
+        $formatted_name = $this->format_display_name($target_user['display_name']);
         
         return [
             'position' => $target_position,
             'user_id' => $target_user['user_id'],
-            'display_name' => $target_user['display_name'],
+            'display_name' => $formatted_name,
             'company' => $target_user['company'],
-            'points' => $target_user['points']
+            'points' => $target_points,
+            'points_needed' => $points_needed,
+            'accepted_percentage' => round($accepted_percentage, 1),
+            'pending_end_percentage' => round($pending_end_percentage, 1),
+            'has_pending' => $pending_points > 0
         ];
+    }
+
+    /**
+     * Format display name to "First name + First letter of surname"
+     */
+    private function format_display_name(string $full_name): string
+    {
+        $name_parts = explode(' ', trim($full_name));
+        
+        if (count($name_parts) < 2) {
+            return $full_name; // Return as-is if no surname
+        }
+        
+        $first_name = $name_parts[0];
+        $surname_initial = substr($name_parts[count($name_parts) - 1], 0, 1);
+        
+        return $first_name . ' ' . $surname_initial . '.';
     }
 
     /**
@@ -162,85 +200,11 @@ class ZebricekProgressShortcode extends ShortcodeBase
      */
     private function render_progress_display(array $data): string
     {
-        extract($data);
-        
-        ob_start(); ?>
-        <div class="<?= esc_attr($wrapper_classes) ?> zebricek-progress bg-white p-4 rounded-lg shadow">
-            <div class="progress-header mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 mb-1">Postup v žebříčku</h3>
-                <div class="current-position-summary text-sm text-gray-600">
-                    Aktuálně jste na <span class="font-medium text-gray-900"><?= $progress_data['current_position'] ?>. pozici</span>
-                    s <span class="font-medium text-gray-900"><?= number_format($progress_data['current_points']) ?> body</span>
-                </div>
-            </div>
-
-            <?php if ($progress_data['next_target']): ?>
-                <div class="next-position-target border-t pt-4">
-                    <div class="target-info mb-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="target-user">
-                                <div class="text-sm font-medium text-gray-900">
-                                    <?= esc_html($progress_data['next_target']['display_name']) ?>
-                                </div>
-                                <div class="text-xs text-gray-600">
-                                    <?= esc_html($progress_data['next_target']['company']) ?>
-                                </div>
-                            </div>
-                            <div class="target-position text-right">
-                                <div class="text-sm font-medium text-red-600">
-                                    <?= $progress_data['next_target']['position'] ?>. pozice
-                                </div>
-                                <div class="text-xs text-gray-600">
-                                    <?= number_format($progress_data['next_target']['points']) ?> bodů
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <?php 
-                    $points_needed = max(1, $progress_data['next_target']['points'] - $progress_data['current_points'] + 1);
-                    $progress_percentage = $progress_data['current_points'] > 0 ? 
-                        min(100, ($progress_data['current_points'] / $progress_data['next_target']['points']) * 100) : 0;
-                    ?>
-                    
-                    <div class="points-needed mb-3">
-                        <div class="progress-bar-container mb-2">
-                            <div class="progress-bar-background bg-gray-200 h-3 rounded-full relative overflow-hidden">
-                                <div class="progress-bar-fill bg-red-600 h-full rounded-full transition-all duration-300" 
-                                     style="width: <?= round($progress_percentage, 1) ?>%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="progress-details flex items-center justify-between text-sm">
-                            <span class="text-gray-600">
-                                <?= round($progress_percentage, 1) ?>% k předběhnutí
-                            </span>
-                            <span class="font-medium text-red-600">
-                                Potřebujete <?= number_format($points_needed) ?> bodů
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div class="achievement-tips bg-gray-50 rounded p-3">
-                        <div class="text-xs text-gray-600 mb-1">Tipy pro získání bodů:</div>
-                        <div class="text-xs text-gray-700">
-                            • Nahrajte realizaci (+2500 b.) • Přidejte fakturu (+body dle částky)
-                        </div>
-                    </div>
-                </div>
-            <?php else: ?>
-                <div class="at-top border-t pt-4 text-center">
-                    <div class="celebration-icon text-4xl mb-2">🏆</div>
-                    <div class="text-lg font-semibold text-yellow-600 mb-1">
-                        Gratulujeme!
-                    </div>
-                    <div class="text-sm text-gray-600">
-                        Jste na vrcholu žebříčku pro rok <?= $progress_data['year'] ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-        <?php return ob_get_clean();
+        // Load template with progress data
+        ob_start();
+        $progress_data = $data['progress_data'];
+        include get_stylesheet_directory() . '/templates/zebricek/progress.php';
+        return ob_get_clean();
     }
 
     /**

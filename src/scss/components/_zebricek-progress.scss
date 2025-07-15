@@ -1,0 +1,128 @@
+/**
+ * Zebricek Progress Component
+ *
+ * Simple progress display matching Figma design specifications.
+ * Extends and reuses existing patterns from user-points-balance for DRY compliance.
+ * Inherits typography from theme config (Avenir Next font family).
+ */
+
+@use "../base/variables" as *;
+@use "user-points-balance" as upb;
+
+.zebricek-progress {
+  // Extend base card styling from user-points-balance
+  @extend .user-points-balance;
+
+  // Override only specific differences for zebricek
+  padding: 31px 26px; // Figma exact specs
+  gap: 7px; // Figma exact specs
+
+  // Main content section - reuse flex-between mixin pattern
+  &__content {
+    @include upb.flex-between;
+    gap: 16px;
+    width: 100%; // Figma exact specs
+  }
+
+  // Progress bar container - reuse patterns from user-points-balance
+  &__bar-container {
+    // Base container styling from user-points-balance pattern
+    position: relative;
+    width: 100%;
+    height: 20px; // Updated to 20px as requested
+    flex: 1;
+    min-width: 100px;
+
+    // Base layer: remaining capacity (gray background)
+    .zebricek-progress__bar-background {
+      position: absolute;
+      width: 100%;
+      height: 8px; // Thinner background like UserPointsBalance
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: $color-progress-bg;
+      border-radius: 0;
+    }
+
+    // Middle layer: pending points (pink) - reuse existing variables
+    .zebricek-progress__bar-pending {
+      position: absolute;
+      height: 20px; // Updated to 20px as requested
+      left: 0;
+      top: 0;
+      background: $color-pending-pill;
+      border-radius: 20px; // Updated to match height
+      transition: width $transition-base;
+      min-width: 0;
+      max-width: 100%;
+      z-index: 2;
+    }
+
+    // Top layer: accepted points (red) - reuse existing variables
+    .zebricek-progress__bar-accepted {
+      position: absolute;
+      height: 20px; // Updated to 20px as requested
+      left: 0;
+      top: 0;
+      background: $color-primary;
+      border-radius: 20px; // Updated to match height
+      transition: width $transition-base;
+      min-width: 0;
+      max-width: 100%;
+      z-index: 3;
+    }
+  }
+
+  // Position text - custom typography for 24px size
+  &__position {
+    @include upb.balance-text(24px, $font-weight-semibold, 1.33);
+    text-align: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &--success {
+      color: $color-primary;
+    }
+  }
+
+  // Details section - reuse flex-between pattern
+  &__details {
+    @include upb.flex-between;
+    gap: 4px;
+    width: 100%;
+  }
+
+  // Typography elements - reuse balance-text mixin
+  &__points-needed,
+  &__target-user,
+  &__success-message {
+    @include upb.balance-text($font-size-sm, $font-weight-normal, 1.29);
+  }
+
+  // Success state layout - reuse flex patterns
+  &__success {
+    @include upb.flex-center;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    width: 100%;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 480px) {
+    padding: 24px 20px; // Slightly smaller padding on mobile
+
+    &__content {
+      gap: 12px; // Smaller gap on mobile
+    }
+
+    &__position {
+      font-size: 20px; // Slightly smaller on mobile
+    }
+
+    &__bar-container {
+      min-width: 80px; // Smaller minimum on mobile
+    }
+  }
+}

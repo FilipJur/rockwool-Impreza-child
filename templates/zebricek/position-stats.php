@@ -2,11 +2,13 @@
 /**
  * Žebříček Position Stats Template
  * 
- * Annual points and position statistics
+ * Annual points and position statistics matching exact Figma design
  * 
  * @var string $annual_points Formatted annual points
  * @var string $year Current year
- * @var string $position Formatted position
+ * @var string $position Formatted position (number only)
+ * @var int $realizations_count Number of realizations added
+ * @var int $invoices_count Number of invoices added
  */
 
 // Prevent direct access
@@ -15,30 +17,44 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="zebricek-annual-points mb-6">
-    <div class="zebricek-stat p-4 space-y-2">
-        <span class="zebricek-stat-label block text-sm font-medium uppercase tracking-wide">
-            <?= esc_html(sprintf(__('získané body za %s', 'mistr-fachman'), $year)) ?>
-        </span>
-        <span class="zebricek-stat-value block text-lg font-bold">
-            <?= esc_html($annual_points) ?>
-        </span>
-    </div>
-    <p class="zebricek-stat-description text-sm mt-2">
-        <?= esc_html__('Body získané v daném roce určující pořadí v soutěži.', 'mistr-fachman') ?>
-    </p>
-</div>
+<div class="zebricek-position-stats">
+    <div class="zebricek-stats-container">
+        
+        <!-- Position stat -->
+        <div class="zebricek-stat zebricek-stat--position">
+            <div class="zebricek-stat__value zebricek-stat__value--primary">
+                <?= esc_html($position) ?>
+            </div>
+            <div class="zebricek-stat__label zebricek-stat__label--center">
+                <?= esc_html__('Aktuální pozice', 'mistr-fachman') ?>
+            </div>
+        </div>
 
-<div class="zebricek-user-position">
-    <div class="zebricek-stat p-4 space-y-2">
-        <span class="zebricek-stat-label block text-sm font-medium uppercase tracking-wide">
-            <?= esc_html__('Vaše umístění v žebříčku', 'mistr-fachman') ?>
-        </span>
-        <span class="zebricek-stat-value block text-lg font-bold">
-            <?= esc_html($position) ?>
-        </span>
+        <!-- Divider -->
+        <div class="zebricek-divider"></div>
+
+        <!-- Annual points stat -->
+        <div class="zebricek-stat zebricek-stat--points">
+            <div class="zebricek-stat__value">
+                <?= esc_html($annual_points) ?>
+            </div>
+            <div class="zebricek-stat__label zebricek-stat__label--center">
+                <?= esc_html(sprintf(__('Celkem bodů za rok %s', 'mistr-fachman'), $year)) ?>
+            </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="zebricek-divider"></div>
+
+        <!-- Realizations stat -->
+        <div class="zebricek-stat zebricek-stat--realizations">
+            <div class="zebricek-stat__value">
+                <?= esc_html($realizations_count ?? 0) ?>
+            </div>
+            <div class="zebricek-stat__label zebricek-stat__label--center">
+                <?= esc_html__('Přidaných realizací', 'mistr-fachman') ?>
+            </div>
+        </div>
+
     </div>
-    <p class="zebricek-stat-description text-sm mt-2">
-        <?= esc_html(sprintf(__('Období %s končí 31. 12. %s.', 'mistr-fachman'), $year, $year)) ?>
-    </p>
 </div>

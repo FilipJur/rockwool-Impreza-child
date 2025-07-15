@@ -42,6 +42,9 @@ $pill-height: 28px;              // Standard pill height
 $progress-bar-height: 20px;      // Progress bar container height
 $progress-track-height: 8px;     // Progress track height
 
+// Card shadows (extracted for DRY reuse)
+$shadow-card: 0px 0px 20px rgba(0, 0, 0, 0.08);  // Standard card shadow
+
 // Spacing Scale (from design-tokens.md)
 $space-xs: 5px;
 $space-sm: 10px;
