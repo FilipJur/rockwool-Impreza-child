@@ -13,6 +13,9 @@
   // Extend base card styling from user-points-balance
   @extend .user-points-balance;
 
+  // Enable positioning context for absolutely positioned external element
+  position: relative;
+
   // Override only specific differences for zebricek
   padding: 31px 26px; // Figma exact specs
   gap: 7px; // Figma exact specs
@@ -109,6 +112,19 @@
     width: 100%;
   }
 
+  // Success state for first place - mimic user-points-balance success-state
+  &--first-place {
+    // Override component background to primary red like user-points-balance
+    background: $color-primary;
+
+    // Make all text white in first place state
+    .zebricek-progress__position,
+    .zebricek-progress__success-message {
+      color: $color-white !important;
+    }
+
+  }
+
   // Responsive adjustments
   @media (max-width: 480px) {
     padding: 24px 20px; // Slightly smaller padding on mobile
@@ -123,6 +139,52 @@
 
     &__bar-container {
       min-width: 80px; // Smaller minimum on mobile
+    }
+  }
+}
+
+// External navigation element - absolutely positioned to not affect container height
+.zebricek-progress-external {
+  position: absolute;
+  top: 100%; // Position below the card container
+  left: 0;
+  right: 0;
+  margin-top: 8px; // 8px spacing from card container
+  z-index: 1; // Ensure it appears above other content
+  pointer-events: none; // Allow clicks to pass through container
+  
+  &__text {
+    // Reuse navigation styling from user-points-balance
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; // Align to the right
+    gap: $space-xxs;
+    margin-right: 23px; // 23px from right edge
+    @include upb.balance-text($font-size-sm, $font-weight-semibold, 1.36);
+    color: $color-black;
+    text-decoration: none;
+    transition: color $transition-fast;
+    cursor: pointer;
+    pointer-events: auto; // Re-enable clicks on the actual text/link
+
+    &:hover {
+      color: $color-primary;
+
+      .zebricek-progress-external__arrow {
+        path {
+          fill: $color-primary;
+        }
+      }
+    }
+  }
+
+  &__arrow {
+    width: 12px;
+    height: 9px;
+    transition: fill $transition-fast;
+    
+    path {
+      transition: fill $transition-fast;
     }
   }
 }

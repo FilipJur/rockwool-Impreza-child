@@ -1,0 +1,59 @@
+/**
+ * Zebricek Announcement Component
+ *
+ * Simple text announcement following Figma design specifications.
+ * Reuses existing patterns and design tokens for consistency.
+ */
+
+@use "../base/variables" as *;
+@use "user-points-balance" as upb;
+
+.zebricek-announcement {
+  // Override background and shadow from user-points-balance extension
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  
+  // Enable positioning context
+  position: relative;
+  
+  // Override specific styling for announcement
+  padding: 31px 26px; // Consistent with other zebricek components
+  gap: 4px; // Figma exact specs
+  display: flex;
+  flex-direction: column;
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px; // Figma exact specs
+    width: 100%;
+  }
+
+  // Title styling - matches Figma 30px semibold
+  &__title {
+    @include upb.balance-text(30px, $font-weight-semibold, 1.2);
+    color: $color-black; // Ensure black text
+    margin: 0;
+  }
+
+  // Subtitle styling - matches Figma 14px normal
+  &__subtitle {
+    @include upb.balance-text(14px, $font-weight-normal, 1.286);
+    color: $color-black; // Ensure black text
+    margin: 0;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 480px) {
+    padding: 24px 20px; // Slightly smaller padding on mobile
+
+    &__title {
+      font-size: 24px; // Slightly smaller on mobile
+    }
+
+    &__subtitle {
+      font-size: 13px; // Slightly smaller on mobile
+    }
+  }
+}

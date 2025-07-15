@@ -169,8 +169,13 @@ class AccountDashboardShortcode extends ShortcodeBase
                 <?php if ($config['show_leaderboard']): ?>
                     <!-- Row 3: Leaderboard Information -->
                     <div class="dashboard-row leaderboard-row">
-                        <div class="dashboard-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <!-- Left: Current Position -->
+                        <div class="dashboard-grid grid grid-cols-1 gap-6 w-full">
+                            <!-- Left: Competition Announcement -->
+                            <div class="dashboard-section announcement-section">
+                                <?= do_shortcode('[zebricek_announcement]') ?>
+                            </div>
+
+                            <!-- Center: Current Position -->
                             <div class="dashboard-section position-section">
                                 <?= do_shortcode('[zebricek_position]') ?>
                             </div>
@@ -232,11 +237,6 @@ class AccountDashboardShortcode extends ShortcodeBase
             background: #94a3b8;
         }
 
-        @media (max-width: 1024px) {
-            .account-dashboard .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-        }
         </style>
         <?php return ob_get_clean();
     }

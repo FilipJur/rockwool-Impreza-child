@@ -56,5 +56,21 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
 
+        <!-- Conditional invoices stat - only show if user has approved invoices -->
+        <?php if (!empty($invoices_count) && $invoices_count > 0): ?>
+            <!-- Divider -->
+            <div class="zebricek-divider"></div>
+
+            <!-- Invoices stat -->
+            <div class="zebricek-stat zebricek-stat--invoices">
+                <div class="zebricek-stat__value">
+                    <?= esc_html($invoices_count) ?>
+                </div>
+                <div class="zebricek-stat__label zebricek-stat__label--center">
+                    <?= esc_html__('Přidaných faktur', 'mistr-fachman') ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
     </div>
 </div>

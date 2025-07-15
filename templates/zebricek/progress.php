@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="zebricek-progress">
+<div class="zebricek-progress<?= $progress_data['next_target'] === null ? ' zebricek-progress--first-place' : '' ?>">
     <?php if ($progress_data['next_target']): ?>
         
         <!-- Main progress section -->
@@ -55,9 +55,9 @@ if (!defined('ABSPATH')) {
         </div>
         
     <?php else: ?>
-        <!-- Top position state -->
+        <!-- Top position state with success styling -->
         <div class="zebricek-progress__success">
-            <div class="zebricek-progress__position zebricek-progress__position--success">
+            <div class="zebricek-progress__position zebricek-progress__position--first">
                 1. místo
             </div>
             <div class="zebricek-progress__success-message">
@@ -65,4 +65,15 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
     <?php endif; ?>
+    
+</div>
+
+<!-- External navigation text - positioned outside card container -->
+<div class="zebricek-progress-external">
+    <div class="zebricek-progress-external__text">
+        Jak si vedu v žebříčku
+        <svg class="zebricek-progress-external__arrow" width="12" height="9" viewBox="0 0 12 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0.000651209 3.83069L9.38419 3.83069L6.75919 1.20569L7.58402 0.380859L11.6172 4.41403L7.58402 8.44719L6.75919 7.62236L9.38419 4.99736L0.000651158 4.99736L0.000651209 3.83069Z" fill="#DB0626"/>
+        </svg>
+    </div>
 </div>

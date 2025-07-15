@@ -36,7 +36,7 @@
 .user-points-balance {
   // Responsive-first container
   width: 100%;
-
+  height: 100%;
   // Layout
   display: flex;
   flex-direction: column;
@@ -216,7 +216,6 @@
     align-items: center;
     align-self: stretch;
     gap: $space-xxs;
-    padding: $space-xs 0 $space-header $space-sm;
     width: 100%;
 
     .nav-link {

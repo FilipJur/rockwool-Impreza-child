@@ -5,8 +5,8 @@
  * REDUCED FROM 378 LINES TO ~80 LINES (79% reduction)
  */
 
-@use '../../base/variables' as *;
-@use 'admin-mixins' as *;
+@use "../../base/variables" as *;
+@use "admin-mixins" as *;
 
 // =============================================================================
 // GENERIC GRID SYSTEMS
@@ -59,7 +59,7 @@
   .invoice-header {
     @include item-header;
   }
-  
+
   // Shared excerpt styling
   .realization-excerpt,
   .invoice-excerpt {
@@ -73,19 +73,19 @@
   .realization-details,
   .invoice-details {
     margin-bottom: $spacing-sm;
-    
+
     .detail-item {
       display: flex;
       margin-bottom: 4px;
       font-size: $font-size-xs;
-      
+
       .detail-label {
         font-weight: 600;
         color: $gray-500;
         min-width: 80px;
         flex-shrink: 0;
       }
-      
+
       .detail-value {
         color: #333;
       }
@@ -117,4 +117,8 @@
     grid-template-columns: 1fr;
     gap: $spacing-md;
   }
+}
+
+.dashboard-grid > * {
+  height: 100%;
 }
