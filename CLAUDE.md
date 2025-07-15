@@ -187,10 +187,33 @@ Quick architecture compliance checks:
 
 **Usage**: Run before major commits or when reviewing architecture changes. Simple, reliable validation without complex hook dependencies.
 
+## 🚨 CRITICAL ARCHITECTURE RULES - NEVER VIOLATE 🚨
+
+### **ABSOLUTELY FORBIDDEN - ZERO TOLERANCE VIOLATIONS**
+1. **NEVER HARDCODE POST TYPES** - Always use `DomainConfigurationService::getWordPressPostType(domain_key)`
+2. **NEVER USE CZECH SLUGS** - System uses English domain keys ('realization', 'invoice')
+3. **NEVER HARDCODE FIELD NAMES** - Always use FieldService classes
+4. **NEVER HARDCODE DOMAIN VALUES** - Use DomainConfigurationService for ALL values
+
+### **CORRECT PATTERNS - ALWAYS FOLLOW**
+```php
+// ✅ CORRECT - Use configuration service
+$post_type = DomainConfigurationService::getWordPressPostType('realization');
+$points = RealizaceFieldService::getPoints($post_id);
+
+// ❌ FORBIDDEN - Never hardcode ANY values
+$post_type = 'realizace'; // NEVER DO THIS
+$post_type = 'realization'; // NEVER DO THIS
+$points = get_field('some_field', $post_id); // NEVER DO THIS
+```
+
+**ENFORCEMENT**: Every violation breaks the Single Source of Truth principle and creates maintenance nightmares. The architecture exists specifically to prevent hardcoding.
+
 ## Active Decisions
+- **ZERO TOLERANCE FOR HARDCODING** (2025-07-15): Absolutely no hardcoded post types, field names, or Czech slugs allowed anywhere in codebase. All values must come from DomainConfigurationService or FieldService classes. Violations undermine entire architecture.
 - **Zebricek dashboard architecture** (2025-07-15): Zebricek components follow established enterprise patterns with template-based rendering, component-scoped SCSS, and service layer integration. ZebricekProgressShortcode reuses three-layer progress bar from UserPointsBalanceShortcode through @extend patterns for DRY compliance. Templates use semantic class names (.zebricek-progress, .zebricek-position-stats) with component-scoped styling. Progress bars standardized to 20px height across all components. External navigation uses absolute positioning to prevent grid height interference in AccountDashboardShortcode. Conditional invoice display based on user approval status. Architecture enables rapid creation of new zebricek components following established patterns.
 - **Unified User Balance & Reward Service Logic** (2025-07-08): To ensure a single source of truth for all user-facing financial data, e-commerce logic is centralized in dedicated services. `MyCred\ECommerce\Manager::get_balance_summary()` provides a canonical source for a user's complete point history (total, used, available). `Services\ProductService::get_next_unaffordable_product()` contains the business logic for determining a user's next reward goal. All frontend components, like the `UserPointsBalanceShortcode`, must consume these services instead of implementing their own calculations.
-- **Service abstraction architecture** (2025-07-07): Created comprehensive service layer to eliminate code duplication and hardcoded values. DomainConfigurationService provides single source of truth for all domain settings (asset configs, field selectors, messages). PointsCalculationService abstracts all business logic calculations with rules-based system (fixed_value, floor_division_10, etc.). ValidationRulesRegistry centralizes all validation rules with composable rule system. ErrorHandlingService unifies error handling patterns across domains. Manager classes now use configuration services instead of hardcoded arrays, reducing duplication by 95%. FieldAccessValidator provides automated compliance checking with CLI script. Architecture enables easy addition of new domains with zero code duplication.
+- **Service abstraction architecture** (2025-07-07): Created comprehensive service layer to eliminate code duplication and hardcoded values. DomainConfigurationService provides single source of truth for all domain settings (asset configs, field selectors, messages). PointsCalculationService abstracts all business logic calculations with rules-based system (fixed_value, , etc.). ValidationRulesRegistry centralizes all validation rules with composable rule system. ErrorHandlingService unifies error handling patterns across domains. Manager classes now use configuration services instead of hardcoded arrays, reducing duplication by 95%. FieldAccessValidator provides automated compliance checking with CLI script. Architecture enables easy addition of new domains with zero code duplication.
 - **CF7 relational selects architecture** (2025-07-01): Contact Form 7 integration with dynamic taxonomy filtering. CF7FormTagBase establishes foundation for future form tag development. Alpine.js reactive components provide frontend reactivity with AJAX material filtering. Dual shortcode system supports CF7 custom tags ([realizace_construction_types], [realizace_materials]) and regular WordPress shortcodes. TaxonomyManager handles data relationships with term meta storage. ACF JSON import pattern with Czech admin labels and English slugs for maintainable localization. Enhanced with XSS protection using esc_attr()/esc_html(), input validation for taxonomy term IDs, user-facing error messages for network failures, loading states with visual feedback, extracted hardcoded strings to constants for localization, JSDoc documentation, optimized Alpine.js structure with shared error configuration. System replaces static text areas with relational selects, enforcing data quality through guided user selection of valid construction type and material combinations.
 - **Dedicated reject button system** (2025-06-26): Replaced problematic status dropdown with context-aware button system in post editor publish box. Three distinct states: pending posts (red "Odmítnout"), published posts (orange "Zrušit schválení"), rejected posts (grey "Odmítnuto" disabled). Integrates with WordPress native dropdown via StatusManager JavaScript injection. Eliminates validation gatekeeper conflicts, provides admin workflow, and resolves AJAX timing issues. StatusDropdownManager.js removed in favor of unified AdminControllerBase implementation.
 - **Dependency injection consolidation** (2025-07-01): Unified all Manager classes under consistent DI pattern with centralized service registry in bootstrap.php. Eliminates singleton service duplication while maintaining backward compatibility through optional parameters. Bootstrap creates shared AresApiClient, UserDetectionService, and RoleManager instances passed to all domains. Fixed initialization timing with early hook priority (20→5) ensuring proper service availability.

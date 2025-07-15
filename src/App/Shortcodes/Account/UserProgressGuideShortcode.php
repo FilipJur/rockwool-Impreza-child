@@ -262,11 +262,15 @@ class UserProgressGuideShortcode extends ShortcodeBase
 
     /**
      * Get project data specifically for realizations only (not invoices)
+     * Always tracks the latest realization to prevent stuck rejected status
      */
     private function get_realization_project_data(int $user_id): array
     {
-        // Only check 'realizace' post type for progress guide
-        $realization_post_types = ['realizace'];
+        // Only check realization post type for progress guide (not invoices)
+        $realization_post_types = [DomainConfigurationService::getWordPressPostType('realization')];
+        
+        // Get the latest realization to track current status (not historical)
+        $latest_realization = $this->get_latest_realization($user_id, $realization_post_types);
         
         $has_uploaded = !empty($this->project_status_service->getProjectsForUser(
             $user_id, 
@@ -280,18 +284,34 @@ class UserProgressGuideShortcode extends ShortcodeBase
             $realization_post_types
         ));
         
-        $has_rejected = !empty($this->project_status_service->getProjectsForUser(
-            $user_id, 
-            ['rejected'], 
-            $realization_post_types
-        ));
+        // Check if LATEST realization is rejected (not any historical rejections)
+        $latest_is_rejected = $latest_realization && $latest_realization->post_status === 'rejected';
 
         return [
             'has_uploaded' => $has_uploaded,
             'has_published' => $has_published,
-            'has_rejected' => $has_rejected,
-            'progress_percentage' => $this->calculate_realization_progress($user_id, $has_published, $has_uploaded, $has_rejected)
+            'has_rejected' => $latest_is_rejected, // Only show rejected if latest is rejected
+            'latest_status' => $latest_realization ? $latest_realization->post_status : null,
+            'progress_percentage' => $this->calculate_realization_progress($user_id, $has_published, $has_uploaded, $latest_is_rejected)
         ];
+    }
+
+    /**
+     * Get the latest realization for the user to track current status
+     */
+    private function get_latest_realization(int $user_id, array $post_types): ?\WP_Post
+    {
+        $posts = get_posts([
+            'post_type' => $post_types,
+            'author' => $user_id,
+            'post_status' => ['pending', 'publish', 'rejected'],
+            'posts_per_page' => 1,
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'suppress_filters' => true
+        ]);
+
+        return !empty($posts) ? $posts[0] : null;
     }
 
     /**
@@ -312,7 +332,7 @@ class UserProgressGuideShortcode extends ShortcodeBase
         }
 
         // Check for drafts
-        $drafts = $this->project_status_service->getProjectsForUser($user_id, ['draft'], ['realizace']);
+        $drafts = $this->project_status_service->getProjectsForUser($user_id, ['draft'], [DomainConfigurationService::getWordPressPostType('realization')]);
         if (!empty($drafts)) {
             return 25;
         }
