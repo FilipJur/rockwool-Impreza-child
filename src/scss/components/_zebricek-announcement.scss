@@ -13,12 +13,12 @@
   background: transparent !important;
   box-shadow: none !important;
   border: none !important;
-  
+
   // Enable positioning context
   position: relative;
-  
+
   // Override specific styling for announcement
-  padding: 31px 26px; // Consistent with other zebricek components
+  padding-inline-end: 10px; // Consistent with other zebricek components
   gap: 4px; // Figma exact specs
   display: flex;
   flex-direction: column;

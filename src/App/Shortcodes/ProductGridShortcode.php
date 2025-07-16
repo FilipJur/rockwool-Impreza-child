@@ -7,14 +7,26 @@ namespace MistrFachman\Shortcodes;
 use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
 use MistrFachman\Services\UserService;
+use MistrFachman\Services\IconHelper;
 
 /**
  * Product Grid Shortcode Component
  *
- * Displays a grid of WooCommerce products with myCred balance filtering.
- * Supports various display options and integrates with the cart-aware balance system.
+ * Displays a grid of WooCommerce products following Figma design specifications.
+ * Supports dynamic header text and button states based on user's affordability.
  *
- * Usage: [mycred_product_grid balance_filter="affordable" columns="3" limit="12"]
+ * Usage: [mycred_product_grid balance_filter="dynamic" limit="6"]
+ *
+ * Attributes:
+ * - balance_filter: "dynamic" (default) - shows unavailable products if user can't afford all, available if they can
+ *                   "available", "affordable", "strictly_available" - shows products user can afford
+ *                   "unavailable", "strictly_unavailable" - shows products user cannot afford
+ * - limit: Number of products to display (default: 12, applied after filtering)
+ * - category: Product category slug to filter by (default: empty)
+ * - orderby: Sort field - "price" (default), "title", "date", "menu_order", "rand"
+ * - order: Sort direction - "ASC" (default), "DESC"
+ * - header: Custom header text (overrides dynamic header based on affordability)
+ * - class: Additional CSS classes
  *
  * @package mistr-fachman
  * @since 1.0.0
@@ -27,18 +39,29 @@ if (!defined('ABSPATH')) {
 
 class ProductGridShortcode extends ShortcodeBase
 {
+    // String constants to eliminate hardcoded values
+    private const HEADER_AFFORD_ALL = 'Zasloužený výběr z toho nejlepšího';
+    private const HEADER_DEFAULT_GOAL = 'Čím víc bodů, tím lepší odměny';
+    private const BUTTON_TEXT_AFFORD = 'Vybrat odměnu';
+    private const BUTTON_TEXT_UNAVAILABLE = 'Zobrazit detail';
+    private const NO_PRODUCTS_HEADER = 'Žádné produkty';
+    private const NO_PRODUCTS_MESSAGE = 'Žádné produkty nebyly nalezeny.';
+    private const POINTS_SUFFIX = ' b.';
+    private const FREE_TEXT = 'Zdarma';
+    private const PLACEHOLDER_IMAGE_TEXT = 'Bez obrázku';
+
     public function __construct(Manager $ecommerce_manager, ProductService $product_service, UserService $user_service) {
         parent::__construct($ecommerce_manager, $product_service, $user_service);
     }
 
 	protected array $default_attributes = [
-		'balance_filter' => 'all',          // all, affordable, unavailable
+		'balance_filter' => 'dynamic',      // strictly_available, strictly_unavailable, dynamic
 		'limit' => '12',                    // Number of products to show
 		'category' => '',                   // Product category slug
-		'order' => 'ASC',                   // ASC or DESC
-		'orderby' => 'title',               // title, date, price, menu_order, rand
-		'show_balance_info' => 'true',      // Show balance information
-		'class' => ''                       // Additional CSS classes
+		'order' => 'ASC',                   // ASC or DESC (used for manual overrides)
+		'orderby' => 'price',               // title, date, price, menu_order, rand (default: price)
+		'class' => '',                      // Additional CSS classes
+		'header' => ''                      // Custom header text (overrides dynamic header)
 	];
 
 	public function get_tag(): string
@@ -48,12 +71,12 @@ class ProductGridShortcode extends ShortcodeBase
 
 	public function get_description(): string
 	{
-		return 'Zobrazí mřížku produktů s možností filtrování podle dostupných bodů';
+		return 'Zobrazí mřížku produktů následující Figma design specifikace';
 	}
 
 	public function get_example(): string
 	{
-		return '[mycred_product_grid balance_filter="affordable" columns="3" limit="12"]';
+		return '[mycred_product_grid balance_filter="affordable" limit="6" header="Vaše dostupné odměny"]';
 	}
 
 	protected function render(array $attributes, ?string $content = null): string
@@ -63,82 +86,84 @@ class ProductGridShortcode extends ShortcodeBase
 		}
 
 		$query_args = [
-			'limit'    => (int) $attributes['limit'],
 			'category' => !empty($attributes['category']) ? [$attributes['category']] : [],
 			'orderby'  => $attributes['orderby'],
 			'order'    => $attributes['order'],
 		];
 
-		// Get pre-filtered data directly from the intelligent service
-		$products = $this->product_service->get_products_filtered_by_balance(
-			$attributes['balance_filter'],
-			$query_args
-		);
+		// Get user context for intelligent product selection
+		$user_id = get_current_user_id();
+		$can_afford_everything = $this->product_service->can_user_afford_all_products($user_id);
+		
+		// Get products based on filter type
+		$products = $this->get_filtered_products($attributes, $user_id, $query_args);
 
-		if (empty($products)) {
-			return $attributes['balance_filter'] === 'all' ?
-				$this->render_no_products($attributes) :
-				$this->render_no_affordable_products($attributes);
+		// Apply limit after filtering
+		if (!empty($products) && $attributes['limit'] > 0) {
+			$products = array_slice($products, 0, (int) $attributes['limit']);
 		}
 
-		// Component data (like React props)
-		$user_balance = $this->ecommerce_manager->get_user_balance();
-		$available_points = $this->ecommerce_manager->get_available_points();
-		$wrapper_classes = $this->get_wrapper_classes($attributes);
-		$show_balance_info = $attributes['show_balance_info'] === 'true';
-		$columns = !empty($attributes['columns']) ? (int) $attributes['columns'] : null;
+		if (empty($products)) {
+			return $this->render_no_products($attributes);
+		}
 
-		// JSX-like template rendering
+		// Header text: custom override or dynamic based on user's ability to afford everything
+		$header_text = !empty($attributes['header']) ? 
+			$attributes['header'] : 
+			($can_afford_everything ? 
+				self::HEADER_AFFORD_ALL : 
+				self::HEADER_DEFAULT_GOAL);
+		
+		$wrapper_classes = $this->get_wrapper_classes($attributes);
+
+		// Simple affordability determination based on filter type (no complex logic)
+		$is_set_affordable = in_array($attributes['balance_filter'], ['available', 'affordable', 'strictly_available']) ||
+			($attributes['balance_filter'] === 'dynamic' && $can_afford_everything);
+		
+		// Template rendering following Figma design exactly
 		ob_start(); ?>
 		<div class="<?= esc_attr($wrapper_classes) ?>">
-			<?php if ($show_balance_info): ?>
-				<div class="mycred-balance-info">
-					<?php switch ($attributes['balance_filter']):
-						case 'affordable': ?>
-							<p class="balance-message">
-								Zobrazeny produkty, které si můžete dovolit (dostupné body: <?= number_format($available_points) ?>)
-							</p>
-							<?php break;
-						case 'unavailable': ?>
-							<p class="balance-message">
-								Zobrazeny produkty mimo váš dosah (dostupné body: <?= number_format($available_points) ?>)
-							</p>
-							<?php break;
-						default: ?>
-							<p class="balance-message">
-								Váš zůstatek: <?= number_format($user_balance) ?> bodů | Dostupné: <?= number_format($available_points) ?> bodů
-							</p>
-							<?php break;
-					endswitch; ?>
-				</div>
-			<?php endif; ?>
+			<div class="products-header">
+				<h2 class="products-title"><?= esc_html($header_text) ?></h2>
+			</div>
 
-			<div class="mycred-products-grid<?= $columns ? ' columns-' . $columns : '' ?>">
+			<div class="products-container">
 				<?php foreach ($products as $product):
-					$can_afford = $this->ecommerce_manager->can_afford_product($product);
 					$price = $product->get_price();
-					$price_display = $price ? number_format((float) $price) . ' bodů' : 'Zdarma';
+					$price_display = $price ? number_format((float) $price) . self::POINTS_SUFFIX : self::FREE_TEXT;
+					$button_text = $is_set_affordable ? self::BUTTON_TEXT_AFFORD : self::BUTTON_TEXT_UNAVAILABLE;
 				?>
-					<div class="mycred-product-item <?= $can_afford ? 'affordable' : 'unavailable' ?>">
+					<div class="product-card">
+						<div class="points-and-lock">
+							<?php if (!$is_set_affordable): ?>
+								<?= IconHelper::get_icon('lock') ?>
+							<?php endif; ?>
+							<span class="points-value"><?= esc_html($price_display) ?></span>
+						</div>
+						
 						<div class="product-image">
 							<?php if ($product->get_image_id()): ?>
 								<?= wp_get_attachment_image($product->get_image_id(), 'woocommerce_thumbnail') ?>
 							<?php else: ?>
-								<div class="placeholder-image">Bez obrázku</div>
+								<div class="placeholder-image"><?= esc_html(self::PLACEHOLDER_IMAGE_TEXT) ?></div>
 							<?php endif; ?>
 						</div>
-						<div class="product-info">
-							<h3 class="product-title">
-								<a href="<?= esc_url($product->get_permalink()) ?>">
-									<?= esc_html($product->get_name()) ?>
-								</a>
-							</h3>
-							<div class="product-price <?= $can_afford ? 'affordable' : 'unavailable' ?>">
-								<?= esc_html($price_display) ?>
+						
+						<div class="product-details">
+							<div class="product-name-and-description">
+								<h3 class="product-name">
+									<a href="<?= esc_url($product->get_permalink()) ?>">
+										<?= esc_html($product->get_name()) ?>
+									</a>
+								</h3>
+								<?php if ($product->get_short_description()): ?>
+									<p class="product-description"><?= esc_html($product->get_short_description()) ?></p>
+								<?php endif; ?>
 							</div>
-							<?php if (!$can_afford): ?>
-								<div class="affordability-message">Nedostatek bodů</div>
-							<?php endif; ?>
+							
+							<a href="<?= esc_url($product->get_permalink()) ?>" class="product-button <?= $is_set_affordable ? 'affordable' : 'unavailable' ?>">
+								<?= esc_html($button_text) ?>
+							</a>
 						</div>
 					</div>
 				<?php endforeach; ?>
@@ -147,15 +172,33 @@ class ProductGridShortcode extends ShortcodeBase
 		<?php return ob_get_clean();
 	}
 
-
-
-
+	/**
+	 * Get filtered products using clean ProductService API (dumb consumer pattern)
+	 */
+	private function get_filtered_products(array $attributes, int $user_id, array $query_args): array
+	{
+		// Simple switch that delegates to explicit ProductService methods
+		switch ($attributes['balance_filter']) {
+			case 'available':
+			case 'affordable':
+			case 'strictly_available':
+				return $this->product_service->get_affordable_products($user_id, $query_args);
+				
+			case 'unavailable':
+			case 'strictly_unavailable':
+				return $this->product_service->get_unaffordable_products($user_id, $query_args);
+				
+			case 'dynamic':
+			default:
+				// For dynamic filter, don't pass ordering attributes - let service decide
+				$dynamic_query_args = $query_args;
+				unset($dynamic_query_args['order'], $dynamic_query_args['orderby']);
+				return $this->product_service->get_dynamic_product_selection($user_id, $dynamic_query_args);
+		}
+	}
 
 	/**
 	 * Render no products message
-	 *
-	 * @param array $attributes Shortcode attributes
-	 * @return string Rendered HTML
 	 */
 	private function render_no_products(array $attributes): string
 	{
@@ -163,37 +206,20 @@ class ProductGridShortcode extends ShortcodeBase
 
 		ob_start(); ?>
 		<div class="<?= esc_attr($wrapper_classes) ?>">
-			<p class="no-products">Žádné produkty nebyly nalezeny.</p>
-		</div>
-		<?php return ob_get_clean();
-	}
-
-	/**
-	 * Render no affordable products message
-	 *
-	 * @param array $attributes Shortcode attributes
-	 * @return string Rendered HTML
-	 */
-	private function render_no_affordable_products(array $attributes): string
-	{
-		$wrapper_classes = $this->get_wrapper_classes($attributes);
-		$filter_text = $attributes['balance_filter'] === 'affordable' ? 'dostupné' : 'nedostupné';
-
-		ob_start(); ?>
-		<div class="<?= esc_attr($wrapper_classes) ?>">
-			<p class="no-products">Žádné <?= esc_html($filter_text) ?> produkty nebyly nalezeny.</p>
+			<div class="products-header">
+				<h2 class="products-title"><?= esc_html(self::NO_PRODUCTS_HEADER) ?></h2>
+			</div>
+			<p class="no-products"><?= esc_html(self::NO_PRODUCTS_MESSAGE) ?></p>
 		</div>
 		<?php return ob_get_clean();
 	}
 
 	/**
 	 * Override wrapper classes to include balance filter context
-	 *
-	 * @param array $attributes Shortcode attributes
-	 * @return string CSS classes
 	 */
 	protected function get_wrapper_classes(array $attributes): string {
 		$classes = [
+			'product-grid',
 			'mycred-shortcode',
 			'mycred-' . str_replace('_', '-', $this->get_tag()),
 			'filter-' . $attributes['balance_filter']
@@ -205,5 +231,4 @@ class ProductGridShortcode extends ShortcodeBase
 
 		return implode(' ', $classes);
 	}
-
 }

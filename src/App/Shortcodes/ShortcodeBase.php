@@ -114,7 +114,7 @@ abstract class ShortcodeBase {
 
         foreach ($attributes as $key => $value) {
             $sanitized[$key] = match ($key) {
-                'balance_filter' => in_array($value, ['all', 'affordable', 'unavailable'], true) ? $value : 'all',
+                'balance_filter' => in_array($value, ['available', 'affordable', 'unavailable', 'strictly_available', 'strictly_unavailable', 'dynamic'], true) ? $value : 'dynamic',
                 'columns', 'limit' => absint($value),
                 'order' => in_array(strtoupper($value), ['ASC', 'DESC'], true) ? strtoupper($value) : 'ASC',
                 'orderby' => in_array($value, ['title', 'date', 'price', 'menu_order', 'rand'], true) ? $value : 'title',

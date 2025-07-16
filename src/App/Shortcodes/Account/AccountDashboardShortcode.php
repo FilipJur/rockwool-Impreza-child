@@ -145,23 +145,7 @@ class AccountDashboardShortcode extends ShortcodeBase
 
                         <!-- Right: Available Products -->
                         <div class="dashboard-section products-section">
-                            <div class="products-container bg-white rounded-lg shadow p-6">
-                                <div class="products-header flex items-center justify-between mb-4">
-                                    <h3 class="text-lg font-semibold text-gray-900">
-                                        Z těchto odměn si už můžete vybírat
-                                    </h3>
-                                    <a href="#" class="explore-rewards inline-flex items-center gap-1 text-sm font-medium text-red-600 hover:text-red-700">
-                                        Prozkoumat odměny
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                        </svg>
-                                    </a>
-                                </div>
-
-                                <div class="products-grid-wrapper overflow-x-auto">
-                                    <?= do_shortcode('[mycred_product_grid balance_filter="' . esc_attr($attributes['products_filter']) . '" limit="' . esc_attr($attributes['products_limit']) . '" class="horizontal-scroll"]') ?>
-                                </div>
-                            </div>
+                            <?= do_shortcode('[mycred_product_grid balance_filter="dynamic" limit="' . esc_attr($attributes['products_limit']) . '"]') ?>
                         </div>
                     </div>
                 </div>
@@ -206,38 +190,6 @@ class AccountDashboardShortcode extends ShortcodeBase
             </div>
         </div>
 
-        <!-- Dashboard Styles -->
-        <style>
-        .account-dashboard .horizontal-scroll .mycred-products-grid {
-            display: flex;
-            overflow-x: auto;
-            gap: 1rem;
-            padding-bottom: 0.5rem;
-        }
-
-        .account-dashboard .horizontal-scroll .mycred-product-item {
-            flex: 0 0 auto;
-            width: 203px;
-            min-width: 203px;
-        }
-
-        .account-dashboard .horizontal-scroll .mycred-products-grid::-webkit-scrollbar {
-            height: 6px;
-        }
-
-        .account-dashboard .horizontal-scroll .mycred-products-grid::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-
-        .account-dashboard .horizontal-scroll .mycred-products-grid::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-        }
-
-        .account-dashboard .horizontal-scroll .mycred-products-grid::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-
-        </style>
         <?php return ob_get_clean();
     }
 

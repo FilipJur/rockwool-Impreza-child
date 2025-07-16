@@ -94,11 +94,15 @@ class UserPointsBalanceShortcode extends ShortcodeBase
      */
     private function get_next_product_info(int $user_id, float $available_points): ?array
     {
+        // Use ProductService centralized method to check if user can afford all products
+        if ($this->product_service->can_user_afford_all_products($user_id)) {
+            return null;
+        }
+
         // Use ProductService to get the next unaffordable product
         $next_product = $this->product_service->get_next_unaffordable_product($user_id);
 
         if (!$next_product) {
-            // User can afford all products
             return null;
         }
 

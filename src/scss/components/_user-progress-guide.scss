@@ -226,6 +226,9 @@
     font-size: 18px;
     color: $color-black;
   }
+  [data-step="rewards"][data-state="locked"][data-current="true"] .step-title {
+    font-weight: 600; // Regular for locked rewards
+  }
 
   [data-step="rewards"][data-state="available"] .step-title {
     font-weight: 400; // Regular for available rewards (not completed)
