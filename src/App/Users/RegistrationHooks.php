@@ -32,7 +32,8 @@ class RegistrationHooks
 		private UserProfileSync $profile_sync,
 		private RegistrationValidator $registration_validator,
 		private RegistrationEligibility $eligibility_checker,
-		private BusinessDataProcessor $data_processor
+		private BusinessDataProcessor $data_processor,
+		private ?\MistrFachman\Services\UserService $user_service = null
 	) {
 	}
 
@@ -259,6 +260,17 @@ class RegistrationHooks
 	 */
 	public function promote_to_full_member(int $user_id): bool
 	{
+		// Delegate to UserService if available, otherwise fall back to original logic
+		if ($this->user_service) {
+			$success = $this->user_service->promoteToFullMember($user_id);
+			if ($success) {
+				// Trigger action for other systems
+				do_action('mistr_fachman_user_promoted', $user_id);
+			}
+			return $success;
+		}
+
+		// FALLBACK: Original logic for backward compatibility
 		$user = get_userdata($user_id);
 
 		if (!$user) {
@@ -299,6 +311,12 @@ class RegistrationHooks
 	 */
 	public function revoke_to_pending(int $user_id): bool
 	{
+		// Delegate to UserService if available, otherwise fall back to original logic
+		if ($this->user_service) {
+			return $this->user_service->revokeToPending($user_id);
+		}
+
+		// FALLBACK: Original logic for backward compatibility
 		$user = get_userdata($user_id);
 
 		if (!$user) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MistrFachman\Users;
 
 use MistrFachman\Services\UserService;
+use MistrFachman\Services\UserStatusService;
 
 /**
  * Access Control Class
@@ -35,7 +36,8 @@ class AccessControl {
     ];
 
     public function __construct(
-        private UserService $user_service
+        private UserService $user_service,
+        private UserStatusService $user_status_service
     ) {}
 
     /**
@@ -60,10 +62,10 @@ class AccessControl {
             return;
         }
 
-        $user_status = $this->user_service->get_user_registration_status();
+        $user_status = $this->user_status_service->getCurrentUserStatus();
 
         // Handle logged-out users
-        if ($user_status === 'logged_out') {
+        if ($user_status === UserStatusService::STATUS_GUEST) {
             $this->handle_logged_out_access();
             return;
         }
@@ -309,15 +311,15 @@ class AccessControl {
      */
     private function get_appropriate_redirect_for_user(string $user_status, string $current_page): ?string {
         switch ($user_status) {
-            case 'full_member':
+            case UserStatusService::STATUS_FULL_MEMBER:
                 // Full members should be redirected to My Account from any registration page
                 return $this->get_my_account_url();
 
-            case 'awaiting_review':
+            case UserStatusService::STATUS_AWAITING_APPROVAL:
                 // Users awaiting review should be redirected from any registration page
                 return $this->get_my_account_url();
 
-            case 'needs_form':
+            case UserStatusService::STATUS_NEEDS_FORM:
                 // Users who need to fill the form should be redirected from login page to registration
                 if ($current_page === 'prihlaseni') {
                     return $this->get_registration_form_url();
@@ -325,7 +327,7 @@ class AccessControl {
                 // Allow access to registrace page
                 return null;
 
-            case 'other':
+            case UserStatusService::STATUS_OTHER:
                 // Users with invalid/unknown status - redirect to homepage for safety
                 mycred_debug('User with unknown status accessing registration page', [
                     'user_status' => $user_status,

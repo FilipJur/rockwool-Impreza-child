@@ -50,13 +50,14 @@ class Manager {
     public static function get_instance(
         ?RoleManager $role_manager = null,
         ?UserDetectionService $user_detection_service = null,
-        ?AresApiClient $ares_api_client = null
+        ?AresApiClient $ares_api_client = null,
+        ?\MistrFachman\Services\UserStatusService $user_status_service = null
     ): self {
         if (self::$instance === null) {
-            if ($role_manager === null || $user_detection_service === null || $ares_api_client === null) {
+            if ($role_manager === null || $user_detection_service === null || $ares_api_client === null || $user_status_service === null) {
                 throw new \InvalidArgumentException('All dependencies must be provided on first call to Users Manager');
             }
-            self::$instance = new self($role_manager, $user_detection_service, $ares_api_client);
+            self::$instance = new self($role_manager, $user_detection_service, $ares_api_client, $user_status_service);
         }
         return self::$instance;
     }
@@ -68,12 +69,13 @@ class Manager {
     private function __construct(
         RoleManager $role_manager,
         UserDetectionService $user_detection_service,
-        AresApiClient $ares_api_client
+        AresApiClient $ares_api_client,
+        private \MistrFachman\Services\UserStatusService $user_status_service
     ) {
         // Store injected dependencies
         $this->role_manager = $role_manager;
         $this->user_detection_service = $user_detection_service;
-        $this->user_service = new UserService($this->role_manager);
+        $this->user_service = new UserService($this->role_manager, $this->user_status_service);
         
         // Initialize business data components
         $this->business_manager = new BusinessDataManager();
@@ -98,16 +100,17 @@ class Manager {
             $profile_sync,
             $registration_validator,
             $eligibility_checker,
-            $business_data_processor
+            $business_data_processor,
+            $this->user_service
         );
         $this->theme_integration = new ThemeIntegration($this->user_service);
-        $this->access_control = new AccessControl($this->user_service);
+        $this->access_control = new AccessControl($this->user_service, $this->user_status_service);
         
         // Initialize admin interface components
         $style_manager = new AdminStyleManager();
-        $card_renderer = new AdminCardRenderer($this->role_manager, $this->business_manager);
+        $card_renderer = new AdminCardRenderer($this->role_manager, $this->business_manager, $this->user_status_service);
         $asset_manager = new AdminAssetManager();
-        $action_handler = new AdminActionHandler($this->role_manager, $this->registration_hooks);
+        $action_handler = new AdminActionHandler($this->role_manager, $this->user_service);
         $modal_renderer = new BusinessDataModalRenderer();
         $business_modal = new BusinessDataModal($this->registration_hooks, $modal_renderer);
         

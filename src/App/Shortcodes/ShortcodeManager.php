@@ -7,6 +7,7 @@ namespace MistrFachman\Shortcodes;
 use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
 use MistrFachman\Services\UserService;
+use MistrFachman\Services\UserStatusService;
 use MistrFachman\Services\ZebricekDataService;
 use MistrFachman\Services\ProjectStatusService;
 
@@ -30,6 +31,7 @@ class ShortcodeManager {
     private Manager $ecommerce_manager;
     private ProductService $product_service;
     private UserService $user_service;
+    private UserStatusService $user_status_service;
     private ZebricekDataService $zebricek_service;
     private ProjectStatusService $project_status_service;
     private array $registered_shortcodes = [];
@@ -38,12 +40,14 @@ class ShortcodeManager {
         Manager $ecommerce_manager,
         ProductService $product_service,
         UserService $user_service,
+        UserStatusService $user_status_service,
         ZebricekDataService $zebricek_service,
         ProjectStatusService $project_status_service
     ) {
         $this->ecommerce_manager = $ecommerce_manager;
         $this->product_service = $product_service;
         $this->user_service = $user_service;
+        $this->user_status_service = $user_status_service;
         $this->zebricek_service = $zebricek_service;
         $this->project_status_service = $project_status_service;
     }
@@ -194,6 +198,9 @@ class ShortcodeManager {
                     } elseif (str_contains($class_name, 'Zebricek') || str_contains($class_name, 'Account')) {
                         // Other Account shortcodes need ZebricekDataService
                         $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service, $this->zebricek_service);
+                    } elseif (str_contains($class_name, 'UserHeader')) {
+                        // UserHeaderShortcode needs UserStatusService
+                        $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service, $this->user_status_service);
                     } else {
                         // Default shortcodes
                         $shortcode_instance = new $class_name($this->ecommerce_manager, $this->product_service, $this->user_service);

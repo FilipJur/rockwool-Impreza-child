@@ -7,6 +7,7 @@ namespace MistrFachman\Shortcodes;
 use MistrFachman\MyCred\ECommerce\Manager;
 use MistrFachman\Services\ProductService;
 use MistrFachman\Services\UserService;
+use MistrFachman\Services\UserStatusService;
 
 /**
  * User Header Shortcode Component
@@ -33,7 +34,12 @@ if (!defined('ABSPATH')) {
 
 class UserHeaderShortcode extends ShortcodeBase
 {
-    public function __construct(Manager $ecommerce_manager, ProductService $product_service, UserService $user_service) {
+    public function __construct(
+        Manager $ecommerce_manager, 
+        ProductService $product_service, 
+        UserService $user_service,
+        private UserStatusService $user_status_service
+    ) {
         parent::__construct($ecommerce_manager, $product_service, $user_service);
     }
 
@@ -55,7 +61,7 @@ class UserHeaderShortcode extends ShortcodeBase
         ], $attributes);
 
         $user_id = get_current_user_id();
-        $status = $this->user_service->get_user_registration_status($user_id);
+        $status = $this->user_status_service->getCurrentUserStatus($user_id);
         $show_icons = $attributes['show_icons'] === 'true';
 
         // Get the user icon path
@@ -64,7 +70,7 @@ class UserHeaderShortcode extends ShortcodeBase
         ob_start();
         ?>
         <div class="user-header-widget">
-            <?php if ($status === 'logged_out'): ?>
+            <?php if ($status === UserStatusService::STATUS_GUEST): ?>
                 <!-- Anonymous user state -->
                 <div class="user-header-widget__anonymous">
                     <?php if ($show_icons): ?>
@@ -75,7 +81,7 @@ class UserHeaderShortcode extends ShortcodeBase
                     </a>
                 </div>
 
-            <?php elseif ($status === 'needs_form'): ?>
+            <?php elseif ($status === UserStatusService::STATUS_NEEDS_FORM): ?>
                 <!-- OTP registered, needs to complete form -->
                 <div class="user-header-widget__needs-form">
                     <a href="<?= esc_url($attributes['registration_url']) ?>" class="w-btn us-btn-style_1">
@@ -83,7 +89,7 @@ class UserHeaderShortcode extends ShortcodeBase
                     </a>
                 </div>
 
-            <?php elseif ($status === 'awaiting_review'): ?>
+            <?php elseif ($status === UserStatusService::STATUS_AWAITING_APPROVAL): ?>
                 <!-- Form submitted, awaiting admin approval -->
                 <div class="user-header-widget__awaiting-review">
                     <span class="user-header-widget__status-text">
@@ -91,7 +97,7 @@ class UserHeaderShortcode extends ShortcodeBase
                     </span>
                 </div>
 
-            <?php elseif ($status === 'full_member' || $status === 'other'): ?>
+            <?php elseif ($status === UserStatusService::STATUS_FULL_MEMBER || $status === UserStatusService::STATUS_OTHER): ?>
                 <!-- Fully registered user (admin, full_member, customer, etc.) -->
                 <div class="user-header-widget__full-member flex">
                     <div class="user-header-widget__user-account">

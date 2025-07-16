@@ -23,7 +23,7 @@ class AdminActionHandler {
 
     public function __construct(
         private RoleManager $role_manager,
-        private RegistrationHooks $registration_hooks
+        private \MistrFachman\Services\UserService $user_service
     ) {}
 
     /**
@@ -53,8 +53,13 @@ class AdminActionHandler {
             wp_die(esc_html__('Uživatel nebyl nalezen nebo nemá čekající stav.', 'mistr-fachman'));
         }
 
-        // Promote user
-        $success = $this->registration_hooks->promote_to_full_member($user_id);
+        // Promote user via UserService
+        $success = $this->user_service->promoteToFullMember($user_id);
+        
+        // Trigger the action that other systems depend on
+        if ($success) {
+            do_action('mistr_fachman_user_promoted', $user_id);
+        }
 
         if ($success) {
             // Set success message
@@ -118,8 +123,8 @@ class AdminActionHandler {
             wp_die(esc_html__('Uživatel nebyl nalezen nebo není plným členem.', 'mistr-fachman'));
         }
 
-        // Revoke user
-        $success = $this->registration_hooks->revoke_to_pending($user_id);
+        // Revoke user via UserService
+        $success = $this->user_service->revokeToPending($user_id);
 
         if ($success) {
             // Set success message

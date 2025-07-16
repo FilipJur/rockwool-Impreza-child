@@ -26,7 +26,8 @@ if (!defined('ABSPATH')) {
 class UserService {
 
     public function __construct(
-        private RoleManager $role_manager
+        private RoleManager $role_manager,
+        private ?UserStatusService $user_status_service = null
     ) {}
 
     /**
@@ -36,51 +37,18 @@ class UserService {
      * @return string Status: 'logged_out', 'full_member', 'awaiting_review', 'needs_form', 'other'
      */
     public function get_user_registration_status(int $user_id = 0): string {
-        try {
-            if ($user_id === 0) {
-                $user_id = get_current_user_id();
-            }
-
-            if (!$user_id) {
-                return 'logged_out';
-            }
-
-            $user = get_userdata($user_id);
-            if (!$user) {
-                return 'logged_out';
-            }
-
-            // Debug logging to understand why status is 'other'
-            $is_full_member = $this->role_manager->is_full_member($user_id);
-            $is_pending = $this->role_manager->is_pending_user($user_id);
-            $meta_status = $this->role_manager->get_user_status($user_id);
-
-            mycred_debug('UserService status check', [
-                'user_id' => $user_id,
-                'user_roles' => $user->roles,
-                'is_full_member' => $is_full_member,
-                'is_pending' => $is_pending,
-                'meta_status' => $meta_status,
-                'pending_role_constant' => RoleManager::PENDING_APPROVAL,
-                'full_member_constant' => RoleManager::FULL_MEMBER
-            ], 'users', 'info');
-
-            // Check if user is full member
-            if ($is_full_member) {
-                return 'full_member';
-            }
-
-            // Check if user is pending approval
-            if ($is_pending) {
-                return $meta_status === RegistrationStatus::AWAITING_REVIEW ? 'awaiting_review' : 'needs_form';
-            }
-
-            return 'other';
-        } catch (\Exception $e) {
-            mycred_debug('UserService error', ['error' => $e->getMessage()], 'users', 'error');
-            // Fail safely during API requests or when services aren't available
-            return 'logged_out';
+        // Always delegate to UserStatusService to enforce single source of truth
+        if ($this->user_status_service) {
+            return $this->user_status_service->getCurrentUserStatus($user_id ?: null);
         }
+        
+        // Fail gracefully if the essential status service is missing
+        mycred_debug('UserStatusService not available in UserService', [
+            'user_id' => $user_id,
+            'method' => 'get_user_registration_status'
+        ], 'users', 'error');
+        
+        return 'other'; // Safe default status
     }
 
     /**
@@ -122,5 +90,86 @@ class UserService {
      */
     public function get_status_css_class(string $status): string {
         return 'user-status-' . sanitize_html_class($status);
+    }
+
+    /**
+     * USER ACTION METHODS
+     * These methods perform actions on users (promote, revoke, etc.)
+     */
+
+    /**
+     * Promote user to full member (admin action)
+     * 
+     * @param int $user_id User ID to promote
+     * @return bool Success status
+     */
+    public function promoteToFullMember(int $user_id): bool {
+        $user = get_userdata($user_id);
+        if (!$user) {
+            return false;
+        }
+
+        // Verify user is currently pending using status service
+        if ($this->user_status_service && !$this->user_status_service->isUserPending($user_id)) {
+            mycred_debug('Attempted to promote non-pending user', [
+                'user_id' => $user_id,
+                'current_status' => $this->user_status_service->getCurrentUserStatus($user_id)
+            ], 'user_service', 'warning');
+            return false;
+        }
+
+        // Change role from pending_approval to full_member
+        $user->set_role(\MistrFachman\Users\RoleManager::FULL_MEMBER);
+        
+        // Clear registration status meta (no longer needed)
+        delete_user_meta($user_id, \MistrFachman\Users\RoleManager::REG_STATUS_META_KEY);
+        
+        mycred_debug('User promoted to full member', [
+            'user_id' => $user_id,
+            'new_status' => $this->get_user_registration_status($user_id)
+        ], 'user_service', 'info');
+
+        return true;
+    }
+
+    /**
+     * Revoke user to pending approval (admin action)
+     * 
+     * @param int $user_id User ID to revoke
+     * @return bool Success status
+     */
+    public function revokeToPending(int $user_id): bool {
+        $user = get_userdata($user_id);
+        if (!$user) {
+            return false;
+        }
+
+        // Change role from full_member to pending_approval
+        $user->set_role(\MistrFachman\Users\RoleManager::PENDING_APPROVAL);
+        
+        // Set status to awaiting review (they can be re-approved)
+        $this->role_manager->update_user_status($user_id, RegistrationStatus::AWAITING_REVIEW);
+        
+        mycred_debug('User revoked to pending approval', [
+            'user_id' => $user_id,
+            'new_status' => $this->get_user_registration_status($user_id)
+        ], 'user_service', 'info');
+
+        return true;
+    }
+
+    /**
+     * Update user registration status (form submission)
+     * 
+     * @param int $user_id User ID
+     * @param string $status New status
+     * @return bool Success status
+     */
+    public function updateRegistrationStatus(int $user_id, string $status): bool {
+        if (!RegistrationStatus::isValidStatus($status)) {
+            return false;
+        }
+
+        return $this->role_manager->update_user_status($user_id, $status);
     }
 }

@@ -6,6 +6,7 @@ namespace MistrFachman\Users;
 
 use MistrFachman\Services\ProjectStatusService;
 use MistrFachman\Services\DomainConfigurationService;
+use MistrFachman\Services\UserStatusService;
 
 /**
  * Admin Card Renderer - UI Component Rendering
@@ -26,15 +27,16 @@ class AdminCardRenderer {
 
     public function __construct(
         private RoleManager $role_manager,
-        private BusinessDataManager $business_manager
+        private BusinessDataManager $business_manager,
+        private UserStatusService $user_status_service
     ) {}
 
     /**
      * Render user status card
      */
     public function render_user_status_card(\WP_User $user, bool $is_pending): void {
-        $current_status = $this->role_manager->get_user_status($user->ID);
-        $status_display = $is_pending ? RegistrationStatus::getDisplayName($current_status) : 'Schválený člen';
+        $current_status = $this->user_status_service->getCurrentUserStatus($user->ID);
+        $status_display = $this->user_status_service->getStatusDisplayName($user->ID);
         $status_color = $is_pending ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
         ?>
         <div class="management-card">
@@ -55,11 +57,11 @@ class AdminCardRenderer {
                 </p>
                 <?php if ($is_pending): ?>
                     <div class="status-timeline">
-                        <div class="timeline-item <?php echo $current_status === RegistrationStatus::NEEDS_FORM ? 'active' : 'completed'; ?>">
+                        <div class="timeline-item <?php echo $current_status === UserStatusService::STATUS_NEEDS_FORM ? 'active' : 'completed'; ?>">
                             <span class="timeline-marker"></span>
                             <span class="timeline-text">Registrace dokončena</span>
                         </div>
-                        <div class="timeline-item <?php echo $current_status === RegistrationStatus::AWAITING_REVIEW ? 'active' : ($current_status === RegistrationStatus::APPROVED ? 'completed' : ''); ?>">
+                        <div class="timeline-item <?php echo $current_status === UserStatusService::STATUS_AWAITING_APPROVAL ? 'active' : ($current_status === UserStatusService::STATUS_FULL_MEMBER ? 'completed' : ''); ?>">
                             <span class="timeline-marker"></span>
                             <span class="timeline-text">Formulář odeslán</span>
                         </div>
@@ -130,7 +132,7 @@ class AdminCardRenderer {
      * Render admin actions card
      */
     public function render_admin_actions_card(\WP_User $user, bool $is_pending): void {
-        $current_status = $this->role_manager->get_user_status($user->ID);
+        $current_status = $this->user_status_service->getCurrentUserStatus($user->ID);
         ?>
         <div class="management-card">
             <div class="card-header">
@@ -141,7 +143,7 @@ class AdminCardRenderer {
             </div>
             <div class="card-content">
                 <?php if ($is_pending): ?>
-                    <?php if ($current_status === RegistrationStatus::AWAITING_REVIEW): ?>
+                    <?php if ($current_status === UserStatusService::STATUS_AWAITING_APPROVAL): ?>
                         <div class="action-description">
                             <p>Uživatel vyplnil registrační formulář a čeká na schválení.</p>
                         </div>
@@ -325,9 +327,9 @@ class AdminCardRenderer {
         }
         
         return match ($status) {
-            RegistrationStatus::NEEDS_FORM => 'Uživatel se zaregistroval, ale ještě nevyplnil závěrečný formulář.',
-            RegistrationStatus::AWAITING_REVIEW => 'Uživatel vyplnil formulář a čeká na schválení administrátorem.',
-            RegistrationStatus::APPROVED => 'Uživatel byl schválen (legacy stav).',
+            UserStatusService::STATUS_NEEDS_FORM => 'Uživatel se zaregistroval, ale ještě nevyplnil závěrečný formulář.',
+            UserStatusService::STATUS_AWAITING_APPROVAL => 'Uživatel vyplnil formulář a čeká na schválení administrátorem.',
+            UserStatusService::STATUS_FULL_MEMBER => 'Uživatel byl schválen (legacy stav).',
             default => 'Neznámý stav registrace.'
         };
     }

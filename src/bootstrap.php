@@ -177,6 +177,12 @@ if (!defined('MISTR_FACHMAN_SERVICES_INITIALIZED')) {
         ? new $UserDetectionService($role_manager)
         : null;
 
+    // Initialize UserStatusService (unified user status management)
+    $UserStatusService = \MistrFachman\Services\UserStatusService::class;
+    $user_status_service = (class_exists($UserStatusService) && $role_manager)
+        ? new $UserStatusService($role_manager)
+        : null;
+
     // Additional shared services for Users domain
     $AresApiClient = \MistrFachman\Users\AresApiClient::class;
     $ares_api_client = class_exists($AresApiClient) ? new $AresApiClient() : null;
@@ -186,8 +192,8 @@ if (!defined('MISTR_FACHMAN_SERVICES_INITIALIZED')) {
     // $leaderboard_service = new LeaderboardService();
 
     // 1. Initialize the Users System (first, as other domains may depend on it)
-    if (class_exists($UsersManager) && $role_manager && $user_detection_service && $ares_api_client) {
-        $users_manager = $UsersManager::get_instance($role_manager, $user_detection_service, $ares_api_client);
+    if (class_exists($UsersManager) && $role_manager && $user_detection_service && $ares_api_client && $user_status_service) {
+        $users_manager = $UsersManager::get_instance($role_manager, $user_detection_service, $ares_api_client, $user_status_service);
 
         // Form configuration is now handled by RegistrationConfig class
         // No need to manually configure form ID - it's centralized in RegistrationConfig::FINAL_REGISTRATION_FORM_ID
@@ -197,7 +203,8 @@ if (!defined('MISTR_FACHMAN_SERVICES_INITIALIZED')) {
             'UsersManager' => class_exists($UsersManager),
             'RoleManager' => (bool)$role_manager,
             'UserDetectionService' => (bool)$user_detection_service,
-            'AresApiClient' => (bool)$ares_api_client
+            'AresApiClient' => (bool)$ares_api_client,
+            'UserStatusService' => (bool)$user_status_service
         ], 'bootstrap', 'error');
     }
 
@@ -237,8 +244,8 @@ if (!defined('MISTR_FACHMAN_SERVICES_INITIALIZED')) {
     $zebricek_data_service = class_exists($ZebricekDataService) ? new $ZebricekDataService() : null;
 
     // 4. Initialize the Shortcode System, injecting all necessary services
-    if (class_exists($ShortcodeManager) && $user_service && $zebricek_data_service && $project_status_service) {
-        $shortcode_manager = new $ShortcodeManager($ecommerce_manager, $product_service, $user_service, $zebricek_data_service, $project_status_service);
+    if (class_exists($ShortcodeManager) && $user_service && $user_status_service && $zebricek_data_service && $project_status_service) {
+        $shortcode_manager = new $ShortcodeManager($ecommerce_manager, $product_service, $user_service, $user_status_service, $zebricek_data_service, $project_status_service);
         $shortcode_manager->init_shortcodes(); // Explicitly initialize
         
         // 4.1. Initialize Žebříček AJAX Service
@@ -252,6 +259,7 @@ if (!defined('MISTR_FACHMAN_SERVICES_INITIALIZED')) {
         mycred_debug('Shortcode Manager class not found or required services unavailable.', [
             'shortcode_manager_exists' => class_exists($ShortcodeManager),
             'user_service_available' => isset($user_service),
+            'user_status_service_available' => isset($user_status_service),
             'zebricek_service_available' => isset($zebricek_data_service),
             'project_status_service_available' => isset($project_status_service)
         ], 'bootstrap', 'error');
