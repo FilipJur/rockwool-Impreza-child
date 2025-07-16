@@ -33,7 +33,7 @@ class ProductService {
             'return' => 'objects',
         ];
         $query_args = wp_parse_args($args, $defaults);
-
+        
         try {
             return wc_get_products($query_args);
         } catch (\Exception $e) {
@@ -154,9 +154,15 @@ class ProductService {
     public function get_affordable_products(?int $user_id = null, array $query_args = []): array {
         $user_id ??= get_current_user_id();
         
-        // Sort affordable products by price (highest to lowest - best rewards first)
-        $affordable_query = array_merge($query_args, ['orderby' => 'price', 'order' => 'DESC']);
-        return $this->get_products_filtered_by_balance('affordable', $affordable_query, $user_id);
+        // Don't rely on WooCommerce ordering - get products without order and sort manually
+        $products = $this->get_products_filtered_by_balance('affordable', $query_args, $user_id);
+        
+        // Manual sort by price DESC (highest to lowest - best rewards first)
+        usort($products, function($a, $b) {
+            return (float)$b->get_price() <=> (float)$a->get_price();
+        });
+        
+        return $products;
     }
 
     /**
@@ -172,9 +178,15 @@ class ProductService {
     public function get_unaffordable_products(?int $user_id = null, array $query_args = []): array {
         $user_id ??= get_current_user_id();
         
-        // Sort unaffordable products by price (lowest to highest - closest goals first)
-        $unavailable_query = array_merge($query_args, ['orderby' => 'price', 'order' => 'ASC']);
-        return $this->get_products_filtered_by_balance('unavailable', $unavailable_query, $user_id);
+        // Don't rely on WooCommerce ordering - get products without order and sort manually
+        $products = $this->get_products_filtered_by_balance('unavailable', $query_args, $user_id);
+        
+        // Manual sort by price ASC (lowest to highest - closest goals first)
+        usort($products, function($a, $b) {
+            return (float)$a->get_price() <=> (float)$b->get_price();
+        });
+        
+        return $products;
     }
 
     /**
