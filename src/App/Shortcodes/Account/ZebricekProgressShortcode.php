@@ -91,7 +91,7 @@ class ZebricekProgressShortcode extends ShortcodeBase
         $balance_summary = $this->ecommerce_manager->get_balance_summary($user_id);
         $pending_points = (int) $balance_summary['pending'];
         
-        // Get next target (user above in leaderboard)
+        // Get next target (user above in leaderboard) - pass pre-fetched data to avoid redundant queries
         $next_target = $this->get_next_target_user($user_position, $current_year, $user_points, $pending_points);
         
         return [
@@ -105,28 +105,20 @@ class ZebricekProgressShortcode extends ShortcodeBase
 
     /**
      * Get the next target user to overtake
+     * Now delegates to centralized service for consistent data
      */
     private function get_next_target_user(int $current_position, string $year, int $user_points, int $pending_points): ?array
     {
-        if ($current_position <= 1) {
-            return null; // Already at the top
+        $user_id = get_current_user_id();
+        
+        // Get next target from centralized service - pass pre-fetched data to avoid redundant queries
+        $next_target = $this->zebricek_service->get_user_next_target($user_id, $year, $user_points, $current_position);
+        
+        if (!$next_target) {
+            return null; // Already at the top or no target found
         }
-
-        // Get the user at position above current user
-        $target_position = $current_position - 1;
         
-        // Get leaderboard data for that position
-        $leaderboard_data = $this->zebricek_service->get_leaderboard_data(1, $target_position - 1, $year);
-        
-        if (empty($leaderboard_data)) {
-            return null;
-        }
-
-        $target_user = $leaderboard_data[0];
-        $target_points = (int) $target_user['points'];
-        
-        // Calculate points needed and progress percentages like UserPointsBalance
-        $points_needed = max(1, $target_points - $user_points + 1);
+        $target_points = (int) $next_target['points'];
         $total_user_points = $user_points + $pending_points;
         
         // Calculate progress percentages for three-segment bar
@@ -134,15 +126,15 @@ class ZebricekProgressShortcode extends ShortcodeBase
         $pending_end_percentage = $target_points > 0 ? min(100, ($total_user_points / $target_points) * 100) : 0;
         
         // Format display name: First name + First letter of surname
-        $formatted_name = $this->format_display_name($target_user['display_name']);
+        $formatted_name = $this->format_display_name($next_target['display_name']);
         
         return [
-            'position' => $target_position,
-            'user_id' => $target_user['user_id'],
+            'position' => $next_target['position'],
+            'user_id' => $next_target['user_id'],
             'display_name' => $formatted_name,
-            'company' => $target_user['company'],
+            'company' => $next_target['company'],
             'points' => $target_points,
-            'points_needed' => $points_needed,
+            'points_needed' => $next_target['points_needed'],
             'accepted_percentage' => round($accepted_percentage, 1),
             'pending_end_percentage' => round($pending_end_percentage, 1),
             'has_pending' => $pending_points > 0
