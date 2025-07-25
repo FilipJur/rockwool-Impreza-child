@@ -31,7 +31,7 @@ class AccountDashboardShortcode extends ShortcodeBase
 {
     protected array $default_attributes = [
         'show_progress_guide' => 'auto', // auto, true, false
-        'products_limit' => '6',
+        'products_limit' => '12',
         'products_filter' => 'affordable',
         'class' => ''
     ];
@@ -137,7 +137,7 @@ class AccountDashboardShortcode extends ShortcodeBase
 
                 <!-- Row 2: Points Balance & Available Products -->
                 <div class="dashboard-row balance-products-row">
-                    <div class="dashboard-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="dashboard-grid grid grid-cols-2 gap-6">
                         <!-- Left: Points Balance -->
                         <div class="dashboard-section balance-section">
                             <?= do_shortcode('[user_points_balance]') ?>
@@ -153,7 +153,7 @@ class AccountDashboardShortcode extends ShortcodeBase
                 <?php if ($config['show_leaderboard']): ?>
                     <!-- Row 3: Leaderboard Information -->
                     <div class="dashboard-row leaderboard-row">
-                        <div class="dashboard-grid grid grid-cols-1 gap-6 w-full">
+                        <div class="dashboard-grid grid grid-cols-3 gap-6 w-full">
                             <!-- Left: Competition Announcement -->
                             <div class="dashboard-section announcement-section">
                                 <?= do_shortcode('[zebricek_announcement]') ?>
